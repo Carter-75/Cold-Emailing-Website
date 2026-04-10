@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "functions": {
+    "app.js": {
+      "maxDuration": 60,
+      "includeFiles": "{services,models,controllers,routes}/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "app.js"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "ALLOWALL"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://carter-portfolio.fyi https://carter-portfolio.vercel.app https://*.vercel.app http://localhost:3000"
+        }
+      ]
+    }
+  ]
+}
