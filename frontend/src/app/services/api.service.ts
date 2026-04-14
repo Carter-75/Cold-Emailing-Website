@@ -10,24 +10,24 @@ export class ApiService {
   
   // Dynamic API URL mapping
   private get apiUrl(): string {
-    // Environmental "Burn-In" Toggles
-    const isProd = ('__PRODUCTION__' as string) === 'true';
-    const prodBackend = '__PROD_BACKEND_URL__' as string;
+    // Environmental "Burn-In" Toggles (usually replaced by CI/CD)
+    const isProdEnv = ('false' as string) === 'true';
+    const prodBackendUrl = '' as string;
     
     const host = window.location.hostname;
     const isLocal = host === 'localhost' || host === '127.0.0.1';
     
-    // 1. If we are local and not forced into production mode, hit the raw local port
-    if (isLocal && !isProd) {
+    // 1. Local development (unless forced to prod mode)
+    if (isLocal && !isProdEnv) {
       return 'http://localhost:3000/api';
     }
 
-    // 2. If we are in production (or forced), prioritize the explicit backend URL from env
-    if (prodBackend && prodBackend !== '' && !prodBackend.includes('__PROD_')) {
-      return prodBackend.endsWith('/') ? prodBackend.slice(0, -1) + '/api' : prodBackend + '/api';
+    // 2. Production with explicit backend URL
+    if (prodBackendUrl && !prodBackendUrl.startsWith('__')) {
+      return prodBackendUrl.endsWith('/') ? prodBackendUrl.slice(0, -1) + '/api' : prodBackendUrl + '/api';
     }
 
-    // 3. Fallback: Use the universal relative path (handled by Vercel Proxy)
+    // 3. Fallback: Relative path (handled by proxy)
     return '/api';
   }
 

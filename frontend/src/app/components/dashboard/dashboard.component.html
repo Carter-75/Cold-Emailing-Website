@@ -1,0 +1,217 @@
+<div class="min-h-screen bg-neutral-950 text-white font-sans selection:bg-indigo-500/30">
+  
+  <nav class="border-b border-white/5 bg-white/5 backdrop-blur-xl sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold relative">
+          C
+          <div class="pro-badge absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full border-2 border-neutral-950"></div>
+        </div>
+        <span class="font-semibold tracking-tight text-lg">ColdAuto <span class="text-[10px] text-indigo-400 font-mono tracking-widest uppercase ml-1">v2.0 PRO</span></span>
+      </div>
+      
+      <div class="flex items-center gap-6">
+        <div *ngIf="auth.isAuthenticated()" class="flex items-center gap-3 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
+          <div class="w-2 h-2 rounded-full" [ngClass]="outreach.status() === 'running' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'"></div>
+          <span class="text-xs font-medium uppercase tracking-wider text-neutral-400">{{ outreach.status() }}</span>
+        </div>
+        <button *ngIf="!auth.isAuthenticated()" (click)="auth.loginWithGoogle()" class="px-5 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-neutral-200 transition-all">
+          Login with Google
+        </button>
+        <button *ngIf="auth.isAuthenticated()" (click)="auth.logout()" class="text-xs text-neutral-500 hover:text-white transition-colors">
+          Logout
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-12 gap-8">
+    
+    <div class="lg:col-span-8 flex flex-col gap-8">
+      
+      <!-- Pro Engine Display -->
+      <div [ngClass]="config.testModeActive ? 'bg-amber-600 shadow-amber-600/20' : 'bg-indigo-600 shadow-indigo-600/20'" 
+           class="rounded-[2.5rem] p-10 relative overflow-hidden shadow-2xl transition-all duration-700">
+        <div #scene class="absolute inset-0 z-0 opacity-40 pointer-events-none"></div>
+        
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <h1 class="text-4xl font-black tracking-tight uppercase">PRO Engine</h1>
+              <span *ngIf="config.testModeActive" class="bg-black/40 text-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-400/30 uppercase tracking-widest">Test Mode Active</span>
+            </div>
+            <p class="text-white/80 text-sm font-medium">Autonomous ICP discovery & sequence optimization</p>
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <button (click)="sendTestEmail()"
+                    [disabled]="!auth.isAuthenticated()"
+                    class="px-6 py-6 rounded-3xl bg-white/10 backdrop-blur-md text-white border border-white/10 transition-all hover:bg-white/20 active:scale-95 disabled:opacity-50 group shadow-lg">
+              <span class="text-xs font-black uppercase tracking-widest">Send Test</span>
+            </button>
+            <button (click)="toggleOutreach()" 
+                    [disabled]="!auth.isAuthenticated()"
+                    [ngClass]="outreach.status() === 'running' ? 'bg-white text-black' : 'bg-black/30 backdrop-blur-md text-white border border-white/20'"
+                    class="px-12 py-6 rounded-3xl flex items-center gap-4 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 group shadow-lg">
+              <span class="text-2xl font-black uppercase tracking-[0.2em]">{{ outreach.status() === 'running' ? 'Abort' : 'Initiate' }}</span>
+              <div *ngIf="outreach.status() === 'running'" class="w-3 h-3 bg-indigo-600 rounded-full animate-ping"></div>
+            </button>
+          </div>
+        </div>
+
+        <div class="relative z-10 mt-16 grid grid-cols-4 gap-4">
+          <div class="bg-black/30 backdrop-blur-xl rounded-2xl p-5 border border-white/10 group hover:border-white/30 transition-all">
+            <div class="text-[10px] uppercase font-bold tracking-widest text-white/40 mb-1">Total Sent</div>
+            <div class="text-3xl font-black tracking-tight">{{ outreach.stats().sent || 0 }}</div>
+          </div>
+          <div class="bg-black/30 backdrop-blur-xl rounded-2xl p-5 border border-white/10 group hover:border-white/30 transition-all">
+            <div class="text-[10px] uppercase font-bold tracking-widest text-white/40 mb-1">Replies</div>
+            <div class="text-3xl font-black tracking-tight">{{ auth.user()?.stats?.replies || 0 }}</div>
+          </div>
+          <div class="bg-black/30 backdrop-blur-xl rounded-2xl p-5 border border-white/10 group hover:border-white/30 transition-all text-green-400">
+            <div class="text-[10px] uppercase font-bold tracking-widest text-white/40 mb-1">Conversion</div>
+            <div class="text-3xl font-black tracking-tight">{{ auth.user()?.stats?.sent > 0 ? ((auth.user()?.stats?.replies / auth.user()?.stats?.sent) * 100 | number:'1.1-1') : '0.0' }}%</div>
+          </div>
+          <div class="bg-black/30 backdrop-blur-xl rounded-2xl p-5 border border-white/10 group hover:border-white/30 transition-all">
+            <div class="text-[10px] uppercase font-bold tracking-widest text-white/40 mb-1">Limit</div>
+            <div class="text-3xl font-black tracking-tight">{{ config.dailyLeadLimit }}/d</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Log Feed -->
+      <div class="bg-neutral-900 border border-white/5 rounded-[2rem] flex flex-col overflow-hidden h-[450px] shadow-xl">
+        <div class="px-8 py-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
+            <h2 class="font-bold tracking-tight text-white/80 uppercase text-xs tracking-[0.2em]">Autonomous Stream</h2>
+          </div>
+          <span class="text-[10px] uppercase font-bold tracking-widest text-indigo-400/60 italic">Monitoring sequences...</span>
+        </div>
+        <div class="flex-1 overflow-y-auto p-8 flex flex-col-reverse gap-4 font-mono text-sm no-scrollbar">
+          <div *ngFor="let log of outreach.logs()" 
+               class="p-4 rounded-2xl border border-white/[0.02] bg-white/[0.02] hover:bg-white/[0.04] transition-colors group">
+            <span class="text-indigo-500/50 text-[10px] font-bold mr-3">SYSTEM_LOG</span>
+            <span class="text-neutral-400 group-hover:text-neutral-200 transition-colors">{{ log }}</span>
+          </div>
+          <div *ngIf="outreach.logs().length === 0" class="flex flex-col items-center justify-center py-20 text-neutral-600 gap-4 opacity-40">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+            <span class="text-xs uppercase tracking-widest font-bold">Waiting for engine discovery</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Side: Extensive Pro Config -->
+    <div class="lg:col-span-4 flex flex-col gap-6">
+      
+      <div class="bg-neutral-900 border border-white/5 rounded-[2rem] p-1 shadow-2xl">
+        <div class="p-8 h-[750px] overflow-y-auto no-scrollbar">
+          <div class="flex items-center justify-between mb-8">
+            <h2 class="text-xl font-black uppercase tracking-tighter">Configuration</h2>
+            <div class="flex items-center gap-2">
+              <span class="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">Test Mode</span>
+              <button (click)="config.testModeActive = !config.testModeActive" 
+                      [ngClass]="config.testModeActive ? 'bg-amber-500' : 'bg-neutral-800'"
+                      class="w-10 h-5 rounded-full relative transition-colors shadow-inner">
+                <div [ngClass]="config.testModeActive ? 'translate-x-5' : 'translate-x-1'" class="absolute top-1 w-3 h-3 bg-white rounded-full transition-transform"></div>
+              </button>
+            </div>
+          </div>
+          
+          <form (ngSubmit)="saveConfig()" class="flex flex-col gap-8">
+            
+            <!-- Section: Credentials -->
+            <div class="space-y-4">
+              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500/60 pb-2 border-b border-indigo-500/10">1. API Infrastructure</div>
+              
+              <div class="grid gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">OpenAI Secret</label>
+                  <input type="password" [(ngModel)]="config.openaiKey" name="openaiKey" class="input-pro" placeholder="sk-...">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">SerpApi (Maps)</label>
+                  <input type="password" [(ngModel)]="config.serpapiKey" name="serpapiKey" class="input-pro">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Apollo (Leads)</label>
+                  <input type="password" [(ngModel)]="config.apolloKey" name="apolloKey" class="input-pro">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Verifalia (Email)</label>
+                  <input type="password" [(ngModel)]="config.verifaliaKey" name="verifaliaKey" class="input-pro">
+                </div>
+              </div>
+            </div>
+
+            <!-- Section: Personalization Info -->
+            <div class="space-y-4">
+              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500/60 pb-2 border-b border-indigo-500/10">2. Identity & Branding</div>
+              
+              <div class="grid gap-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Sender Name</label>
+                    <input type="text" [(ngModel)]="config.senderName" name="senderName" class="input-pro" placeholder="e.g. Carter">
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Sender Role</label>
+                    <input type="text" [(ngModel)]="config.senderTitle" name="senderTitle" class="input-pro" placeholder="Founder">
+                  </div>
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Company Name</label>
+                  <input type="text" [(ngModel)]="config.companyName" name="companyName" class="input-pro">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Core Value Prop</label>
+                  <textarea [(ngModel)]="config.valueProp" name="valueProp" rows="2" class="input-pro text-xs" placeholder="What is your unfair advantage?"></textarea>
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Typical Outcome</label>
+                  <input type="text" [(ngModel)]="config.targetOutcome" name="targetOutcome" class="input-pro" placeholder="e.g. 2x more organic leads">
+                </div>
+              </div>
+            </div>
+
+            <!-- Section: Sending Account -->
+            <div class="space-y-4">
+              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500/60 pb-2 border-b border-indigo-500/10">3. Outbound Channel</div>
+              
+              <div class="grid gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Outreach Email</label>
+                  <input type="email" [(ngModel)]="config.senderEmail" name="senderEmail" class="input-pro">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">App Password</label>
+                  <input type="password" [(ngModel)]="config.appPassword" name="appPassword" class="input-pro">
+                </div>
+                
+                <div *ngIf="config.testModeActive" class="space-y-1.5 animate-in slide-in-from-top-2 duration-300">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-amber-500">Test Recipient Email</label>
+                  <input type="email" [(ngModel)]="config.testRecipientEmail" name="testRecipientEmail" class="input-pro border-amber-500/30 bg-amber-500/5">
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Physical Address (CAN-SPAM)</label>
+                  <textarea [(ngModel)]="config.physicalAddress" name="physicalAddress" rows="2" class="input-pro text-xs"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" [disabled]="!auth.isAuthenticated()" class="mt-4 w-full bg-white text-black py-6 rounded-3xl font-black uppercase tracking-[0.2em] hover:bg-neutral-200 transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl">
+              Sync Configuration
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>

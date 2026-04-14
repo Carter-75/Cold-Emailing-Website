@@ -1,0 +1,13 @@
+{
+  "name": "cold-emailing-website-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev-launcher.js",
+    "install-all": "npm install && npm install --prefix backend && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "dotenv": "^16.4.5"
+  }
+}

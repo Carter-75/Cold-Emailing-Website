@@ -1,22 +1,19 @@
-// Explicit Environment Resolution
+// Strict Environment Validation
+require('./config/env');
+
 const path = require('path');
 const fs = require('fs');
-const resolveEnvPath = () => {
-  const candidates = [path.join(process.cwd(), '.env.local'), path.join(process.cwd(), 'backend', '.env.local')];
-  for (const c of candidates) { if (fs.existsSync(c)) return c; }
-  return candidates[0];
-};
-require('dotenv').config({ path: resolveEnvPath() });
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
+const session = require('express-session');
+const passport = require('passport');
+require('./config/passport');
 
 const app = express();
-
-require('dotenv').config({ path: require('path').join(__dirname, '../.env.local') });
 
 // --- Diagnostic Routes (Moved up for early availability) ---
 app.get('/api/health', (req, res) => {
@@ -65,10 +62,15 @@ const indexRouter = require('./routes/index');
 const PROJECT_NAME = process.env.PROJECT_NAME || 'Portfolio Project';
 
 // --- MongoDB Setup ---
+const { initAgenda } = require('./services/agenda.service');
+
 const mongoURI = process.env.MONGODB_URI;
-    if (mongoURI) {
+if (mongoURI) {
   mongoose.connect(mongoURI)
-    .then(() => console.log('OK: Connected to MongoDB'))
+    .then(() => {
+      console.log('OK: Connected to MongoDB');
+      initAgenda();
+    })
     .catch(err => {
       console.error('WARN: MongoDB Connection Error (Graceful):', err.message);
       console.log('INFO: Continuing without database features...');
@@ -84,17 +86,28 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+app.use(session({
+  secret: process.env.JWT_SECRET || 'cold-outreach-secret',
+  resave: false,
+  saveUninitialized: false
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 // --- Portfolio Iframe Security ---
 const isProd = process.env.PRODUCTION === 'true';
 const prodUrl = process.env.PROD_FRONTEND_URL;
 
-const frameAncestors = ["'self'", "https://carter-portfolio.fyi", "https://carter-portfolio.vercel.app", "https://*.vercel.app", `http://localhost:${process.env.PORT || '{be_port}'}`];
-if (prodUrl) {{
+const authRouter = require('./routes/auth');
+
+const frameAncestors = ["'self'", "https://carter-portfolio.fyi", "https://carter-portfolio.vercel.app", "https://*.vercel.app", `http://localhost:${process.env.PORT || '3000'}`];
+if (prodUrl) {
   frameAncestors.push(prodUrl);
-}}
-if (process.env.PROD_BACKEND_URL) {{
+}
+if (process.env.PROD_BACKEND_URL) {
   frameAncestors.push(process.env.PROD_BACKEND_URL);
-}}
+}
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -106,7 +119,7 @@ app.use(helmet({
 }));
 
 app.use((req, res, next) => {
-  res.setHeader('X-Frame-Options', 'ALLOWALL'); // For compatibility
+  res.setHeader('X-Frame-Options', 'DENY'); // Default to DENY, overridden by CSP frame-ancestors in modern browsers
   next();
 });
 
@@ -115,6 +128,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api', indexRouter);
+app.use('/api/auth', authRouter);
 if (aiRouter) {
   app.use('/api/ai', aiRouter);
 }
