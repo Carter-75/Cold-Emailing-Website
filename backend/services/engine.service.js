@@ -69,6 +69,13 @@ class OutreachEngine {
           // Re-check heartbeat inside lead loop
           if (!hasActiveDashboard()) break;
 
+          // Limit Enforcement
+          if (this.processedLeadsCount >= this.currentUser.config.dailyLeadLimit) {
+            emitToAll('engine-log', `Daily Limit Reached (${this.currentUser.config.dailyLeadLimit}). Engine stopping...`);
+            this.stop('Daily limit reached');
+            break;
+          }
+
           emitToAll('engine-log', `Processing: ${lead.name}...`);
 
           // 1. Check history & suppression
@@ -119,8 +126,10 @@ class OutreachEngine {
             emitToAll('engine-log', `Sending email to ${email}...`);
           }
 
+          const safeConfig = this.currentUser.config.toObject ? this.currentUser.config.toObject() : this.currentUser.config;
+          
           await EmailService.sendEmail({
-            ...this.currentUser.config.toObject(),
+            ...safeConfig,
             userId: this.currentUser._id,
             displayName: this.currentUser.displayName,
             testMode: this.currentUser.config.testModeActive

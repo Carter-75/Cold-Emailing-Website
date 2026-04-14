@@ -126,7 +126,19 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
+  // If in dev and hitting the root, redirect to frontend port
+  if (process.env.PRODUCTION !== 'true' && req.headers.host?.includes('3000')) {
+    return res.redirect('http://localhost:4200');
+  }
   res.send(`API for ${PROJECT_NAME} is running at /api`);
+});
+
+// Help users who hit /dashboard on the wrong port (3000 instead of 4200)
+app.get('/dashboard', (req, res) => {
+  if (process.env.PRODUCTION !== 'true') {
+    return res.redirect('http://localhost:4200/dashboard');
+  }
+  res.status(404).send('Not Found');
 });
 
 app.use('/api', indexRouter);

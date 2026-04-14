@@ -40,3 +40,17 @@ The `optimizer.service.js` looks at which cities and email variants are getting 
 - **Strict Configuration**: The app will not start without a `MONGODB_URI` and critical API keys.
 - **Unsubscribe Handling**: Every email includes a 1-click unsubscribe link that instantly adds the recipient to a suppression list.
 - **Kill Switch**: If the email service encounters a fatal error (e.g., Gmail password changed), the engine shuts down immediately to prevent damage.
+
+---
+
+## 🚀 Production Deployment Checklist
+
+Before you scale your outreach on Vercel, ensure the following are configured in your Production Environment Variables:
+
+1.  **Absolute URLs**: Set `PROD_BACKEND_URL` and `PROD_FRONTEND_URL` to your Vercel domain (e.g., `https://cold-emailing-website.vercel.app`). This is required for Google OAuth and Unsubscribe links.
+2.  **Database**: Point `MONGODB_URI` to your production MongoDB Atlas cluster.
+3.  **API Keys**: Ensure `OPENAI_API_KEY`, `SERPAPI_KEY`, `APOLLO_KEY`, and `VERFALIA_KEY` are all present.
+4.  **Gmail Security**: Use a **Google App Password** for `config.appPassword` (NOT your standard Gmail password).
+
+> [!IMPORTANT]
+> **Wait for the Engine**: The engine has a built-in "Jitter Delay" of 1-2 minutes between emails. If you click Initiate and don't see an email instantly, check the "Autonomous Stream" logs for the countdown.

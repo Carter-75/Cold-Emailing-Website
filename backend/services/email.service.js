@@ -45,19 +45,21 @@ class EmailService {
       },
     });
 
+    const rootUrl = process.env.PROD_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:3000';
+
     const footer = `
       <br><br>
       <hr>
       <p style="font-size: 12px; color: #666;">
-        ${userConfig.physicalAddress}<br>
+        ${userConfig.physicalAddress || ''}<br>
         You received this email because we found your business ${businessName} on Google Maps and thought you could benefit from our services.
         <br>
-        <a href="${process.env.BACKEND_URL || 'http://localhost:3000'}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&userId=${userConfig.userId}">1-Click Unsubscribe</a>
+        <a href="${rootUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&userId=${userConfig.userId}">1-Click Unsubscribe</a>
       </p>
     `;
 
     const mailOptions = {
-      from: `"${userConfig.displayName || 'Web Dev Assistant'}" <${userConfig.senderEmail}>`,
+      from: `"${userConfig.displayName || userConfig.senderName || 'Web Dev Assistant'}" <${userConfig.senderEmail}>`,
       to: recipientEmail,
       subject: `Improving ${businessName}'s Online Presence`,
       html: content.replace(/\n/g, '<br>') + footer,
