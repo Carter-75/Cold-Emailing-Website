@@ -13,8 +13,7 @@ def sync_vercel_env():
     print("Vercel Watcher: Syncing local .env.local to Production Vault...")
     
     try:
-        # We assume the project is linked (via 'vercel link' or similar)
-        # The 'env add' command will handle link errors if they occur
+        commands = []
         with open(env_path, "r", encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
@@ -25,40 +24,38 @@ def sync_vercel_env():
                 key = key.strip()
                 val = val.strip()
                 
-                # Strip surrounding quotes if they exist
                 if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
                     val = val[1:-1]
                 
                 if key and val:
-                    # Sync logic using PowerShell for robust escaping on Windows
-                    # We pass the value via an environment variable to ensure zero shell interpolation
-                    target_env = os.environ.copy()
-                    target_env["KV_VAL"] = val
+                    # Escape single quotes for PowerShell
+                    escaped_val = val.replace("'", "''")
+                    # Remove if exists, then add. Using -ErrorAction SilentlyContinue for the rm.
+                    commands.append(f"Write-Host '   Syncing {key}...'; npx vercel env rm {key} production --yes; npx vercel env add {key} production --value '{escaped_val}' --yes")
 
-                    # 1. Try to remove existing var (ignore failure if it doesn't exist)
-                    subprocess.run(
-                        ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", f"npx vercel env rm {key} production --yes"],
-                        env=target_env,
-                        capture_output=True
-                    )
-                    
-                    # 2. Add/Update the variable using the env var for the value
-                    result = subprocess.run(
-                        ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", f"npx vercel env add {key} production --value $env:KV_VAL --yes"],
-                        env=target_env,
-                        capture_output=True,
-                        text=True
-                    )
-                    
-                    if result.returncode != 0:
-                        print(f"   [!] Failed to sync {key}: {result.stderr.strip()}")
-                    else:
-                        print(f"   Synced: {key}")
+        if not commands:
+            print("No variables to sync.")
+            return
 
-        print("Vercel Vault is now up to date.")
+        # Combine into a single PS1 script content
+        all_commands = "\n".join(commands)
+        
+        # Execute the entire batch in one PowerShell process
+        result = subprocess.run(
+            ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", all_commands],
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode != 0:
+            print(f"Error during Vercel sync:\n{result.stderr}")
+        else:
+            print(result.stdout)
+            print("Vercel Vault is now up to date.")
 
     except Exception as e:
         print(f"Error during Vercel sync: {e}")
+
 
 if __name__ == "__main__":
     sync_vercel_env()
