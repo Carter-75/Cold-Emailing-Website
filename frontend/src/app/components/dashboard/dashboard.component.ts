@@ -26,7 +26,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     verifaliaKey: '',
     
     // SMTP/IMAP
-    senderEmail: '',
+    senderEmail: 'help@carter-portfolio.fyi',
     appPassword: '',
     imapHost: 'imap.gmail.com',
     imapPort: 993,

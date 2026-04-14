@@ -52,5 +52,11 @@ Before you scale your outreach on Vercel, ensure the following are configured in
 3.  **API Keys**: Ensure `OPENAI_API_KEY`, `SERPAPI_KEY`, `APOLLO_KEY`, and `VERFALIA_KEY` are all present.
 4.  **Gmail Security**: Use a **Google App Password** for `config.appPassword` (NOT your standard Gmail password).
 
-> [!IMPORTANT]
 > **Wait for the Engine**: The engine has a built-in "Jitter Delay" of 1-2 minutes between emails. If you click Initiate and don't see an email instantly, check the "Autonomous Stream" logs for the countdown.
+
+---
+
+## 📬 Contact & Support
+For any questions regarding the outreach engine or technical issues, please contact:
+**Email:** [help@carter-portfolio.fyi](mailto:help@carter-portfolio.fyi)
+**Website:** [carter-portfolio.fyi](https://carter-portfolio.fyi)
