@@ -6,6 +6,7 @@
     "dev": "nodemon ./bin/www"
   },
   "dependencies": {
+    "@vercel/functions": "^3.4.3",
     "agenda": "^6.2.4",
     "axios": "^1.15.0",
     "cookie-parser": "~1.4.6",

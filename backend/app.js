@@ -12,6 +12,7 @@ const helmet = require('helmet');
 const session = require('express-session');
 const passport = require('passport');
 require('./config/passport');
+const { connectToDatabase } = require('./lib/mongodb');
 
 const app = express();
 
@@ -46,6 +47,18 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+// --- MongoDB Connectivity Middleware ---
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (err) {
+    // Fail gracefully for diagnostics, or block if critical
+    console.error('Database connection failed in middleware:', err.message);
+    next();
+  }
+});
 
 // --- Diagnostic Routes (More resilient for Vercel Rewrites) ---
 app.all(['/api/health', '/api/ping', '/health', '/ping'], (req, res) => {
@@ -97,25 +110,18 @@ const indexRouter = require('./routes/index');
 
 const PROJECT_NAME = process.env.PROJECT_NAME || 'Portfolio Project';
 
-// --- MongoDB Setup ---
+// --- MongoDB Initialization ---
 const { initAgenda } = require('./services/agenda.service');
 
-const mongoURI = process.env.MONGODB_URI;
-if (mongoURI) {
-  mongoose.connect(mongoURI)
-    .then(() => {
-      console.log('OK: Connected to MongoDB');
-      initAgenda();
-    })
-    .catch(err => {
-      console.error('WARN: MongoDB Connection Error (Graceful):', err.message);
-      console.log('INFO: Continuing without database features...');
-      mongoose.set('bufferCommands', false);
-    });
-} else {
-  console.log('INFO: No MONGODB_URI found in .env.local. Database features disabled.');
-  mongoose.set('bufferCommands', false);
-}
+// "Warm up" the connection and initialize Agenda
+connectToDatabase()
+  .then(() => {
+    initAgenda();
+  })
+  .catch(err => {
+    console.error('Initial MongoDB Connection failed:', err.message);
+    mongoose.set('bufferCommands', false);
+  });
 
 app.use(session({
   secret: process.env.JWT_SECRET || 'cold-outreach-secret',
