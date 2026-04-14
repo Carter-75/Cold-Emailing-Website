@@ -10,21 +10,21 @@ class EmailService {
     Persona Context:
     ${config.personaContext || 'I am a web developer finishing my degree and help businesses build professional online presence.'}
 
-    Standard Pricing Model (To be referenced when appropriate):
+    Standard Pricing Model:
     - Basic Landing Pages: $100
     - Custom Business Sites: $250
     - Full Custom Applications: $475
 
     Linguistic Rules:
     - Max 4-6 sentences.
-    - Zero passive phrasing (Banned: "if interested", "worth a chat", "let me know").
+    - Zero passive phrasing.
     - Use active, direct language.
-    - Reference carter-portfolio.fyi for social proof.
+    - **CRITICAL**: Do NOT include a sign-off or signature (e.g. No "Best,", "Regards,", or your name at the end). The system handles the signature separately.
     
     Email Structure:
     - Sentence 1: Personalized hook regarding ${lead.businessName}.
-    - Sentence 2: The direct value prop and status as an expert web dev (mentions graduating/degree where natural).
-    - Sentence 3: The opportunity (e.g. converting Maps traffic to a high-perf site).
+    - Sentence 2: The direct value prop and status as an expert web dev.
+    - Sentence 3: The opportunity.
     - Sentence 4: One of the pricing tiers or a request for a quick chat.`;
 
     const userPrompt = `Generate a high-converting cold email for ${lead.businessName}. 
@@ -55,7 +55,11 @@ class EmailService {
 
     const rootUrl = process.env.PROD_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:3000';
 
+    const signature = userConfig.signature || `<p>${userConfig.senderName}<br>${userConfig.senderTitle}</p>`;
+
     const footer = `
+      <br>
+      ${signature}
       <br><br>
       <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
       <p style="font-size: 11px; color: #999; line-height: 1.5; font-family: sans-serif;">

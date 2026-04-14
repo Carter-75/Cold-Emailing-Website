@@ -46,6 +46,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     
     // Persona / AI Spot
     personaContext: 'I am a web developer finishing my degree and ready to help businesses build a professional online presence. I focus on high-performance, clean designs.',
+    signature: '',
     
     // Logic
     dailyLeadLimit: 3,

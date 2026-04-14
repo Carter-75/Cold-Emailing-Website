@@ -218,14 +218,22 @@
               <textarea [(ngModel)]="config.personaContext" name="personaContext" rows="4" class="input-pro text-sm" placeholder="Tell the AI who you are and what you want to achieve..."></textarea>
               <p class="text-[10px] text-neutral-500 mt-2 lowercase italic">* This information is injected into every email sequence for maximum personalization.</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-4">
               <div class="space-y-1.5">
-                <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Core Value Prop</label>
-                <textarea [(ngModel)]="config.valueProp" name="valueProp" rows="2" class="input-pro text-xs"></textarea>
+                <label class="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Email Signature (HTML)</label>
+                <textarea [(ngModel)]="config.signature" name="signature" rows="6" class="input-pro font-mono text-[11px]" placeholder="<table...>...</table>"></textarea>
+                <p class="text-[9px] text-neutral-500 mt-1 lowercase italic">* This HTML will be injected exactly as-is after the email content.</p>
               </div>
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Target Outcome</label>
-                <input type="text" [(ngModel)]="config.targetOutcome" name="targetOutcome" class="input-pro">
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Core Value Prop</label>
+                  <textarea [(ngModel)]="config.valueProp" name="valueProp" rows="2" class="input-pro text-xs"></textarea>
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Target Outcome</label>
+                  <input type="text" [(ngModel)]="config.targetOutcome" name="targetOutcome" class="input-pro">
+                </div>
               </div>
             </div>
             <button type="submit" class="w-full bg-white text-black py-6 rounded-3xl font-black uppercase tracking-widest hover:bg-neutral-200 transition-all">
@@ -273,8 +281,5 @@
       </div>
 
     </div>
-  </main>
-</div>
-
   </main>
 </div>
