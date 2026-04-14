@@ -233,6 +233,11 @@
               </div>
             </div>
             <div class="space-y-1.5">
+              <label class="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Portfolio Website URL</label>
+              <input type="text" [(ngModel)]="config.websiteUrl" name="websiteUrl" class="input-pro" placeholder="e.g. carter-portfolio.fyi">
+              <p class="text-[9px] text-neutral-500 italic mt-1">* This URL is injected into the AI generation logic to prove your professional presence.</p>
+            </div>
+            <div class="space-y-1.5">
               <label class="text-[10px] font-bold uppercase tracking-widest text-indigo-400">AI Persona & Context</label>
               <textarea [(ngModel)]="config.personaContext" name="personaContext" rows="4" class="input-pro text-sm" placeholder="Tell the AI who you are and what you want to achieve..."></textarea>
               <p class="text-[10px] text-neutral-500 mt-2 lowercase italic">* This information is injected into every email sequence for maximum personalization.</p>

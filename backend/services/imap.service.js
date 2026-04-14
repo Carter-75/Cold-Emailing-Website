@@ -12,8 +12,8 @@ class IMAPService {
 
   async checkInbox(user) {
     const client = new ImapFlow({
-      host: user.config.imapHost || 'imap.gmail.com',
-      port: user.config.imapPort || 993,
+      host: user.config.imapHost,
+      port: user.config.imapPort,
       secure: true,
       auth: {
         user: user.config.senderEmail,

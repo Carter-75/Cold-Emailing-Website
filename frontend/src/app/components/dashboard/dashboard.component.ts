@@ -30,10 +30,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // SMTP/IMAP
     senderEmail: '',
     appPassword: '',
-    smtpHost: 'mail.privateemail.com',
+    smtpHost: '',
     smtpPort: 465,
     smtpSecure: true,
-    imapHost: 'imap.privateemail.com',
+    imapHost: '',
     imapPort: 993,
     
     // Personalization
