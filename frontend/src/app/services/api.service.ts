@@ -11,8 +11,8 @@ export class ApiService {
   // Dynamic API URL mapping
   private get apiUrl(): string {
     // Environmental "Burn-In" Toggles (usually replaced by CI/CD)
-    const isProdEnv = ('false' as string) === 'true';
-    const prodBackendUrl = '' as string;
+    const isProdEnv = ('__PRODUCTION__' as string) === 'true';
+    const prodBackendUrl = '__PROD_BACKEND_URL__' as string;
     
     const host = window.location.hostname;
     const isLocal = host === 'localhost' || host === '127.0.0.1';
