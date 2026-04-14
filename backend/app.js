@@ -121,7 +121,7 @@ app.use(helmet({
 }));
 
 app.use((req, res, next) => {
-  res.setHeader('X-Frame-Options', 'DENY'); // Default to DENY, overridden by CSP frame-ancestors in modern browsers
+  res.setHeader('X-Frame-Options', 'ALLOWALL'); // For compatibility with portfolio embedding
   next();
 });
 

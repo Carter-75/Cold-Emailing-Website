@@ -28,19 +28,19 @@
     },
     {
       "src": "/dashboard",
-      "dest": "frontend/index.html"
+      "dest": "/index.html"
     },
     {
       "src": "/(assets/.*)",
-      "dest": "frontend/$1"
+      "dest": "/$1"
     },
     {
       "src": "/(.*\\.(js|css|png|jpg|svg|ico))$",
-      "dest": "frontend/$1"
+      "dest": "/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "frontend/index.html"
+      "dest": "/index.html"
     }
   ]
 }
