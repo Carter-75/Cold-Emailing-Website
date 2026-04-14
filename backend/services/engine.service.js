@@ -14,7 +14,16 @@ class OutreachEngine {
     this.isRunning = false;
     this.currentUser = null;
     this.currentCity = null;
-    this.processedLeadsCount = 0;
+    this.processedLeadsCount = 0; // Legacy local counter, will be supplemented by database check
+  }
+
+  async getSentTodayCount(userId) {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    return await SentEmail.countDocuments({
+      userId,
+      sentAt: { $gte: startOfToday }
+    });
   }
 
   async start(userId) {
@@ -53,15 +62,48 @@ class OutreachEngine {
       }
 
       try {
+        // 1. Unified Daily Limit Check
+        const totalSentToday = await this.getSentTodayCount(this.currentUser._id);
+        const dailyLimit = this.currentUser.config.dailyLeadLimit || 3;
+        
+        if (totalSentToday >= dailyLimit) {
+          emitToAll('engine-log', `Daily Limit Reached (${totalSentToday}/${dailyLimit}). Engine pausing...`);
+          this.stop('Daily limit reached (Database synchronized)');
+          break;
+        }
+
+        // 2. PRIORITY: Process Scheduled Follow-ups FIRST
+        emitToAll('engine-log', `Checking for due follow-ups (Priority 1)...`);
+        const SequenceService = require('./sequence.service');
+        const dueFollowUps = await Lead.find({
+          userId: this.currentUser._id,
+          status: 'emailed',
+          nextEmailAt: { $lte: new Date() }
+        });
+
+        if (dueFollowUps.length > 0) {
+          emitToAll('engine-log', `Found ${dueFollowUps.length} follow-ups due. Processing...`);
+          for (const followUp of dueFollowUps) {
+            if (!this.isRunning || !hasActiveDashboard()) break;
+            
+            // Re-check limit inside follow-up loop
+            const currentCount = await this.getSentTodayCount(this.currentUser._id);
+            if (currentCount >= dailyLimit) break;
+
+            await SequenceService.processLead(followUp);
+            emitToAll('engine-stats', { sent: currentCount + 1 });
+            
+            // Delay between follow-ups
+            await this.delay(10000);
+          }
+          continue; // Re-start loop to check limits and more follow-ups before discovery
+        }
+
+        // 3. SECONDARY: Discovery (Find new businesses)
         this.currentCity = cityRotator.getNextCity();
-        emitToAll('engine-log', `Searching for businesses in ${this.currentCity}...`);
+        emitToAll('engine-log', `No follow-ups due. Searching for NEW businesses in ${this.currentCity}...`);
 
         const leads = await LeadGenService.findLeads(this.currentCity, this.currentUser.config.serpapiKey);
-        
-        if (leads.length === 0) {
-          emitToAll('engine-log', `No leads found in ${this.currentCity}. Moving to next city.`);
-          continue;
-        }
 
         for (const lead of leads) {
           if (!this.isRunning) break;
@@ -78,12 +120,18 @@ class OutreachEngine {
 
           emitToAll('engine-log', `Processing: ${lead.name}...`);
 
-          // 1. Check history & suppression
-          const alreadySent = await SentEmail.findOne({ userId: this.currentUser._id, recipientEmail: lead.phone }); // Using phone as temporary proxy if email not found yet, but we'll check email specifically after enrichment
-          const unsubscribed = await Unsubscribe.findOne({ userId: this.currentUser._id, recipientEmail: lead.phone }); // Ditto
+          // 1. Check history & suppression (Email proxy or Business Name)
+          const alreadySent = await SentEmail.findOne({ 
+            userId: this.currentUser._id, 
+            $or: [{ recipientEmail: lead.phone }, { businessName: lead.name }] 
+          });
+          const unsubscribed = await Unsubscribe.findOne({ 
+            userId: this.currentUser._id, 
+            $or: [{ recipientEmail: lead.phone }, { businessName: lead.name }] 
+          });
 
           if (alreadySent || unsubscribed) {
-            emitToAll('engine-log', `Skipping ${lead.name} (Already in history/suppression).`);
+            emitToAll('engine-log', `Skipping ${lead.name} (Business/Phone already in history/suppression).`);
             continue;
           }
 
@@ -94,13 +142,23 @@ class OutreachEngine {
             continue;
           }
 
-          // 3. Double Check Sent/Unsubscribe/Replied with actual email
-          const emailSent = await SentEmail.findOne({ userId: this.currentUser._id, recipientEmail: email });
-          const emailUnsub = await Unsubscribe.findOne({ userId: this.currentUser._id, recipientEmail: email });
-          const leadStatus = await Lead.findOne({ userId: this.currentUser._id, recipientEmail: email, status: 'replied' });
+          // 3. Double Check Sent/Unsubscribe/Replied with actual email OR Business Name
+          const emailSent = await SentEmail.findOne({ 
+            userId: this.currentUser._id, 
+            $or: [{ recipientEmail: email }, { businessName: lead.name }] 
+          });
+          const emailUnsub = await Unsubscribe.findOne({ 
+            userId: this.currentUser._id, 
+            $or: [{ recipientEmail: email }, { businessName: lead.name }] 
+          });
+          const leadStatus = await Lead.findOne({ 
+            userId: this.currentUser._id, 
+            $or: [{ recipientEmail: email }, { businessName: lead.name }],
+            status: 'replied' 
+          });
           
           if (emailSent || emailUnsub || leadStatus) {
-            emitToAll('engine-log', `Email ${email} has already responded, unsubscribed, or been sent. Skipping.`);
+            emitToAll('engine-log', `Business ${lead.name} or Email ${email} has already responded, unsubscribed, or been sent. Skipping.`);
             continue;
           }
 
@@ -120,7 +178,15 @@ class OutreachEngine {
           let emailContent = content;
           if (this.currentUser.config.testModeActive) {
             recipient = this.currentUser.config.testRecipientEmail || email;
-            emailContent = `[TEST MODE] Original Recipient: ${email}\n\n` + content;
+            emailContent = `--- DATABASE SNAPSHOT [TEST MODE] ---
+Business: ${lead.name}
+Found Email: ${email}
+City: ${this.currentCity}
+Category: ${lead.category || 'N/A'}
+Phone: ${lead.phone || 'N/A'}
+Source Maps Address: ${lead.address || 'N/A'}
+--------------------------------------
+\n\n` + content;
             emitToAll('engine-log', `TEST MODE: Redirecting email for ${lead.name} to ${recipient}`);
           } else {
             emitToAll('engine-log', `Sending email to ${email}...`);
@@ -136,20 +202,27 @@ class OutreachEngine {
           }, recipient, emailContent, lead.name);
 
           // 7. Log to DB
-          await SentEmail.create({
+          const sentRecord = await SentEmail.create({
             userId: this.currentUser._id,
             recipientEmail: email,
             businessName: lead.name,
-            city: this.currentCity
+            city: this.currentCity,
+            testMode: !!this.currentUser.config.testModeActive
           });
 
-          // Persistent User Stats Update
-          await User.findByIdAndUpdate(this.currentUser._id, {
-            $inc: { 'stats.emailsSent': 1 }
-          });
+          // Cleanup logic for Stateless Testing
+          if (this.currentUser.config.testModeActive) {
+            console.log(`[Test Mode] Cleaning up stateless data for ${lead.name}...`);
+            await SentEmail.deleteOne({ _id: sentRecord._id });
+            // Note: Discovery leads aren't always saved as 'Lead' models in this loop yet,
+            // but if they were, they would be deleted here. 
+            emitToAll('engine-log', `[Test Mode] Success! (Data wiped)`);
+            continue; 
+          }
 
-          this.processedLeadsCount++;
-          emitToAll('engine-stats', { sent: this.processedLeadsCount });
+          // Update User Stats
+          const newSentCount = await this.getSentTodayCount(this.currentUser._id);
+          emitToAll('engine-stats', { sent: newSentCount });
           emitToAll('engine-log', `Success! Email sent to ${lead.name}.`);
 
           // 8. Jitter Delay

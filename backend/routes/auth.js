@@ -10,12 +10,13 @@ router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
   (req, res) => {
     // Successful authentication, redirect to dashboard.
-    // Determine the frontend URL: prioritize environment variable, otherwise use current host
-    const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
-    const redirectPath = frontendUrl.endsWith('/') ? `${frontendUrl}dashboard` : `${frontendUrl}/dashboard`;
+    // Dynamically resolve the frontend URL based on the current request
+    const host = req.get('host');
+    const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+    const baseUrl = `${protocol}://${host}`;
     
-    // Safety check for production to ensure we don't accidentally redirect to the backend port
-    const finalRedirect = redirectPath.replace(':3000', ':4200'); // Clean up any cross-port leakage in local dev
+    // Redirect to /dashboard on the same host (since Vercel hosts both on one domain)
+    const finalRedirect = baseUrl.endsWith('/') ? `${baseUrl}dashboard` : `${baseUrl}/dashboard`;
     
     res.redirect(finalRedirect);
   }

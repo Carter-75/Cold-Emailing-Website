@@ -6,7 +6,8 @@ const SentEmailSchema = new mongoose.Schema({
   businessName: String,
   city: String,
   sentAt: { type: Date, default: Date.now },
-  status: { type: String, default: 'sent' }
+  status: { type: String, default: 'sent' },
+  testMode: { type: Boolean, default: false }
 });
 
 // Ensure we don't send to the same email multiple times for a specific user

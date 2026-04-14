@@ -15,7 +15,15 @@
   ],
   "rewrites": [
     {
-      "source": "/api",
+      "source": "/api/health",
+      "destination": "/backend/app.js"
+    },
+    {
+      "source": "/api/ping",
+      "destination": "/backend/app.js"
+    },
+    {
+      "source": "/api/auth/(.*)",
       "destination": "/backend/app.js"
     },
     {

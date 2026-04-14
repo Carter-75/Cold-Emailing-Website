@@ -23,7 +23,8 @@ const LeadSchema = new mongoose.Schema({
   stats: {
     opened: { type: Number, default: 0 },
     clicked: { type: Number, default: 0 }
-  }
+  },
+  isTestData: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // Ensure unique outreach per user per email

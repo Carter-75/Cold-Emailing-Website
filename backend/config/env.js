@@ -45,13 +45,19 @@ const validateEnv = () => {
         const parsed = envSchema.parse(process.env);
         return parsed;
     } catch (err) {
-        console.error('\n❌ FATAL CONFIGURATION ERROR:');
+        console.error('\n⚠️ CONFIGURATION WARNING:');
         err.errors.forEach(e => {
             console.error(`   - ${e.path.join('.')}: ${e.message}`);
         });
-        console.error('\n   The application physically cannot work without these variables.');
-        console.error('   Please update your .env.local file.\n');
-        process.exit(1);
+        console.warn('\n   Continuing in DEGRATED MODE. Some features will fail until .env.local/Vercel variables are updated.\n');
+        
+        // Return partially valid env or defaults to allow booting for diagnostics
+        return {
+            ...process.env,
+            PRODUCTION: process.env.PRODUCTION || 'false',
+            PORT: process.env.PORT || '3000',
+            PROJECT_NAME: process.env.PROJECT_NAME || 'Cold Outreach (Degraded)'
+        };
     }
 };
 

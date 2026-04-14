@@ -17,7 +17,29 @@ const app = express();
 
 // --- Middlewares ---
 app.use(cors({
-  origin: [process.env.FRONTEND_URL, process.env.PROD_FRONTEND_URL, 'https://carter-portfolio.fyi'],
+  origin: (origin, callback) => {
+    // 1. No origin (like mobile apps or curl) or same-domain
+    if (!origin) return callback(null, true);
+    
+    const allowed = [
+      process.env.FRONTEND_URL, 
+      process.env.PROD_FRONTEND_URL, 
+      'https://carter-portfolio.fyi'
+    ].filter(Boolean);
+    
+    // 2. Check if it matches allowed list or is a Vercel subdomain
+    const isAllowed = allowed.includes(origin) || 
+                      origin.endsWith('.vercel.app') || 
+                      origin.includes('localhost') || 
+                      origin.includes('127.0.0.1');
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn('⚠️ Blocked by CORS:', origin);
+      callback(null, false);
+    }
+  },
   credentials: true
 }));
 app.use(logger('dev'));
@@ -25,15 +47,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// --- Diagnostic Routes (Moved below middlewares for CORS/JSON support) ---
-app.get(['/api/health', '/api/ping'], (req, res) => {
+// --- Diagnostic Routes (More resilient for Vercel Rewrites) ---
+app.all(['/api/health', '/api/ping', '/health', '/ping'], (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.status(200).json({
     status: 'online',
-    cwd: process.cwd(),
-    dirname: __dirname,
-    version: '1.0.1-recovery',
+    path: req.path,
+    url: req.url,
+    method: req.method,
+    version: '1.0.2-stable',
     env: process.env.PRODUCTION === 'true' ? 'production' : 'development',
+    mongo: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString()
   });
 });
@@ -108,25 +132,16 @@ const prodUrl = process.env.PROD_FRONTEND_URL;
 
 const authRouter = require('./routes/auth');
 
-const frameAncestors = ["'self'", "https://carter-portfolio.fyi", "https://carter-portfolio.vercel.app", "https://*.vercel.app", `http://localhost:${process.env.PORT || '3000'}`];
-if (prodUrl) {
-  frameAncestors.push(prodUrl);
-}
-if (process.env.PROD_BACKEND_URL) {
-  frameAncestors.push(process.env.PROD_BACKEND_URL);
-}
-
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      "frame-ancestors": frameAncestors,
-    },
-  },
-}));
-
 app.use((req, res, next) => {
-  res.setHeader('X-Frame-Options', 'ALLOWALL'); // For compatibility with portfolio embedding
+  // Dynamically calculate frame ancestors to support various Vercel aliases
+  const host = req.get('host');
+  const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+  const currentOrigin = `${protocol}://${host}`;
+  
+  const ancestors = ["'self'", "https://carter-portfolio.fyi", "https://*.vercel.app", currentOrigin];
+  
+  res.setHeader('Content-Security-Policy', `frame-ancestors ${ancestors.join(' ')}`);
+  res.setHeader('X-Frame-Options', 'ALLOWALL'); 
   next();
 });
 

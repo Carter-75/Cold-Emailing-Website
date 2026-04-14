@@ -52,41 +52,52 @@ class SequenceService {
         return;
       }
 
-      // Get Template (A/B)
-      let template = await Template.findOne({ userId: user._id, step: currentStep, variant: lead.variant });
-      
-      // If template doesn't exist, we might need to generate it or use a default logic
-      // For this SaaS version, we expect templates to be pre-generated or we generate them on the fly
-      if (!template) {
-        console.log(`[Sequence] Template missing for Step ${currentStep} Variant ${lead.variant}. Skipping.`);
-        return;
-      }
+      // Generate AI Content based on step
+      console.log(`[Sequence] Generating AI Step ${currentStep} for ${lead.businessName}...`);
+      const body = await EmailService.generateContent(lead, user.config, currentStep);
 
       // Final Check: Test Mode
       let recipient = lead.recipientEmail;
-      let subject = template.subject;
-      let body = template.body;
+      let finalBody = body;
 
       if (user.config.testModeActive) {
-        recipient = user.config.testRecipientEmail;
-        body = `--- TEST MODE METADATA ---
-Original Recipient: ${lead.recipientEmail}
+        recipient = user.config.testRecipientEmail || lead.recipientEmail;
+        finalBody = `--- DATABASE SNAPSHOT [TEST MODE] ---
 Business: ${lead.businessName}
-Step: ${currentStep}
+Found Email: ${lead.recipientEmail}
+City: ${lead.city}
+Category: ${lead.category || 'N/A'}
+Sequence Step: ${currentStep}
 Variant: ${lead.variant}
----------------------------
+Status: ${lead.status}
+--------------------------------------
 \n\n` + body;
       }
 
       // Send Email
       console.log(`[Sequence] Sending Step ${currentStep} to ${recipient}...`);
-      const sentInfo = await EmailService.sendEmail(user.config, recipient, body, lead.businessName);
+      await EmailService.sendEmail(user.config, recipient, finalBody, lead.businessName);
       
-      // Update Lead
+      // Update Lead / Record Sent Email (Crucial for Unified daily limit)
+      const SentEmail = require('../models/SentEmail');
+      const sentRecord = await SentEmail.create({
+        userId: user._id,
+        recipientEmail: lead.recipientEmail,
+        businessName: lead.businessName,
+        status: 'follow-up-' + currentStep,
+        testMode: !!user.config.testModeActive
+      });
+
+      // Cleanup logic for Stateless Testing
+      if (user.config.testModeActive) {
+        console.log(`[Test Mode] Cleaning up stateless data for ${lead.businessName}...`);
+        await Lead.deleteOne({ _id: lead._id });
+        await SentEmail.deleteOne({ _id: sentRecord._id });
+        return; // Terminate early for this lead in test mode
+      }
+
+      // Update Lead (Production logic)
       lead.sequenceStep += 1;
-      lead.lastEmailedAt = new Date();
-      
-      // Schedule next step
       const nextDelay = currentStep === 1 ? 7 : 7; // Day 1 -> 7 -> 14
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + nextDelay);

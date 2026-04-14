@@ -5,31 +5,40 @@ class EmailService {
   async generateContent(lead, config, step = 1) {
     const openai = new OpenAI({ apiKey: config.openaiKey });
     
+    let stepInstructions = '';
+    if (step === 1) {
+      stepInstructions = `This is the INITIAL outreach. Focus on a personalized hook regarding ${lead.businessName} and a brief intro.`;
+    } else if (step === 2) {
+      stepInstructions = `This is the FIRST FOLLOW-UP. Acknowledge that you emailed them previously about ${lead.businessName}. Keep it shorter and focus on the "bump" of the value prop.`;
+    } else {
+      stepInstructions = `This is the FINAL FOLLOW-UP. Be professional but direct. Mention this is the last time you'll be reaching out personally about optimizing ${lead.businessName}'s presence.`;
+    }
+
     const systemPrompt = `You are a world-class cold email expert representing ${config.senderName} (${config.senderTitle}) from ${config.companyName}.
     
+    Sequence Step: ${step}
+    Instructions: ${stepInstructions}
+
     Persona Context:
     ${config.personaContext || 'I help businesses build a professional online presence.'}
 
-    Standard Pricing Model (reference if applicable):
+    Standard Pricing Model:
     ${config.priceTier1 ? '- ' + config.priceTier1 : '- Basic Service: $100'}
     ${config.priceTier2 ? '- ' + config.priceTier2 : '- Professional Service: $250'}
     ${config.priceTier3 ? '- ' + config.priceTier3 : '- Full Solution: $475'}
 
     Linguistic Rules:
-    - Max 4-6 sentences.
+    - Max 3-5 sentences for follow-ups.
     - Zero passive phrasing.
-    - Use active, direct language.
-    - **CRITICAL**: Do NOT include a sign-off or signature (e.g. No "Best,", "Regards,", or your name at the end). The system handles the signature separately.
+    - **CRITICAL**: Do NOT include a sign-off or signature.
     
     Email Structure:
-    - Sentence 1: Personalized hook regarding ${lead.businessName}.
-    - Sentence 2: The direct value prop and status as an expert web dev.
-    - Sentence 3: The opportunity.
-    - Sentence 4: One of the pricing tiers or a request for a quick chat.`;
+    - Personalized context regarding ${lead.businessName}.
+    - The value prop: ${config.valueProp}.
+    - Clear Call to Action: ${config.targetOutcome}.`;
 
-    const userPrompt = `Generate a high-converting cold email for ${lead.businessName}. 
-    Value Prop: ${config.valueProp}
-    Outcome: ${config.targetOutcome}
+    const userPrompt = `Generate the Step ${step} email for ${lead.businessName}. 
+    Goal: ${config.targetOutcome}
     Portfolio: carter-portfolio.fyi`;
 
     const completion = await openai.chat.completions.create({
@@ -58,7 +67,9 @@ class EmailService {
       }
     });
 
-    const rootUrl = process.env.PROD_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:3000';
+    const rootUrl = process.env.PROD_BACKEND_URL || 
+                    process.env.BACKEND_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
     const signature = userConfig.signature || `<p>${userConfig.senderName}<br>${userConfig.senderTitle}</p>`;
 
@@ -71,7 +82,7 @@ class EmailService {
         <strong>Legal Disclosure:</strong> This communication is from ${userConfig.senderName} at ${userConfig.companyName}.<br>
         Store Address: ${userConfig.physicalAddress || 'Available on Request'}<br>
         You are receiving this because your business, ${businessName}, was identified as a candidate for digital optimization based on public Google Maps data.<br>
-        <a href="${rootUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&userId=${userConfig.userId}" style="color: #4f46e5; text-decoration: underline;">Opt-out of future communications</a>
+        <a href="${rootUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&userId=${userConfig.userId}&businessName=${encodeURIComponent(businessName)}" style="color: #4f46e5; text-decoration: underline;">Opt-out of future communications</a>
       </p>
     `;
 

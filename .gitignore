@@ -5,3 +5,5 @@ dist/
 .vscode/
 .vercel
 .env*.local
+.env.vercel.tmp
+*.tmp

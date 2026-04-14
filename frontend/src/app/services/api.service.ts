@@ -10,25 +10,18 @@ export class ApiService {
   
   // Dynamic API URL mapping
   private get apiUrl(): string {
-    // Environmental "Burn-In" Toggles (usually replaced by CI/CD)
-    const isProdEnv = ('__PRODUCTION__' as string) === 'true';
-    const prodBackendUrl = '__PROD_BACKEND_URL__' as string;
-    
     const host = window.location.hostname;
     const isLocal = host === 'localhost' || host === '127.0.0.1';
-    
-    // 1. Local development (unless forced to prod mode)
-    if (isLocal && !isProdEnv) {
-      return 'http://localhost:3000/api';
+    const isProdEnv = ('__PRODUCTION__' as string) === 'true';
+
+    // 1. Production Always uses relative /api 
+    // This is most stable for Vercel deployments where frontend and backend share a domain.
+    if (!isLocal || isProdEnv) {
+      return '/api';
     }
 
-    // 2. Production with explicit backend URL
-    if (prodBackendUrl && !prodBackendUrl.startsWith('__')) {
-      return prodBackendUrl.endsWith('/') ? prodBackendUrl.slice(0, -1) + '/api' : prodBackendUrl + '/api';
-    }
-
-    // 3. Fallback: Relative path (handled by proxy)
-    return '/api';
+    // 2. Local development
+    return 'http://localhost:3000/api';
   }
 
   /**

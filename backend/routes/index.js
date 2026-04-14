@@ -82,17 +82,28 @@ router.post('/config', async (req, res) => {
 
 // Unsubscribe
 router.get('/unsubscribe', async (req, res) => {
-  const { email, userId } = req.query;
+  const { email, userId, businessName } = req.query;
   if (!email || !userId) return res.status(400).send('Invalid request');
   
   try {
+    const Lead = require('../models/Lead');
+
+    // 1. Record the unsubscribe with business context
     await Unsubscribe.findOneAndUpdate(
       { userId, recipientEmail: email },
-      { userId, recipientEmail: email },
+      { userId, recipientEmail: email, businessName },
       { upsert: true }
     );
-    res.send('<h1>You have been unsubscribed.</h1><p>We will not contact you again.</p>');
+
+    // 2. Kill all active leads for this user/email or user/business
+    const query = { $or: [{ userId, recipientEmail: email }] };
+    if (businessName) query.$or.push({ userId, businessName });
+
+    await Lead.updateMany(query, { status: 'finished' });
+
+    res.send('<h1>You have been unsubscribed.</h1><p>We will not contact you or your business again.</p>');
   } catch (err) {
+    console.error('Unsubscribe Error:', err);
     res.status(500).send('Error processing unsubscribe request.');
   }
 });
