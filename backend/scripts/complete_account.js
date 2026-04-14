@@ -37,6 +37,7 @@ async function migrate() {
       companyName: 'Carter Portfolio',
       physicalAddress: 'Available on Request', // Standard legal compliant placeholder
       websiteUrl: 'carter-portfolio.fyi',
+      senderEmail: 'hello@carter-portfolio.fyi',
       
       // AI Awareness
       personaContext: 'I am a web developer finishing my degree and help businesses build a professional online presence. I focus on high-performance, clean designs.',

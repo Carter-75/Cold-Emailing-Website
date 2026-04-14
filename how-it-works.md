@@ -58,5 +58,5 @@ Before you scale your outreach on Vercel, ensure the following are configured in
 
 ## 📬 Contact & Support
 For any questions regarding the outreach engine or technical issues, please contact:
-**Email:** [help@carter-portfolio.fyi](mailto:help@carter-portfolio.fyi)
+**Email:** [hello@carter-portfolio.fyi](mailto:hello@carter-portfolio.fyi)
 **Website:** [carter-portfolio.fyi](https://carter-portfolio.fyi)
