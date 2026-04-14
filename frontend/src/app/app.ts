@@ -14,9 +14,14 @@ export class App implements OnInit {
   protected readonly title = signal('Cold-Emailing-Website');
   
   ngOnInit() {
-    this.api.getData('ping').subscribe({
-      next: (res) => console.log('API Status:', res),
-      error: (err) => console.error('API Offline:', err)
+    this.api.getData<{status: string}>('ping').subscribe({
+      next: (res) => console.log('✅ API Status:', res),
+      error: (err) => {
+        console.error('❌ API Offline or Malformed Response:', err);
+        if (err.status === 200) {
+          console.warn('⚠️ Received 200 OK but failed to parse JSON. This likely means the API returned HTML (Angular fallback). Check Vercel rewrites.');
+        }
+      }
     });
   }
 }

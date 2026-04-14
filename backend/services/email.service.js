@@ -8,12 +8,12 @@ class EmailService {
     const systemPrompt = `You are a world-class cold email expert representing ${config.senderName} (${config.senderTitle}) from ${config.companyName}.
     
     Persona Context:
-    ${config.personaContext || 'I am a web developer finishing my degree and help businesses build professional online presence.'}
+    ${config.personaContext || 'I help businesses build a professional online presence.'}
 
-    Standard Pricing Model:
-    - Basic Landing Pages: $100
-    - Custom Business Sites: $250
-    - Full Custom Applications: $475
+    Standard Pricing Model (reference if applicable):
+    ${config.priceTier1 ? '- ' + config.priceTier1 : '- Basic Service: $100'}
+    ${config.priceTier2 ? '- ' + config.priceTier2 : '- Professional Service: $250'}
+    ${config.priceTier3 ? '- ' + config.priceTier3 : '- Full Solution: $475'}
 
     Linguistic Rules:
     - Max 4-6 sentences.
@@ -46,11 +46,16 @@ class EmailService {
   async sendEmail(userConfig, recipientEmail, content, businessName) {
     const isTest = userConfig.testMode || false;
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: userConfig.smtpHost || 'smtp.gmail.com',
+      port: userConfig.smtpPort || 465,
+      secure: userConfig.smtpSecure ?? true,
       auth: {
         user: userConfig.senderEmail,
         pass: userConfig.appPassword,
       },
+      tls: {
+        rejectUnauthorized: false // Often needed for custom domain SMTP
+      }
     });
 
     const rootUrl = process.env.PROD_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:3000';

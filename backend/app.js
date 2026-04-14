@@ -15,9 +15,19 @@ require('./config/passport');
 
 const app = express();
 
-// --- Diagnostic Routes (Moved up for early availability) ---
+// --- Middlewares ---
+app.use(cors({
+  origin: [process.env.FRONTEND_URL, process.env.PROD_FRONTEND_URL, 'https://carter-portfolio.fyi'],
+  credentials: true
+}));
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+
+// --- Diagnostic Routes (Moved below middlewares for CORS/JSON support) ---
 app.get(['/api/health', '/api/ping'], (req, res) => {
-  res.json({
+  res.type('json').json({
     status: 'online',
     cwd: process.cwd(),
     dirname: __dirname,
@@ -32,9 +42,9 @@ app.get('/api/debug-bundle', async (req, res) => {
     let results = [];
     const list = await fs.readdir(dir, { withFileTypes: true });
     for (const file of list) {
-      const res = path.resolve(dir, file.name);
+      const resPath = path.resolve(dir, file.name);
       if (file.isDirectory()) {
-        results.push({ name: file.name, type: 'dir', children: await listFiles(res) });
+        results.push({ name: file.name, type: 'dir', children: await listFiles(resPath) });
       } else {
         results.push({ name: file.name, type: 'file' });
       }
@@ -80,13 +90,6 @@ if (mongoURI) {
   console.log('INFO: No MONGODB_URI found in .env.local. Database features disabled.');
   mongoose.set('bufferCommands', false);
 }
-
-// --- Middlewares ---
-app.use(cors());
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
 
 app.use(session({
   secret: process.env.JWT_SECRET || 'cold-outreach-secret',

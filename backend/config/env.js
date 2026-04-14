@@ -24,6 +24,8 @@ require('dotenv').config({ path: resolveEnvPath() });
 const envSchema = z.object({
     // Critical Infrastructure
     MONGODB_URI: z.string().url({ message: "MONGODB_URI must be a valid connection string" }).optional(),
+    // Security
+    ENCRYPTION_KEY: z.string().optional(),
     JWT_SECRET: z.string().min(10, { message: "JWT_SECRET should be a secure string of at least 10 chars" }),
     
     // Server Config
@@ -41,7 +43,6 @@ const envSchema = z.object({
 const validateEnv = () => {
     try {
         const parsed = envSchema.parse(process.env);
-        console.log('✅ Environment configuration validated.');
         return parsed;
     } catch (err) {
         console.error('\n❌ FATAL CONFIGURATION ERROR:');

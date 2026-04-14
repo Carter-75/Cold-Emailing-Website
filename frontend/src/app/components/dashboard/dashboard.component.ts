@@ -17,7 +17,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   auth = inject(AuthService);
   outreach = inject(OutreachService);
   
-  activeTab = signal<'overview' | 'infra' | 'identity' | 'services'>('overview');
+  activeTab = signal<'overview' | 'infra' | 'identity'>('overview');
 
   // Advanced Config state
   config = {
@@ -28,9 +28,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     verifaliaKey: '',
     
     // SMTP/IMAP
-    senderEmail: 'help@carter-portfolio.fyi',
+    senderEmail: '',
     appPassword: '',
-    imapHost: 'imap.gmail.com',
+    smtpHost: 'mail.privateemail.com',
+    smtpPort: 465,
+    smtpSecure: true,
+    imapHost: 'imap.privateemail.com',
     imapPort: 993,
     
     // Personalization
@@ -41,12 +44,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     serviceDesc: '',
     valueProp: '',
     targetOutcome: '',
-    websiteUrl: 'carter-portfolio.fyi',
+    websiteUrl: '',
     physicalAddress: '',
     
     // Persona / AI Spot
-    personaContext: 'I am a web developer finishing my degree and ready to help businesses build a professional online presence. I focus on high-performance, clean designs.',
+    personaContext: '',
     signature: '',
+    priceTier1: '',
+    priceTier2: '',
+    priceTier3: '',
     
     // Logic
     dailyLeadLimit: 3,

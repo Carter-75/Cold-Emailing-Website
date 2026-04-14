@@ -44,11 +44,6 @@
               class="px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all">
         AI Spot
       </button>
-      <button (click)="activeTab.set('services')" 
-              [ngClass]="activeTab() === 'services' ? 'bg-indigo-600 text-white' : 'text-neutral-400 hover:text-white'"
-              class="px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all">
-        Services & Pricing
-      </button>
     </div>
 
     <!-- Tab Content -->
@@ -155,8 +150,6 @@
                 <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">SerpApi Key</label>
                 <input type="password" [(ngModel)]="config.serpapiKey" name="serpapiKey" class="input-pro">
               </div>
-            </div>
-            <div class="space-y-4">
               <div class="space-y-1.5">
                 <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Apollo API Key</label>
                 <input type="password" [(ngModel)]="config.apolloKey" name="apolloKey" class="input-pro">
@@ -166,21 +159,47 @@
                 <input type="password" [(ngModel)]="config.verifaliaKey" name="verifaliaKey" class="input-pro">
               </div>
             </div>
-            <div class="col-span-full pt-8 border-t border-white/5 mt-4">
-              <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-6">Outbound Channel</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Outreach Email</label>
-                  <input type="email" [(ngModel)]="config.senderEmail" name="senderEmail" class="input-pro">
+
+            <div class="space-y-4">
+              <div class="bg-white/5 p-6 rounded-3xl space-y-4 border border-white/5">
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-400">Outbound (SMTP)</h3>
+                <div class="grid grid-cols-3 gap-4">
+                  <div class="col-span-2 space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Host</label>
+                    <input type="text" [(ngModel)]="config.smtpHost" name="smtpHost" class="input-pro text-xs">
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Port</label>
+                    <input type="number" [(ngModel)]="config.smtpPort" name="smtpPort" class="input-pro text-xs">
+                  </div>
                 </div>
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">App Password</label>
-                  <input type="password" [(ngModel)]="config.appPassword" name="appPassword" class="input-pro">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Sender Email</label>
+                  <input type="email" [(ngModel)]="config.senderEmail" name="senderEmail" class="input-pro text-xs">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Password / App Pass</label>
+                  <input type="password" [(ngModel)]="config.appPassword" name="appPassword" class="input-pro text-xs">
+                </div>
+              </div>
+
+              <div class="bg-white/5 p-6 rounded-3xl space-y-4 border border-white/5">
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-400">Inbound (IMAP)</h3>
+                <div class="grid grid-cols-3 gap-4">
+                  <div class="col-span-2 space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Host</label>
+                    <input type="text" [(ngModel)]="config.imapHost" name="imapHost" class="input-pro text-xs">
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Port</label>
+                    <input type="number" [(ngModel)]="config.imapPort" name="imapPort" class="input-pro text-xs">
+                  </div>
                 </div>
               </div>
             </div>
-            <button type="submit" class="col-span-full mt-8 bg-white text-black py-6 rounded-3xl font-black uppercase tracking-widest hover:bg-neutral-200 transition-all">
-              Update Infrastructure
+
+            <button type="submit" class="col-span-full mt-4 bg-white text-black py-6 rounded-3xl font-black uppercase tracking-widest hover:bg-neutral-200 transition-all shadow-xl">
+              Save Infrastructure
             </button>
           </form>
         </div>
@@ -218,6 +237,25 @@
               <textarea [(ngModel)]="config.personaContext" name="personaContext" rows="4" class="input-pro text-sm" placeholder="Tell the AI who you are and what you want to achieve..."></textarea>
               <p class="text-[10px] text-neutral-500 mt-2 lowercase italic">* This information is injected into every email sequence for maximum personalization.</p>
             </div>
+
+            <div class="space-y-6 pt-6 border-t border-white/5">
+              <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400">Service Tiers & Pricing Context</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Tier 1 (e.g. $100)</label>
+                  <input type="text" [(ngModel)]="config.priceTier1" name="priceTier1" class="input-pro text-xs" placeholder="Basic Landing Pages: $100">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Tier 2 (e.g. $250)</label>
+                  <input type="text" [(ngModel)]="config.priceTier2" name="priceTier2" class="input-pro text-xs" placeholder="Custom Business Sites: $250">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Tier 3 (e.g. $475)</label>
+                  <input type="text" [(ngModel)]="config.priceTier3" name="priceTier3" class="input-pro text-xs" placeholder="Full Custom Applications: $475">
+                </div>
+              </div>
+              <p class="text-[9px] text-neutral-500 italic lowercase">* These descriptions are used for 'Extra Info' for the AI to understand your pricing and services.</p>
+            </div>
             <div class="space-y-4">
               <div class="space-y-1.5">
                 <label class="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Email Signature (HTML)</label>
@@ -237,46 +275,9 @@
               </div>
             </div>
             <button type="submit" class="w-full bg-white text-black py-6 rounded-3xl font-black uppercase tracking-widest hover:bg-neutral-200 transition-all">
-              Update Persona
+              Update Identity
             </button>
           </form>
-        </div>
-      </div>
-
-      <!-- Tab: Services -->
-      <div *ngSwitchCase="'services'" class="space-y-12">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <!-- Tier 1 -->
-          <div class="bg-neutral-900 border border-white/5 rounded-[2.5rem] p-8 flex flex-col items-center text-center group hover:border-indigo-500/50 transition-all">
-            <div class="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">1</div>
-            <h3 class="text-xl font-black uppercase tracking-tight mb-2">Starter</h3>
-            <p class="text-neutral-500 text-sm mb-6">High-performance landing pages for local businesses.</p>
-            <div class="text-3xl font-black mb-1">$100</div>
-            <div class="text-[10px] uppercase font-bold tracking-widest text-neutral-400">One-time payment</div>
-          </div>
-          <!-- Tier 2 -->
-          <div class="bg-indigo-600 border border-indigo-400/50 rounded-[2.5rem] p-8 flex flex-col items-center text-center shadow-2xl shadow-indigo-600/20">
-            <div class="w-12 h-12 rounded-2xl bg-white text-indigo-600 flex items-center justify-center font-bold mb-6">2</div>
-            <h3 class="text-xl font-black uppercase tracking-tight mb-2">Business</h3>
-            <p class="text-white/80 text-sm mb-6">Custom multi-page solutions with SEO optimization.</p>
-            <div class="text-3xl font-black mb-1">$250</div>
-            <div class="text-[10px] uppercase font-bold tracking-widest text-white/60">Professional choice</div>
-          </div>
-          <!-- Tier 3 -->
-          <div class="bg-neutral-900 border border-white/5 rounded-[2.5rem] p-8 flex flex-col items-center text-center group hover:border-indigo-500/50 transition-all">
-            <div class="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">3</div>
-            <h3 class="text-xl font-black uppercase tracking-tight mb-2">Pro</h3>
-            <p class="text-neutral-500 text-sm mb-6">Full custom applications & strategic consulting.</p>
-            <div class="text-3xl font-black mb-1">$475</div>
-            <div class="text-[10px] uppercase font-bold tracking-widest text-neutral-400">Enterprise scale</div>
-          </div>
-        </div>
-        
-        <div class="bg-neutral-900/50 border border-white/5 rounded-[2.5rem] p-10 text-center">
-          <p class="text-neutral-400 text-sm max-w-2xl mx-auto italic">
-            "The pricing above is currently integrated into the AI's core logic. 
-            Every outreach email generated will reference these tiers to ensure consistency and transparency."
-          </p>
         </div>
       </div>
 
