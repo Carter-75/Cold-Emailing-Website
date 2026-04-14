@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, viewChild, ElementRef, afterNextRender, OnDestroy } from '@angular/core';
+import { Component, signal, inject, OnInit, viewChild, ElementRef, afterNextRender, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -11,12 +11,15 @@ import anime from 'animejs';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+  styleUrl: './dashboard.component.css',
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   auth = inject(AuthService);
   outreach = inject(OutreachService);
   
+  activeTab = signal<'overview' | 'infra' | 'identity' | 'services'>('overview');
+
   // Advanced Config state
   config = {
     // API Keys
@@ -41,6 +44,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     targetOutcome: '',
     websiteUrl: 'carter-portfolio.fyi',
     physicalAddress: '',
+    
+    // Persona / AI Spot
+    personaContext: 'I am a web developer finishing my degree and ready to help businesses build a professional online presence. I focus on high-performance, clean designs.',
     
     // Logic
     dailyLeadLimit: 3,

@@ -36,19 +36,22 @@ class OptimizerService {
   }
 
   async generateOptimizedTemplate(user, template, openai) {
-    const prompt = `You are a cold email expert. You are improving a cold email for a SaaS product.
-    USER PROFILE:
-    - Sender: ${user.config.senderName} (${user.config.senderTitle})
-    - Company: ${user.config.companyName}
-    - Value Prop: ${user.config.valueProp}
-    - targetOutcome: ${user.config.targetOutcome}
+    const prompt = `You are a cold email expert representing ${user.config.senderName} (${user.config.senderTitle}) from ${user.config.companyName}.
+    
+    PERSONA CONTEXT:
+    ${user.config.personaContext || 'Web developer finishing degree, building high-performance sites.'}
+
+    SERVICE PRICING:
+    - Basic Landing Pages: $100
+    - Custom Business Sites: $250
+    - Full Custom Applications: $475
     
     This is Step ${template.step} of a sequence.
     The previous version performed poorly (< 1% reply rate). 
     
     REQUIREMENTS:
     1. Max 4-6 sentences.
-    2. Focus on the "Assumptive" angle (they don't have a website, we can build it).
+    2. Focus on the value prop: ${user.config.valueProp}.
     3. Reference carter-portfolio.fyi.
     4. Short, professional, zero passive phrasing.
     5. Return a JSON object with "subject" and "body".

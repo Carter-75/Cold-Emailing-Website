@@ -27,6 +27,7 @@ const UserSchema = new mongoose.Schema({
     targetOutcome: String,
     websiteUrl: { type: String, default: 'carter-portfolio.fyi' },
     physicalAddress: String,
+    personaContext: String,
     
     // Autonomous logic
     dailyLeadLimit: { type: Number, default: 3 },
