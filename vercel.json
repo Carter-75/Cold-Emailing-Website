@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/bin/www",
+      "src": "backend/app.js",
       "use": "@vercel/node"
     },
     {
@@ -13,34 +13,33 @@
       }
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/auth/(.*)",
-      "dest": "backend/bin/www"
+      "source": "/api/(.*)",
+      "destination": "/backend/app.js"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "backend/bin/www"
+      "source": "/socket.io/(.*)",
+      "destination": "/backend/app.js"
     },
     {
-      "src": "/socket.io/(.*)",
-      "dest": "backend/bin/www"
-    },
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
     {
-      "src": "/dashboard",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/(assets/.*)",
-      "dest": "/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|svg|ico))$",
-      "dest": "/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "ALLOWALL"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://carter-portfolio.fyi https://carter-portfolio.vercel.app https://*.vercel.app http://localhost:3000"
+        }
+      ]
     }
   ]
 }
