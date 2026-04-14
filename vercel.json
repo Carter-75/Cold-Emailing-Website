@@ -1,31 +1,46 @@
 {
-  "experimentalServices": {
-    "frontend": {
-      "entrypoint": "frontend",
-      "routePrefix": "/",
-      "outputDirectory": "dist/frontend"
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/bin/www",
+      "use": "@vercel/node"
     },
-    "backend": {
-      "entrypoint": "backend",
-      "routePrefix": "/_/backend"
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist/frontend"
+      }
     }
-  },
-  "rewrites": [
+  ],
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "/_/backend/api/:path*"
+      "src": "/api/auth/(.*)",
+      "dest": "backend/bin/www"
     },
     {
-      "source": "/auth/:path*",
-      "destination": "/_/backend/api/auth/:path*"
+      "src": "/api/(.*)",
+      "dest": "backend/bin/www"
     },
     {
-      "source": "/dashboard",
-      "destination": "/"
+      "src": "/socket.io/(.*)",
+      "dest": "backend/bin/www"
     },
     {
-      "source": "/login",
-      "destination": "/"
+      "src": "/dashboard",
+      "dest": "frontend/index.html"
+    },
+    {
+      "src": "/(assets/.*)",
+      "dest": "frontend/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|svg|ico))$",
+      "dest": "frontend/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/index.html"
     }
   ]
 }
