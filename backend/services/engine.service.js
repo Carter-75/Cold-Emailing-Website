@@ -106,7 +106,7 @@ class OutreachEngine {
 
           // 5. Generate AI Content
           emitToAll('engine-log', `Generating personalized pitch for ${lead.name}...`);
-          const content = await EmailService.generateContent(lead.name, this.currentUser.config.openaiKey);
+          const content = await EmailService.generateContent(lead, this.currentUser.config);
 
           // 6. Send Email (Handling Test Mode)
           let recipient = email;
@@ -132,6 +132,11 @@ class OutreachEngine {
             recipientEmail: email,
             businessName: lead.name,
             city: this.currentCity
+          });
+
+          // Persistent User Stats Update
+          await User.findByIdAndUpdate(this.currentUser._id, {
+            $inc: { 'stats.emailsSent': 1 }
           });
 
           this.processedLeadsCount++;

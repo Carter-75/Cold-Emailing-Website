@@ -62,7 +62,7 @@
         <div class="relative z-10 mt-16 grid grid-cols-4 gap-4">
           <div class="bg-black/30 backdrop-blur-xl rounded-2xl p-5 border border-white/10 group hover:border-white/30 transition-all">
             <div class="text-[10px] uppercase font-bold tracking-widest text-white/40 mb-1">Total Sent</div>
-            <div class="text-3xl font-black tracking-tight">{{ outreach.stats().sent || 0 }}</div>
+            <div class="text-3xl font-black tracking-tight">{{ (auth.user()?.stats?.emailsSent || 0) + (outreach.stats().sent || 0) }}</div>
           </div>
           <div class="bg-black/30 backdrop-blur-xl rounded-2xl p-5 border border-white/10 group hover:border-white/30 transition-all">
             <div class="text-[10px] uppercase font-bold tracking-widest text-white/40 mb-1">Replies</div>
@@ -70,7 +70,7 @@
           </div>
           <div class="bg-black/30 backdrop-blur-xl rounded-2xl p-5 border border-white/10 group hover:border-white/30 transition-all text-green-400">
             <div class="text-[10px] uppercase font-bold tracking-widest text-white/40 mb-1">Conversion</div>
-            <div class="text-3xl font-black tracking-tight">{{ auth.user()?.stats?.sent > 0 ? ((auth.user()?.stats?.replies / auth.user()?.stats?.sent) * 100 | number:'1.1-1') : '0.0' }}%</div>
+            <div class="text-3xl font-black tracking-tight">{{ (auth.user()?.stats?.emailsSent + outreach.stats().sent) > 0 ? ((auth.user()?.stats?.replies / (auth.user()?.stats?.emailsSent + outreach.stats().sent)) * 100 | number:'1.1-1') : '0.0' }}%</div>
           </div>
           <div class="bg-black/30 backdrop-blur-xl rounded-2xl p-5 border border-white/10 group hover:border-white/30 transition-all">
             <div class="text-[10px] uppercase font-bold tracking-widest text-white/40 mb-1">Limit</div>

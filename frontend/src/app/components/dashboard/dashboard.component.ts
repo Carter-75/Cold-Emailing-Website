@@ -51,6 +51,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private sceneContainer = viewChild<ElementRef<HTMLDivElement>>('scene');
   private engine?: Matter.Engine;
   private render?: Matter.Render;
+  private physicsInterval: any;
 
   constructor() {
     afterNextRender(() => {
@@ -67,6 +68,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    if (this.physicsInterval) clearInterval(this.physicsInterval);
     if (this.render) {
       Matter.Render.stop(this.render);
       if (this.render.canvas.parentNode) {
@@ -128,7 +130,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       Matter.World.add(this.engine!.world, particle);
     };
 
-    setInterval(() => {
+    this.physicsInterval = setInterval(() => {
       if (this.outreach.status() === 'running') {
         createParticle();
       }

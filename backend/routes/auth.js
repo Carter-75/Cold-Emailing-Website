@@ -17,7 +17,11 @@ router.get('/google/callback',
 // Get current user
 router.get('/user', (req, res) => {
   if (req.isAuthenticated()) {
-    res.json(req.user);
+    res.json({
+      ...req.user,
+      isShadow: !!req.user.isShadow,
+      dbStatus: require('mongoose').connection.readyState === 1 ? 'online' : 'shadow-mode'
+    });
   } else {
     res.status(401).json({ message: 'Not authenticated' });
   }

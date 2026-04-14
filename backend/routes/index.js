@@ -51,8 +51,19 @@ router.post('/outreach/test-send', async (req, res) => {
 router.post('/config', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ message: 'Unauthorized' });
-    const user = await User.findById(req.user._id);
     
+    // Shadow Mode Support
+    if (req.user.isShadow) {
+      req.user.config = { ...req.user.config, ...req.body };
+      // Re-serialize the shadow user into the session so changes persist for this browser session
+      req.login(req.user, (err) => {
+        if (err) return res.status(500).json({ message: 'Session update failed' });
+        return res.json({ message: 'Configuration saved to session (Shadow Mode)' });
+      });
+      return;
+    }
+
+    const user = await User.findById(req.user._id);
     const oldKeys = { ...user.config.toObject() };
     user.config = { ...user.config, ...req.body };
     await user.save();

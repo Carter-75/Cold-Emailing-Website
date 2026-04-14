@@ -16,7 +16,7 @@ require('./config/passport');
 const app = express();
 
 // --- Diagnostic Routes (Moved up for early availability) ---
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/api/ping'], (req, res) => {
   res.json({
     status: 'online',
     cwd: process.cwd(),
@@ -74,9 +74,11 @@ if (mongoURI) {
     .catch(err => {
       console.error('WARN: MongoDB Connection Error (Graceful):', err.message);
       console.log('INFO: Continuing without database features...');
+      mongoose.set('bufferCommands', false);
     });
 } else {
   console.log('INFO: No MONGODB_URI found in .env.local. Database features disabled.');
+  mongoose.set('bufferCommands', false);
 }
 
 // --- Middlewares ---
