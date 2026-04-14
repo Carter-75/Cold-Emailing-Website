@@ -64,8 +64,14 @@ router.post('/config', async (req, res) => {
     }
 
     const user = await User.findById(req.user._id);
-    const oldKeys = { ...user.config.toObject() };
-    user.config = { ...user.config, ...req.body };
+    
+    // Explicitly update config fields to trigger Mongoose isModified correctly
+    if (req.body) {
+      Object.keys(req.body).forEach(key => {
+        user.config[key] = req.body[key];
+      });
+    }
+
     await user.save();
 
     // If OpenAI key was added/updated and no templates exist, bootstrap them

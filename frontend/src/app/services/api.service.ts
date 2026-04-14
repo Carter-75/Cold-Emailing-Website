@@ -20,8 +20,8 @@ export class ApiService {
       return '/api';
     }
 
-    // 2. Local development
-    return 'http://localhost:3000/api';
+    // 2. Development: Use the current host/port but hit the /api endpoint
+    return `${window.location.protocol}//${window.location.host}/api`;
   }
 
   /**

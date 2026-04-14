@@ -39,7 +39,7 @@ class EmailService {
 
     const userPrompt = `Generate the Step ${step} email for ${lead.businessName}. 
     Goal: ${config.targetOutcome}
-    Portfolio: carter-portfolio.fyi`;
+    Portfolio: ${config.websiteUrl || 'Portfolio available on request'} `;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -55,8 +55,8 @@ class EmailService {
   async sendEmail(userConfig, recipientEmail, content, businessName) {
     const isTest = userConfig.testMode || false;
     const transporter = nodemailer.createTransport({
-      host: userConfig.smtpHost || 'smtp.gmail.com',
-      port: userConfig.smtpPort || 465,
+      host: userConfig.smtpHost,
+      port: userConfig.smtpPort,
       secure: userConfig.smtpSecure ?? true,
       auth: {
         user: userConfig.senderEmail,

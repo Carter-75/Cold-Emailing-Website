@@ -49,7 +49,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://carter-portfolio.fyi https://carter-portfolio.vercel.app https://*.vercel.app http://localhost:3000"
+          "value": "frame-ancestors 'self' https://*.vercel.app http://localhost:3000"
         }
       ]
     }

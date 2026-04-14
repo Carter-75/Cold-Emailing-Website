@@ -15,11 +15,11 @@ const UserSchema = new mongoose.Schema({
     // SMTP & IMAP
     senderEmail: String,
     appPassword: String,
-    smtpHost: { type: String, default: 'smtp.gmail.com' },
-    smtpPort: { type: Number, default: 465 },
+    smtpHost: String,
+    smtpPort: Number,
     smtpSecure: { type: Boolean, default: true },
-    imapHost: { type: String, default: 'imap.gmail.com' },
-    imapPort: { type: Number, default: 993 },
+    imapHost: String,
+    imapPort: Number,
     
     // Personalization & Branding
     senderName: String,
@@ -29,7 +29,7 @@ const UserSchema = new mongoose.Schema({
     serviceDesc: String,
     valueProp: String,
     targetOutcome: String,
-    websiteUrl: { type: String, default: 'carter-portfolio.fyi' },
+    websiteUrl: String,
     physicalAddress: String,
     personaContext: String,
     signature: String,
@@ -65,8 +65,10 @@ const SENSITIVE_FIELDS = [
 UserSchema.pre('save', function(next) {
   if (this.config) {
     SENSITIVE_FIELDS.forEach(field => {
-      if (this.isModified(`config.${field}`) && this.config[field]) {
-        // Only encrypt if text is not already in encrypted format (contains Delimiter)
+      const fieldPath = `config.${field}`;
+      if (this.isModified(fieldPath) && this.config[field]) {
+        // Robust check: Only encrypt if it's not already in format iv:tag:data
+        // We trust isModified but verify format as a fail-safe
         if (!this.config[field].includes(':')) {
            this.config[field] = encrypt(this.config[field]);
         }
@@ -82,7 +84,7 @@ UserSchema.pre('save', function(next) {
 UserSchema.post('init', function(doc) {
   if (doc.config) {
     SENSITIVE_FIELDS.forEach(field => {
-      if (doc.config[field]) {
+      if (doc.config[field] && doc.config[field].includes(':')) {
         doc.config[field] = decrypt(doc.config[field]);
       }
     });
@@ -90,12 +92,12 @@ UserSchema.post('init', function(doc) {
 });
 
 /**
- * Special handling for Save output to ensure the object in memory remains decrypted
+ * Decrypt after save to ensure in-memory object remains usable
  */
 UserSchema.post('save', function(doc) {
   if (doc.config) {
     SENSITIVE_FIELDS.forEach(field => {
-      if (doc.config[field]) {
+      if (doc.config[field] && doc.config[field].includes(':')) {
         doc.config[field] = decrypt(doc.config[field]);
       }
     });

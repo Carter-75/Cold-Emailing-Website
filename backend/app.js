@@ -138,7 +138,7 @@ app.use((req, res, next) => {
   const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
   const currentOrigin = `${protocol}://${host}`;
   
-  const ancestors = ["'self'", "https://carter-portfolio.fyi", "https://*.vercel.app", currentOrigin];
+  const ancestors = ["'self'", "https://*.vercel.app", currentOrigin];
   
   res.setHeader('Content-Security-Policy', `frame-ancestors ${ancestors.join(' ')}`);
   res.setHeader('X-Frame-Options', 'ALLOWALL'); 
