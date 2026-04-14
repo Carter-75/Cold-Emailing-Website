@@ -27,10 +27,12 @@ app.use(cookieParser());
 
 // --- Diagnostic Routes (Moved below middlewares for CORS/JSON support) ---
 app.get(['/api/health', '/api/ping'], (req, res) => {
-  res.type('json').json({
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json({
     status: 'online',
     cwd: process.cwd(),
     dirname: __dirname,
+    version: '1.0.1-recovery',
     env: process.env.PRODUCTION === 'true' ? 'production' : 'development',
     timestamp: new Date().toISOString()
   });

@@ -12,13 +12,14 @@ const AUTH_TAG_LENGTH = 16;
 function getSecret() {
   const secret = process.env.ENCRYPTION_KEY;
   if (!secret) {
-    // In production, this should throw. In development, we fallback IF we are NOT in production mode.
     if (process.env.PRODUCTION === 'true') {
-      throw new Error('FATAL: ENCRYPTION_KEY is missing in production!');
+      console.error('\n🛑 CRITICAL: ENCRYPTION_KEY is missing from environment variables!');
+      console.error('   Sensitive database fields will remain readable/vulnerable until corrected.');
+      console.error('   Please add your key to the Vercel Dashboard.\n');
     }
-    return crypto.createHash('sha256').update('dev-secret-only').digest();
+    // Consistent fallback for stability - this allows the app to stay online
+    return crypto.createHash('sha256').update('emergency-offline-fallback').digest();
   }
-  // Ensure we have a 32-byte key from whatever string is provided
   return crypto.createHash('sha256').update(String(secret)).digest();
 }
 
