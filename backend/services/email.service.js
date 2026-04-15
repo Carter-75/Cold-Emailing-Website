@@ -87,7 +87,7 @@ class EmailService {
     `;
 
     const mailOptions = {
-      from: `"${userConfig.displayName || userConfig.senderName || 'Carter Portfolio'}" <${userConfig.senderEmail}>`,
+      from: `"${userConfig.displayName || userConfig.senderName || 'Phoenix'}" <${userConfig.senderEmail}>`,
       to: recipientEmail,
       subject: `Accelerating ${businessName}'s Digital Growth`,
       html: content.replace(/\n/g, '<br>') + footer,
