@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
+import { tap } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 
 @Injectable({
@@ -14,11 +15,13 @@ export class OutreachService {
   stats = signal<any>({ sent: 0 });
 
   constructor() {
-    this.initSocket();
+    if (this.isSocketSupported()) {
+      this.initSocket();
+    }
   }
 
   private initSocket() {
-    const baseUrl = (this.api as any).apiUrl.replace('/api', '');
+    const baseUrl = window.location.origin;
     this.socket = io(baseUrl);
 
     this.socket.on('engine-status', (data) => {
@@ -35,16 +38,31 @@ export class OutreachService {
     });
   }
 
+  private isSocketSupported() {
+    const host = window.location.hostname;
+    return host === 'localhost' || host === '127.0.0.1';
+  }
+
   private addLog(msg: string) {
     this.logs.update(prev => [msg, ...prev].slice(0, 100));
   }
 
   startOutreach() {
-    return this.api.postData('outreach/start', {});
+    return this.api.postData<{ message?: string }>('outreach/start', {}).pipe(
+      tap((response) => {
+        this.status.set('running');
+        this.addLog(`System: ${response.message || 'Automation enabled'}`);
+      })
+    );
   }
 
   stopOutreach() {
-    return this.api.postData('outreach/stop', {});
+    return this.api.postData<{ message?: string }>('outreach/stop', {}).pipe(
+      tap((response) => {
+        this.status.set('stopped');
+        this.addLog(`System: ${response.message || 'Automation disabled'}`);
+      })
+    );
   }
 
   sendTestEmail() {

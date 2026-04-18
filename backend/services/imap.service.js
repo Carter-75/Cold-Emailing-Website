@@ -4,10 +4,26 @@ const Lead = require('../models/Lead');
 
 class IMAPService {
   async checkAllInboxes() {
-    const users = await User.find({ 'config.appPassword': { $exists: true } });
+    const users = await User.find({
+      'config.outreachEnabled': true,
+      'config.appPassword': { $exists: true, $ne: '' },
+      'config.senderEmail': { $exists: true, $ne: '' },
+      'config.imapHost': { $exists: true, $ne: '' },
+      'config.imapPort': { $exists: true, $ne: null }
+    });
+
+    const summary = {
+      usersChecked: 0,
+      repliesDetected: 0
+    };
+
     for (const user of users) {
-      await this.checkInbox(user);
+      const result = await this.checkInbox(user);
+      summary.usersChecked += 1;
+      summary.repliesDetected += result?.repliesDetected ?? 0;
     }
+
+    return summary;
   }
 
   async checkInbox(user) {
@@ -25,6 +41,7 @@ class IMAPService {
     try {
       await client.connect();
       let lock = await client.getMailboxLock('INBOX');
+      let repliesDetected = 0;
       
       try {
         // Fetch last 50 emails to check for replies
@@ -43,6 +60,7 @@ class IMAPService {
               console.log(`[IMAP] Reply detected from ${lead.recipientEmail}! Aborting sequence.`);
               lead.status = 'replied';
               await lead.save();
+              repliesDetected += 1;
               
               // Update user stats
               user.stats.replies += 1;
@@ -55,8 +73,10 @@ class IMAPService {
       }
       
       await client.logout();
+      return { repliesDetected };
     } catch (err) {
       console.error(`[IMAP] Error checking inbox for ${user.email}:`, err.message);
+      return { repliesDetected: 0, error: err.message };
     }
   }
 }

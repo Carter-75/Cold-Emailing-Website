@@ -1,5 +1,4 @@
 const Lead = require('../models/Lead');
-const User = require('../models/User');
 const Template = require('../models/Template');
 const EmailService = require('./email.service');
 const EnrichmentService = require('./enrichment.service');
@@ -12,14 +11,30 @@ class SequenceService {
       nextEmailAt: { $lte: new Date() }
     }).populate('userId');
 
+    const summary = {
+      dueLeads: leads.length,
+      processed: 0,
+      skipped: 0,
+      finished: 0,
+      errors: 0
+    };
+
     for (const lead of leads) {
-      await this.processLead(lead);
+      const result = await this.processLead(lead);
+      if (result === 'processed') summary.processed += 1;
+      else if (result === 'finished') summary.finished += 1;
+      else if (result === 'skipped') summary.skipped += 1;
+      else if (result === 'error') summary.errors += 1;
     }
+
+    return summary;
   }
 
   async processLead(lead) {
     const user = lead.userId;
-    if (!user || user.config.testModeActive === false && lead.status === 'finished') return;
+    if (!user || (!user.config?.outreachEnabled && !user.config?.testModeActive) || (user.config.testModeActive === false && lead.status === 'finished')) {
+      return 'skipped';
+    }
 
     try {
       // Step 0: Enrichment (If still in discovery status)
@@ -28,14 +43,14 @@ class SequenceService {
         if (!email) {
           lead.status = 'finished'; // No email found, give up
           await lead.save();
-          return;
+          return 'finished';
         }
         
         const isValid = await VerificationService.verifyEmail(email, user.config.verifaliaKey);
         if (!isValid) {
           lead.status = 'finished';
           await lead.save();
-          return;
+          return 'finished';
         }
 
         lead.recipientEmail = email;
@@ -49,7 +64,7 @@ class SequenceService {
       if (currentStep > 3) {
         lead.status = 'finished';
         await lead.save();
-        return;
+        return 'finished';
       }
 
       // Generate AI Content based on step
@@ -76,24 +91,43 @@ Status: ${lead.status}
 
       // Send Email
       console.log(`[Sequence] Sending Step ${currentStep} to ${recipient}...`);
-      await EmailService.sendEmail(user.config, recipient, finalBody, lead.businessName);
+      const sendConfig = user.config?.toObject ? user.config.toObject() : user.config;
+
+      await EmailService.sendEmail({
+        ...sendConfig,
+        userId: user._id,
+        displayName: user.displayName
+      }, recipient, finalBody, lead.businessName);
       
       // Update Lead / Record Sent Email (Crucial for Unified daily limit)
       const SentEmail = require('../models/SentEmail');
-      const sentRecord = await SentEmail.create({
-        userId: user._id,
-        recipientEmail: lead.recipientEmail,
-        businessName: lead.businessName,
-        status: 'follow-up-' + currentStep,
-        testMode: !!user.config.testModeActive
-      });
+      const sentRecord = await SentEmail.findOneAndUpdate(
+        {
+          userId: user._id,
+          recipientEmail: lead.recipientEmail
+        },
+        {
+          userId: user._id,
+          recipientEmail: lead.recipientEmail,
+          businessName: lead.businessName,
+          city: lead.city,
+          sentAt: new Date(),
+          status: 'follow-up-' + currentStep,
+          testMode: !!user.config.testModeActive
+        },
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true
+        }
+      );
 
       // Cleanup logic for Stateless Testing
       if (user.config.testModeActive) {
         console.log(`[Test Mode] Cleaning up stateless data for ${lead.businessName}...`);
         await Lead.deleteOne({ _id: lead._id });
         await SentEmail.deleteOne({ _id: sentRecord._id });
-        return; // Terminate early for this lead in test mode
+        return 'processed'; // Terminate early for this lead in test mode
       }
 
       // Update Lead (Production logic)
@@ -109,13 +143,23 @@ Status: ${lead.status}
 
       await lead.save();
       
-      // Update Template Stats
-      template.stats.sentCount += 1;
-      await template.save();
+      await Template.findOneAndUpdate(
+        {
+          userId: user._id,
+          step: currentStep,
+          variant: lead.variant
+        },
+        {
+          $inc: { 'stats.sentCount': 1 }
+        }
+      );
+
+      return lead.status === 'finished' ? 'finished' : 'processed';
 
     } catch (err) {
       console.error(`[Sequence] Error processing lead ${lead._id}:`, err.message);
       // In a SaaS version, we might retry or log a specific error status
+      return 'error';
     }
   }
 }

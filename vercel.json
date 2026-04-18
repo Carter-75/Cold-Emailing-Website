@@ -1,38 +1,23 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist/frontend"
-      }
-    },
-    {
-      "src": "backend/app.js",
-      "use": "@vercel/node"
+  "fluid": true,
+  "installCommand": "npm run install-all",
+  "buildCommand": "npm run vercel-build --prefix frontend",
+  "outputDirectory": "frontend/dist/frontend",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 300
     }
-  ],
+  },
   "rewrites": [
     {
-      "source": "/api/health",
-      "destination": "/backend/app.js"
-    },
-    {
-      "source": "/api/ping",
-      "destination": "/backend/app.js"
-    },
-    {
-      "source": "/api/auth/(.*)",
-      "destination": "/backend/app.js"
+      "source": "/api",
+      "destination": "/api/index"
     },
     {
       "source": "/api/(.*)",
-      "destination": "/backend/app.js"
-    },
-    {
-      "source": "/socket.io/(.*)",
-      "destination": "/backend/app.js"
+      "destination": "/api/index"
     },
     {
       "source": "/((?!api/).*)",
@@ -41,7 +26,7 @@
   ],
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "X-Frame-Options",
@@ -49,9 +34,23 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://*.vercel.app http://localhost:3000"
+          "value": "frame-ancestors 'self' https://*.vercel.app https://carter-portfolio.fyi http://localhost:3000 http://localhost:4200"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/maintenance",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/discovery",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/optimize",
+      "schedule": "0 15 * * 0"
     }
   ]
 }

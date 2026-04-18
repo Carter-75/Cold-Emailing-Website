@@ -7,3 +7,6 @@ dist/
 .env*.local
 .env.vercel.tmp
 *.tmp
+frontend/.gitignore
+frontend/vercel.json
+frontend/api/

@@ -1,5 +1,3 @@
-const { Agenda } = require('agenda');
-
 let agenda;
 
 const defineJobs = (agendaInstance) => {
@@ -31,21 +29,33 @@ const initAgenda = async () => {
     return;
   }
 
-  agenda = new Agenda({
-    db: { address: process.env.MONGODB_URI, collection: 'agendaJobs' },
-    processEvery: '1 minute'
-  });
+  if (process.env.VERCEL || process.env.VERCEL_ENV) {
+    console.log('INFO: Skipping Agenda initialization on Vercel serverless runtime');
+    return;
+  }
 
-  defineJobs(agenda);
+  try {
+    const { Agenda } = await import('agenda');
 
-  await agenda.start();
-  console.log('OK: Agenda scheduler started');
-  
-  // Schedule recurring jobs
-  await agenda.every('1 day', 'daily-discovery');
-  await agenda.every('15 minutes', 'process-sequences');
-  await agenda.every('30 minutes', 'monitor-replies');
-  await agenda.every('1 week', 'optimize-templates');
+    agenda = new Agenda({
+      db: { address: process.env.MONGODB_URI, collection: 'agendaJobs' },
+      processEvery: '1 minute'
+    });
+
+    defineJobs(agenda);
+
+    await agenda.start();
+    console.log('OK: Agenda scheduler started');
+    
+    // Schedule recurring jobs
+    await agenda.every('1 day', 'daily-discovery');
+    await agenda.every('15 minutes', 'process-sequences');
+    await agenda.every('30 minutes', 'monitor-replies');
+    await agenda.every('1 week', 'optimize-templates');
+  } catch (err) {
+    agenda = undefined;
+    console.warn('WARN: Agenda initialization skipped:', err.message);
+  }
 };
 
 module.exports = { 

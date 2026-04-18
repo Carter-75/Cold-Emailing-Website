@@ -4,10 +4,21 @@ const User = require('../models/User');
 
 class OptimizerService {
   async runOptimization() {
-    const users = await User.find({ 'config.openaiKey': { $exists: true } });
+    const users = await User.find({
+      'config.outreachEnabled': true,
+      'config.openaiKey': { $exists: true, $ne: '' }
+    });
+
+    const summary = {
+      usersChecked: users.length,
+      templatesOptimized: 0
+    };
+
     for (const user of users) {
-      await this.optimizeForUser(user);
+      summary.templatesOptimized += await this.optimizeForUser(user);
     }
+
+    return summary;
   }
 
   async optimizeForUser(user) {
@@ -15,6 +26,7 @@ class OptimizerService {
     
     // Check all templates (Steps 1, 2, 3 and Variants A, B)
     const templates = await Template.find({ userId: user._id });
+    let optimizedCount = 0;
 
     for (const template of templates) {
       // Self-Correction Threshold: If reply rate < 1% after at least 10 sends
@@ -31,8 +43,11 @@ class OptimizerService {
         template.stats = { sentCount: 0, replyCount: 0 }; // Reset stats for new variant
         template.lastOptimizedAt = new Date();
         await template.save();
+        optimizedCount += 1;
       }
     }
+
+    return optimizedCount;
   }
 
   async generateOptimizedTemplate(user, template, openai) {

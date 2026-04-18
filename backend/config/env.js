@@ -27,6 +27,7 @@ const envSchema = z.object({
     // Security
     ENCRYPTION_KEY: z.string().optional(),
     JWT_SECRET: z.string().min(10, { message: "JWT_SECRET should be a secure string of at least 10 chars" }),
+    CRON_SECRET: z.string().min(16, { message: "CRON_SECRET should be at least 16 chars when configured" }).optional(),
     
     // Server Config
     PORT: z.string().optional().default('3000'),

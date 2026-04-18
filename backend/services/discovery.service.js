@@ -7,7 +7,9 @@ const cityRotator = require('./city-rotator');
 class DiscoveryWorker {
   async runDiscovery(userId) {
     const user = await User.findById(userId);
-    if (!user || !user.config.serpapiKey) return;
+    if (!user || !user.config.outreachEnabled || !user.config.serpapiKey) {
+      return { skipped: true, leadsFound: 0 };
+    }
 
     console.log(`[Discovery] Running daily sweep for ${user.email}...`);
     
@@ -47,8 +49,10 @@ class DiscoveryWorker {
       }
 
       console.log(`[Discovery] Sweep finished. Found ${leadsFoundThisSweep} leads in ${city}.`);
+      return { skipped: false, leadsFound: leadsFoundThisSweep, city };
     } catch (err) {
       console.error(`[Discovery] Error during sweep:`, err.message);
+      return { skipped: false, leadsFound: 0, city, error: err.message };
     }
   }
 }

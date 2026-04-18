@@ -1,41 +1,74 @@
 const express = require('express');
 const router = express.Router();
-const OutreachEngine = require('../services/engine.service');
 const User = require('../models/User');
 const Unsubscribe = require('../models/Unsubscribe');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  res.json({ status: 'online', message: 'Cold Emailing API root' });
 });
 
 // Outreach Controls
 router.post('/outreach/start', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ message: 'Unauthorized' });
-    await OutreachEngine.start(req.user._id);
-    res.json({ message: 'Engine starting' });
+
+    if (req.user.isShadow) {
+      req.user.config = { ...req.user.config, outreachEnabled: true };
+      return req.login(req.user, (err) => {
+        if (err) return res.status(500).json({ message: 'Session update failed' });
+        return res.json({ message: 'Automation enabled' });
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.config.outreachEnabled = true;
+    await user.save();
+
+    res.json({ message: 'Automation enabled' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.post('/outreach/stop', (req, res) => {
-  OutreachEngine.stop('User stopped');
-  res.json({ message: 'Engine stopping' });
+router.post('/outreach/stop', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Unauthorized' });
+
+    if (req.user.isShadow) {
+      req.user.config = { ...req.user.config, outreachEnabled: false };
+      return req.login(req.user, (err) => {
+        if (err) return res.status(500).json({ message: 'Session update failed' });
+        return res.json({ message: 'Automation disabled' });
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.config.outreachEnabled = false;
+    await user.save();
+
+    res.json({ message: 'Automation disabled' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 router.post('/outreach/test-send', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ message: 'Unauthorized' });
-    const user = await User.findById(req.user._id);
+    const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
     const EmailService = require('../services/email.service');
     
-    const testLead = { businessName: 'TEST BUSINESS - ' + user.companyName };
+    const companyName = user.config?.companyName || user.companyName || 'Your Company';
+    const rawConfig = user.config?.toObject ? user.config.toObject() : (user.config || {});
+    const testLead = { businessName: 'TEST BUSINESS - ' + companyName };
     const content = await EmailService.generateContent(testLead, user.config);
     
     await EmailService.sendEmail({
-      ...user.config.toObject(),
+      ...rawConfig,
       userId: user._id,
       displayName: user.displayName,
       testMode: true
@@ -64,6 +97,10 @@ router.post('/config', async (req, res) => {
     }
 
     const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const oldKeys = {
+      openaiKey: user.config?.openaiKey || ''
+    };
     
     // Explicitly update config fields to trigger Mongoose isModified correctly
     if (req.body) {

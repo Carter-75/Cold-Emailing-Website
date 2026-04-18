@@ -7,7 +7,7 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 // Google Auth Callback
 router.get('/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  passport.authenticate('google', { failureRedirect: '/dashboard?auth=failed' }),
   (req, res) => {
     // Successful authentication, redirect to dashboard.
     // Dynamically resolve the frontend URL based on the current request
@@ -36,9 +36,10 @@ router.get('/user', (req, res) => {
 });
 
 // Logout
-router.get('/logout', (req, res) => {
+router.get('/logout', (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
+    req.session = null;
     res.json({ message: 'Logged out' });
   });
 });

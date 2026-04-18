@@ -5,16 +5,19 @@ const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const logger = require('morgan');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
-const session = require('express-session');
 const passport = require('passport');
 require('./config/passport');
 const { connectToDatabase } = require('./lib/mongodb');
 
 const app = express();
+const isProd = process.env.PRODUCTION === 'true';
+
+app.set('trust proxy', 1);
 
 // --- Middlewares ---
 app.use(cors({
@@ -47,6 +50,10 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(helmet({
+  contentSecurityPolicy: false,
+  frameguard: false
+}));
 
 // --- MongoDB Connectivity Middleware ---
 app.use(async (req, res, next) => {
@@ -107,35 +114,31 @@ try {
 }
 
 const indexRouter = require('./routes/index');
+const cronRouter = require('./routes/cron');
 
 const PROJECT_NAME = process.env.PROJECT_NAME || 'Portfolio Project';
 
 // --- MongoDB Initialization ---
-const { initAgenda } = require('./services/agenda.service');
-
-// "Warm up" the connection and initialize Agenda
 connectToDatabase()
-  .then(() => {
-    initAgenda();
-  })
+  .then(() => {})
   .catch(err => {
     console.error('Initial MongoDB Connection failed:', err.message);
     mongoose.set('bufferCommands', false);
   });
 
-app.use(session({
-  secret: process.env.JWT_SECRET || 'cold-outreach-secret',
-  resave: false,
-  saveUninitialized: false
+app.use(cookieSession({
+  name: 'cold-emailing-session',
+  keys: [process.env.JWT_SECRET || 'cold-outreach-secret'],
+  httpOnly: true,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  sameSite: 'lax',
+  secure: isProd
 }));
 
 app.use(passport.initialize());
 app.use(passport.session());
 
 // --- Portfolio Iframe Security ---
-const isProd = process.env.PRODUCTION === 'true';
-const prodUrl = process.env.PROD_FRONTEND_URL;
-
 const authRouter = require('./routes/auth');
 
 app.use((req, res, next) => {
@@ -155,6 +158,7 @@ app.get('/', (req, res) => {
   res.send(`API for ${PROJECT_NAME} is running at /api`);
 });
 
+app.use('/api/cron', cronRouter);
 app.use('/api', indexRouter);
 app.use('/api/auth', authRouter);
 if (aiRouter) {

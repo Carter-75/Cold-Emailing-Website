@@ -39,6 +39,7 @@ const UserSchema = new mongoose.Schema({
     
     // Autonomous logic
     dailyLeadLimit: { type: Number, default: 3 },
+    outreachEnabled: { type: Boolean, default: false },
     testModeActive: { type: Boolean, default: false },
     testRecipientEmail: String
   },

@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, viewChild, ElementRef, afterNextRender, OnDestroy } from '@angular/core';
+import { Component, signal, inject, OnInit, viewChild, ElementRef, afterNextRender, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -56,6 +56,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     
     // Logic
     dailyLeadLimit: 3,
+    outreachEnabled: false,
     testModeActive: false,
     testRecipientEmail: ''
   };
@@ -66,6 +67,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private physicsInterval: any;
 
   constructor() {
+    effect(() => {
+      const user = this.auth.user();
+      if (user?.config) {
+        this.config = { ...this.config, ...user.config };
+        this.outreach.status.set(user.config.outreachEnabled ? 'running' : 'stopped');
+      }
+    });
+
     afterNextRender(() => {
       this.initPhysics();
       this.animateHeader();

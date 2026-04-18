@@ -67,7 +67,8 @@ class EmailService {
       }
     });
 
-    const rootUrl = process.env.PROD_BACKEND_URL || 
+    const rootUrl = process.env.PROD_FRONTEND_URL ||
+                    process.env.PROD_BACKEND_URL || 
                     process.env.BACKEND_URL || 
                     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
