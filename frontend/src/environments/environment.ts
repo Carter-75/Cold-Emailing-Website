@@ -1,0 +1,1 @@
+export const environment = { googleClientId: '253276135079-3bo1r79ebir2i257j842f5tijfdn6gvg.apps.googleusercontent.com' };

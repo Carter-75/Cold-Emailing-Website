@@ -1,47 +1,114 @@
 const express = require('express');
 const router = express.Router();
-const passport = require('passport');
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+const { OAuth2Client } = require('google-auth-library');
+const User = require('../models/User');
+const { verifyToken } = require('../middleware/auth');
 
-// Auth with Google
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Google Auth Callback
-router.get('/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/dashboard?auth=failed' }),
-  (req, res) => {
-    // Successful authentication, redirect to dashboard.
-    // Dynamically resolve the frontend URL based on the current request
-    const host = req.get('host');
-    const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
-    const baseUrl = `${protocol}://${host}`;
-    
-    // Redirect to /dashboard on the same host (since Vercel hosts both on one domain)
-    const finalRedirect = baseUrl.endsWith('/') ? `${baseUrl}dashboard` : `${baseUrl}/dashboard`;
-    
-    res.redirect(finalRedirect);
+router.post('/google/verify', async (req, res) => {
+  const { idToken } = req.body;
+  
+  if (!idToken) {
+    return res.status(400).json({ message: 'Google ID Token is required' });
   }
-);
 
-// Get current user
-router.get('/user', (req, res) => {
-  if (req.isAuthenticated()) {
-    res.json({
-      ...req.user,
-      isShadow: !!req.user.isShadow,
-      dbStatus: require('mongoose').connection.readyState === 1 ? 'online' : 'shadow-mode'
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
-  } else {
-    res.status(401).json({ message: 'Not authenticated' });
+    const payload = ticket.getPayload();
+    
+    if (!payload) {
+      throw new Error("Empty payload from Google");
+    }
+
+    const googleId = payload['sub'];
+    const email = payload['email'];
+    const displayName = payload['name'];
+
+    const isDbConnected = mongoose.connection.readyState === 1;
+
+    let user;
+    let isShadow = false;
+    
+    if (!isDbConnected) {
+      console.log('INFO: Shadow Mode Auth - Creating in-memory user for', email);
+      user = {
+        _id: 'shadow_' + googleId,
+        googleId,
+        email,
+        displayName,
+        isShadow: true,
+        config: {
+          senderName: displayName.split(' ')[0],
+          senderEmail: email
+        },
+        stats: { emailsSent: 0, replies: 0 }
+      };
+      isShadow = true;
+    } else {
+      user = await User.findOne({ googleId });
+      if (!user) {
+        user = await User.findOne({ email });
+        if (user) {
+          user.googleId = googleId;
+          if (!user.displayName) user.displayName = displayName;
+          await user.save();
+        } else {
+          user = await User.create({ googleId, email, displayName });
+        }
+      }
+      // mongoose document to object
+      if (user.toObject) {
+         user = user.toObject();
+      }
+    }
+
+    // Create JWT containing everything needed statelessly
+    const tokenPayload = {
+      _id: user._id,
+      googleId: user.googleId,
+      email: user.email,
+      displayName: user.displayName,
+      isShadow: !!isShadow,
+      config: user.config
+    };
+    
+    const sessionToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({ token: sessionToken, user: { ...user, isShadow: !!isShadow, dbStatus: isDbConnected ? 'online' : 'shadow-mode' } });
+  } catch (error) {
+    console.error('Google Auth Error:', error);
+    res.status(401).json({ message: 'Invalid Google token' });
   }
 });
 
-// Logout
-router.get('/logout', (req, res, next) => {
-  req.logout((err) => {
-    if (err) return next(err);
-    req.session = null;
-    res.json({ message: 'Logged out' });
-  });
+// Get current user via local token payload
+router.get('/user', verifyToken, async (req, res) => {
+  try {
+    const isDbConnected = mongoose.connection.readyState === 1;
+    let freshUser = req.user;
+
+    if (isDbConnected && !req.user.isShadow) {
+      const dbUser = await User.findById(req.user._id);
+      if (!dbUser) {
+        return res.status(401).json({ message: 'User record no longer exists' });
+      }
+      freshUser = { ...req.user, ...dbUser.toObject() };
+    }
+
+    res.json({
+      ...freshUser,
+      dbStatus: isDbConnected ? 'online' : 'shadow-mode'
+    });
+  } catch (err) {
+    console.error('Fetch user error:', err);
+    res.status(500).json({ message: 'Failed to fetch user data' });
+  }
 });
 
 module.exports = router;

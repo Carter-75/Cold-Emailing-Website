@@ -5,13 +5,10 @@ const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const cookieSession = require('cookie-session');
 const logger = require('morgan');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
-const passport = require('passport');
-require('./config/passport');
 const { connectToDatabase } = require('./lib/mongodb');
 
 const app = express();
@@ -136,17 +133,7 @@ if (isProd && !process.env.ENCRYPTION_KEY) {
   throw new Error('CRITICAL: ENCRYPTION_KEY is missing in production. Server halt.');
 }
 
-app.use(cookieSession({
-  name: 'cold-emailing-session',
-  keys: [process.env.JWT_SECRET],
-  httpOnly: true,
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  sameSite: 'lax',
-  secure: isProd
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
+// JWT authentication is handled per-route via the middleware/auth.js module
 
 // --- Portfolio Iframe Security ---
 const authRouter = require('./routes/auth');

@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { OutreachService } from '../../services/outreach.service';
+import { GoogleSigninButtonModule } from '@abacritt/angularx-social-login';
 import * as Matter from 'matter-js';
 import anime from 'animejs';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, GoogleSigninButtonModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -100,7 +101,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   saveConfig() {
-    this.outreach.saveConfig(this.config).subscribe(() => {
+    this.outreach.saveConfig(this.config).subscribe((res: any) => {
+      if (res && res.token) localStorage.setItem('auth_token', res.token);
       alert('Configuration saved and engine optimized!');
       this.auth.checkAuth(); // Refresh user data
     });
@@ -108,9 +110,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   toggleOutreach() {
     if (this.outreach.status() === 'stopped' || this.outreach.status() === 'paused') {
-      this.outreach.startOutreach().subscribe();
+      this.outreach.startOutreach().subscribe((res: any) => {
+        if (res && res.token) localStorage.setItem('auth_token', res.token);
+      });
     } else {
-      this.outreach.stopOutreach().subscribe();
+      this.outreach.stopOutreach().subscribe((res: any) => {
+        if (res && res.token) localStorage.setItem('auth_token', res.token);
+      });
     }
   }
 

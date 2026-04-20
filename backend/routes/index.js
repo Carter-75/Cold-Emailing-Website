@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Unsubscribe = require('../models/Unsubscribe');
+const jwt = require('jsonwebtoken');
+const { verifyToken } = require('../middleware/auth');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -9,16 +11,12 @@ router.get('/', function(req, res, next) {
 });
 
 // Outreach Controls
-router.post('/outreach/start', async (req, res) => {
+router.post('/outreach/start', verifyToken, async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Unauthorized' });
-
     if (req.user.isShadow) {
-      req.user.config = { ...req.user.config, outreachEnabled: true };
-      return req.login(req.user, (err) => {
-        if (err) return res.status(500).json({ message: 'Session update failed' });
-        return res.json({ message: 'Automation enabled' });
-      });
+      const config = { ...(req.user.config || {}), outreachEnabled: true };
+      const newToken = jwt.sign({ ...req.user, config }, process.env.JWT_SECRET, { expiresIn: '7d' });
+      return res.json({ message: 'Automation enabled (Shadow Mode)', token: newToken });
     }
 
     const user = await User.findById(req.user._id);
@@ -32,16 +30,12 @@ router.post('/outreach/start', async (req, res) => {
   }
 });
 
-router.post('/outreach/stop', async (req, res) => {
+router.post('/outreach/stop', verifyToken, async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Unauthorized' });
-
     if (req.user.isShadow) {
-      req.user.config = { ...req.user.config, outreachEnabled: false };
-      return req.login(req.user, (err) => {
-        if (err) return res.status(500).json({ message: 'Session update failed' });
-        return res.json({ message: 'Automation disabled' });
-      });
+      const config = { ...(req.user.config || {}), outreachEnabled: false };
+      const newToken = jwt.sign({ ...req.user, config }, process.env.JWT_SECRET, { expiresIn: '7d' });
+      return res.json({ message: 'Automation disabled (Shadow Mode)', token: newToken });
     }
 
     const user = await User.findById(req.user._id);
@@ -55,9 +49,8 @@ router.post('/outreach/stop', async (req, res) => {
   }
 });
 
-router.post('/outreach/test-send', async (req, res) => {
+router.post('/outreach/test-send', verifyToken, async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Unauthorized' });
     const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
     const EmailService = require('../services/email.service');
@@ -81,10 +74,8 @@ router.post('/outreach/test-send', async (req, res) => {
 });
 
 // Update Config
-router.post('/config', async (req, res) => {
+router.post('/config', verifyToken, async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Unauthorized' });
-    
     const allowedKeys = [
       'openaiKey', 'serpapiKey', 'apolloKey', 'verifaliaKey', 'senderEmail', 'appPassword', 
       'senderName', 'senderTitle', 'companyName', 'websiteUrl', 'physicalAddress', 'priceTier1', 
@@ -92,21 +83,18 @@ router.post('/config', async (req, res) => {
       'smtpHost', 'smtpPort', 'smtpSecure', 'testModeActive', 'testRecipientEmail', 'signature'
     ];
 
+    let safeBody = {};
+    if (req.body) {
+      Object.keys(req.body).forEach(k => {
+        if (allowedKeys.includes(k)) safeBody[k] = req.body[k];
+      });
+    }
+
     // Shadow Mode Support
     if (req.user.isShadow) {
-      let safeBody = {};
-      if (req.body) {
-        Object.keys(req.body).forEach(k => {
-          if (allowedKeys.includes(k)) safeBody[k] = req.body[k];
-        });
-      }
-      req.user.config = { ...req.user.config, ...safeBody };
-      // Re-serialize the shadow user into the session so changes persist for this browser session
-      req.login(req.user, (err) => {
-        if (err) return res.status(500).json({ message: 'Session update failed' });
-        return res.json({ message: 'Configuration saved to session (Shadow Mode)' });
-      });
-      return;
+      const config = { ...(req.user.config || {}), ...safeBody };
+      const newToken = jwt.sign({ ...req.user, config }, process.env.JWT_SECRET, { expiresIn: '7d' });
+      return res.json({ message: 'Configuration saved to session (Shadow Mode)', token: newToken });
     }
 
     const user = await User.findById(req.user._id);
@@ -115,18 +103,13 @@ router.post('/config', async (req, res) => {
       openaiKey: user.config?.openaiKey || ''
     };
     
-    // Explicitly update config fields to trigger Mongoose isModified correctly
-    if (req.body) {
-      Object.keys(req.body).forEach(key => {
-        if (allowedKeys.includes(key)) {
-          user.config[key] = req.body[key];
-        }
-      });
-    }
+    // Explicitly update config fields
+    Object.keys(safeBody).forEach(key => {
+      user.config[key] = safeBody[key];
+    });
 
     await user.save();
 
-    // If OpenAI key was added/updated and no templates exist, bootstrap them
     const OptimizerService = require('../services/optimizer.service');
     if (user.config.openaiKey && (!oldKeys.openaiKey || oldKeys.openaiKey !== user.config.openaiKey)) {
       await OptimizerService.bootstrapTemplates(user._id, user.config.openaiKey);
@@ -155,14 +138,12 @@ router.get('/unsubscribe', async (req, res) => {
   try {
     const Lead = require('../models/Lead');
 
-    // 1. Record the unsubscribe with business context
     await Unsubscribe.findOneAndUpdate(
       { userId, recipientEmail: email },
       { userId, recipientEmail: email, businessName },
       { upsert: true }
     );
 
-    // 2. Kill all active leads for this user/email or user/business
     const query = { $or: [{ userId, recipientEmail: email }] };
     if (businessName) query.$or.push({ userId, businessName });
 

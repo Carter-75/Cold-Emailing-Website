@@ -15,9 +15,9 @@
           <div class="w-2 h-2 rounded-full" [ngClass]="outreach.status() === 'running' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'"></div>
           <span class="text-xs font-medium uppercase tracking-wider text-neutral-400">{{ outreach.status() }}</span>
         </div>
-        <button *ngIf="!auth.isAuthenticated()" (click)="auth.loginWithGoogle()" class="px-5 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-neutral-200 transition-all">
-          Login with Google
-        </button>
+        <div *ngIf="!auth.isAuthenticated()" class="overflow-hidden rounded-[4px] ml-2 scale-[0.9] origin-right">
+          <asl-google-signin-button type="standard" shape="rectangular" theme="outline" size="large"></asl-google-signin-button>
+        </div>
         <button *ngIf="auth.isAuthenticated()" (click)="auth.logout()" class="text-xs text-neutral-500 hover:text-white transition-colors">
           Logout
         </button>
