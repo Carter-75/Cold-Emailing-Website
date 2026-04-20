@@ -85,9 +85,22 @@ router.post('/config', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ message: 'Unauthorized' });
     
+    const allowedKeys = [
+      'openaiKey', 'serpapiKey', 'apolloKey', 'verifaliaKey', 'senderEmail', 'appPassword', 
+      'senderName', 'senderTitle', 'companyName', 'websiteUrl', 'physicalAddress', 'priceTier1', 
+      'priceTier2', 'priceTier3', 'valueProp', 'targetOutcome', 'personaContext', 'dailyLeadLimit', 
+      'smtpHost', 'smtpPort', 'smtpSecure', 'testModeActive', 'testRecipientEmail', 'signature'
+    ];
+
     // Shadow Mode Support
     if (req.user.isShadow) {
-      req.user.config = { ...req.user.config, ...req.body };
+      let safeBody = {};
+      if (req.body) {
+        Object.keys(req.body).forEach(k => {
+          if (allowedKeys.includes(k)) safeBody[k] = req.body[k];
+        });
+      }
+      req.user.config = { ...req.user.config, ...safeBody };
       // Re-serialize the shadow user into the session so changes persist for this browser session
       req.login(req.user, (err) => {
         if (err) return res.status(500).json({ message: 'Session update failed' });
@@ -105,7 +118,9 @@ router.post('/config', async (req, res) => {
     // Explicitly update config fields to trigger Mongoose isModified correctly
     if (req.body) {
       Object.keys(req.body).forEach(key => {
-        user.config[key] = req.body[key];
+        if (allowedKeys.includes(key)) {
+          user.config[key] = req.body[key];
+        }
       });
     }
 
@@ -124,9 +139,18 @@ router.post('/config', async (req, res) => {
 });
 
 // Unsubscribe
+const crypto = require('crypto');
 router.get('/unsubscribe', async (req, res) => {
-  const { email, userId, businessName } = req.query;
-  if (!email || !userId) return res.status(400).send('Invalid request');
+  const { email, userId, businessName, sig } = req.query;
+  if (!email || !userId || !sig) return res.status(400).send('Invalid request');
+
+  const expectedSig = crypto.createHmac('sha256', process.env.ENCRYPTION_KEY)
+    .update(email + userId)
+    .digest('hex');
+
+  if (sig.length !== expectedSig.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) {
+    return res.status(403).send('Invalid signature. Unsubscribe link forged or expired.');
+  }
   
   try {
     const Lead = require('../models/Lead');

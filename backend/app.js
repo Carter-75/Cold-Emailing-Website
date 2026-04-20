@@ -31,11 +31,10 @@ app.use(cors({
       'https://carter-portfolio.fyi'
     ].filter(Boolean);
     
-    // 2. Check if it matches allowed list or is a Vercel subdomain
-    const isAllowed = allowed.includes(origin) || 
-                      origin.endsWith('.vercel.app') || 
-                      origin.includes('localhost') || 
-                      origin.includes('127.0.0.1');
+    // 2. Check if it matches allowed list or is strict localhost
+    const isLocalhost = origin === 'http://localhost:3000' || origin === 'http://localhost:4200' || origin === 'http://127.0.0.1:3000' || origin === 'http://127.0.0.1:4200';
+    
+    const isAllowed = allowed.includes(origin) || isLocalhost || (process.env.VERCEL_URL && origin === `https://${process.env.VERCEL_URL}`);
 
     if (isAllowed) {
       callback(null, true);
@@ -83,6 +82,7 @@ app.all(['/api/health', '/api/ping', '/health', '/ping'], (req, res) => {
 });
 
 app.get('/api/debug-bundle', async (req, res) => {
+  if (isProd) return res.status(404).json({ error: 'Not Found' });
   const fs = require('fs').promises;
   async function listFiles(dir) {
     let results = [];
@@ -126,9 +126,19 @@ connectToDatabase()
     mongoose.set('bufferCommands', false);
   });
 
+if (isProd && !process.env.JWT_SECRET) {
+  console.error('\n🛑 CRITICAL: JWT_SECRET is missing from environment variables!');
+  throw new Error('CRITICAL: JWT_SECRET is missing in production. Server halt.');
+}
+
+if (isProd && !process.env.ENCRYPTION_KEY) {
+  console.error('\n🛑 CRITICAL: ENCRYPTION_KEY is missing from environment variables!');
+  throw new Error('CRITICAL: ENCRYPTION_KEY is missing in production. Server halt.');
+}
+
 app.use(cookieSession({
   name: 'cold-emailing-session',
-  keys: [process.env.JWT_SECRET || 'cold-outreach-secret'],
+  keys: [process.env.JWT_SECRET],
   httpOnly: true,
   maxAge: 7 * 24 * 60 * 60 * 1000,
   sameSite: 'lax',

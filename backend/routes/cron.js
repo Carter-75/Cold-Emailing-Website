@@ -48,4 +48,9 @@ router.get('/optimize', withCronAuth(async () => {
   return SchedulerService.runOptimizationSweep();
 }));
 
+router.get('/outreach', withCronAuth(async (req) => {
+  const userId = req.query.userId;
+  return SchedulerService.runOutreachChunk(userId);
+}));
+
 module.exports = router;

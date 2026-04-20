@@ -1,17 +1,20 @@
 const nodemailer = require('nodemailer');
 const { OpenAI } = require('openai');
+const crypto = require('crypto');
 
 class EmailService {
   async generateContent(lead, config, step = 1) {
     const openai = new OpenAI({ apiKey: config.openaiKey });
     
+    const safeBusinessName = lead.businessName ? lead.businessName.replace(/["\n\r]/g, ' ').trim() : 'the business';
+
     let stepInstructions = '';
     if (step === 1) {
-      stepInstructions = `This is the INITIAL outreach. Focus on a personalized hook regarding ${lead.businessName} and a brief intro.`;
+      stepInstructions = `This is the INITIAL outreach. Focus on a personalized hook regarding """${safeBusinessName}""" and a brief intro.`;
     } else if (step === 2) {
-      stepInstructions = `This is the FIRST FOLLOW-UP. Acknowledge that you emailed them previously about ${lead.businessName}. Keep it shorter and focus on the "bump" of the value prop.`;
+      stepInstructions = `This is the FIRST FOLLOW-UP. Acknowledge that you emailed them previously about """${safeBusinessName}""". Keep it shorter and focus on the "bump" of the value prop.`;
     } else {
-      stepInstructions = `This is the FINAL FOLLOW-UP. Be professional but direct. Mention this is the last time you'll be reaching out personally about optimizing ${lead.businessName}'s presence.`;
+      stepInstructions = `This is the FINAL FOLLOW-UP. Be professional but direct. Mention this is the last time you'll be reaching out personally about optimizing """${safeBusinessName}"""'s presence.`;
     }
 
     const systemPrompt = `You are a world-class cold email expert representing ${config.senderName} (${config.senderTitle}) from ${config.companyName}.
@@ -33,11 +36,11 @@ class EmailService {
     - **CRITICAL**: Do NOT include a sign-off or signature.
     
     Email Structure:
-    - Personalized context regarding ${lead.businessName}.
+    - Personalized context regarding """${safeBusinessName}""".
     - The value prop: ${config.valueProp}.
     - Clear Call to Action: ${config.targetOutcome}.`;
 
-    const userPrompt = `Generate the Step ${step} email for ${lead.businessName}. 
+    const userPrompt = `Generate the Step ${step} email for """${safeBusinessName}""". 
     Goal: ${config.targetOutcome}
     Portfolio: ${config.websiteUrl || 'Portfolio available on request'} `;
 
@@ -61,9 +64,6 @@ class EmailService {
       auth: {
         user: userConfig.senderEmail,
         pass: userConfig.appPassword,
-      },
-      tls: {
-        rejectUnauthorized: false // Often needed for custom domain SMTP
       }
     });
 
@@ -74,6 +74,10 @@ class EmailService {
 
     const signature = userConfig.signature || `<p>${userConfig.senderName}<br>${userConfig.senderTitle}</p>`;
 
+    const sig = crypto.createHmac('sha256', process.env.ENCRYPTION_KEY)
+      .update(recipientEmail + userConfig.userId)
+      .digest('hex');
+
     const footer = `
       <br>
       ${signature}
@@ -83,7 +87,7 @@ class EmailService {
         <strong>Legal Disclosure:</strong> This communication is from ${userConfig.senderName} at ${userConfig.companyName}.<br>
         Store Address: ${userConfig.physicalAddress || 'Available on Request'}<br>
         You are receiving this because your business, ${businessName}, was identified as a candidate for digital optimization based on public Google Maps data.<br>
-        <a href="${rootUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&userId=${userConfig.userId}&businessName=${encodeURIComponent(businessName)}" style="color: #4f46e5; text-decoration: underline;">Opt-out of future communications</a>
+        <a href="${rootUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&userId=${userConfig.userId}&businessName=${encodeURIComponent(businessName)}&sig=${sig}" style="color: #4f46e5; text-decoration: underline;">Opt-out of future communications</a>
       </p>
     `;
 

@@ -4,6 +4,7 @@ const DiscoveryWorker = require('./discovery.service');
 const SequenceService = require('./sequence.service');
 const IMAPService = require('./imap.service');
 const OptimizerService = require('./optimizer.service');
+const OutreachEngine = require('./engine.service');
 
 class SchedulerService {
   async acquireLease(key, ttlMinutes) {
@@ -172,6 +173,27 @@ class SchedulerService {
     utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
     return Math.ceil((((utcDate - yearStart) / 86400000) + 1) / 7);
+  }
+
+  /**
+   * Specifically triggers the atomic OutreachEngine for a single user (or all if omitted)
+   * This is the "Serverless Friendly" alternative to the old long-lived loop.
+   */
+  async runOutreachChunk(userId) {
+    if (userId) {
+      return await OutreachEngine.processChunk(userId);
+    }
+
+    // If no userId provided, process one chunk for each active user to progress sequences
+    const users = await User.find({ 'config.outreachEnabled': true }).select('_id email');
+    const results = [];
+    for (const user of users) {
+      results.push({
+        email: user.email,
+        result: await OutreachEngine.processChunk(user._id)
+      });
+    }
+    return results;
   }
 }
 

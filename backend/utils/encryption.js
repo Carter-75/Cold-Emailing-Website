@@ -12,13 +12,7 @@ const AUTH_TAG_LENGTH = 16;
 function getSecret() {
   const secret = process.env.ENCRYPTION_KEY;
   if (!secret) {
-    if (process.env.PRODUCTION === 'true') {
-      console.error('\n🛑 CRITICAL: ENCRYPTION_KEY is missing from environment variables!');
-      console.error('   Sensitive database fields will remain readable/vulnerable until corrected.');
-      console.error('   Please add your key to the Vercel Dashboard.\n');
-    }
-    // Consistent fallback for stability - this allows the app to stay online
-    return crypto.createHash('sha256').update('emergency-offline-fallback').digest();
+    throw new Error('CRITICAL: ENCRYPTION_KEY is missing from environment variables!');
   }
   return crypto.createHash('sha256').update(String(secret)).digest();
 }
