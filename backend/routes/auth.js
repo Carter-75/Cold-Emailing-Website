@@ -87,6 +87,13 @@ router.post('/google/verify', async (req, res) => {
   }
 });
 
+// Safety Catch: If Google redirects here (misconfigured Redirect URI), send them back to the frontend
+router.get('/google/callback', (req, res) => {
+  const frontendUrl = process.env.PROD_FRONTEND_URL || 'http://localhost:4200';
+  console.warn('⚠️ Google redirected to /callback. Check Google Console "Redirect URIs". Redirecting user to frontend...');
+  res.redirect(frontendUrl);
+});
+
 // Get current user via local token payload
 router.get('/user', verifyToken, async (req, res) => {
   try {
