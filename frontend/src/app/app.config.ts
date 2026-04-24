@@ -22,7 +22,8 @@ export const appConfig: ApplicationConfig = {
             id: GoogleLoginProvider.PROVIDER_ID,
             provider: new GoogleLoginProvider(environment.googleClientId, {
               oneTapEnabled: false,
-              prompt: 'select_account'
+              prompt: 'select_account',
+              ux_mode: 'popup', // Force popup mode to avoid redirect URI issues
             })
           }
         ],
