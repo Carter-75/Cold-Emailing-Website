@@ -1,8 +1,13 @@
 const axios = require('axios');
 
 class EnrichmentService {
-  async findEmail(businessName, city, apiKey) {
-    if (!apiKey) throw new Error('Apollo API Key is required');
+  async findEmail(businessName, city, apiKey, isTest = false) {
+    if (!apiKey && !isTest) throw new Error('Apollo API Key is required');
+
+    if (!apiKey && isTest) {
+      console.log(`[Enrichment] MOCK MODE: Returning shadow email for ${businessName}...`);
+      return 'test@example.com';
+    }
 
     try {
       const response = await axios.post('https://api.apollo.io/v1/people/search', {

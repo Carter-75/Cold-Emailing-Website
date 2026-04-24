@@ -1,8 +1,13 @@
 const axios = require('axios');
 
 class VerificationService {
-  async verifyEmail(email, apiKey) {
-    if (!apiKey) throw new Error('Verifalia API Key is required');
+  async verifyEmail(email, apiKey, isTest = false) {
+    if (!apiKey && !isTest) throw new Error('Verifalia API Key is required');
+
+    if (!apiKey && isTest) {
+      console.log(`[Verification] MOCK MODE: Auto-approving ${email}...`);
+      return true;
+    }
 
     try {
       // Verifalia uses Basic Auth (API Key is the SID/Token or similar depending on setup)

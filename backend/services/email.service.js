@@ -56,7 +56,17 @@ class EmailService {
   }
 
   async sendEmail(userConfig, recipientEmail, content, businessName) {
-    const isTest = userConfig.testMode || false;
+    const isTest = userConfig.testMode || userConfig.testModeActive || false;
+    
+    // Check if we have enough SMTP config to actually send
+    const canSend = userConfig.senderEmail && userConfig.appPassword && userConfig.smtpHost;
+
+    if (!canSend && isTest) {
+      console.log(`[EmailService] MOCK MODE: Skipping real SMTP send to ${recipientEmail} (Missing credentials).`);
+      console.log(`[EmailService] Content Preview: ${content.substring(0, 100)}...`);
+      return; // Success, but no real email sent
+    }
+
     const transporter = nodemailer.createTransport({
       host: userConfig.smtpHost,
       port: userConfig.smtpPort,

@@ -32,8 +32,15 @@ class OutreachEngine {
     if (!user) throw new Error('User not found');
     
     const config = user.config;
-    if (!config.openaiKey || !config.serpapiKey || !config.apolloKey || !config.verifaliaKey || !config.senderEmail || !config.appPassword) {
-      throw new Error('Incomplete configuration.');
+    const isTest = !!config.testModeActive;
+
+    // Relaxed check: Only OpenAI is strictly required for generation in Test Mode
+    if (!config.openaiKey) {
+       throw new Error('OpenAI Key is required for core generation.');
+    }
+
+    if (!isTest && (!config.serpapiKey || !config.apolloKey || !config.verifaliaKey || !config.senderEmail || !config.appPassword)) {
+      throw new Error('Incomplete configuration for production outreach.');
     }
 
     const dailyLimit = config.dailyLeadLimit || 3;
@@ -45,11 +52,27 @@ class OutreachEngine {
     }
 
     // 1. PRIORITY: Process a chunk of Follow-ups
-    const dueFollowUps = await Lead.find({
+    let dueFollowUps = await Lead.find({
       userId: user._id,
       status: 'emailed',
       nextEmailAt: { $lte: new Date() }
     }).limit(3);
+
+    // [TEST MODE] Simulation: If no follow-ups exist, seed one to test the logic
+    if (isTest && dueFollowUps.length === 0) {
+      console.log('[Engine] TEST MODE: Seeding mock follow-up lead to test sequence logic...');
+      const mockFollowUp = await Lead.create({
+        userId: user._id,
+        businessName: 'Mock Follow-up Business',
+        recipientEmail: config.testRecipientEmail || 'test-followup@example.com',
+        city: 'Mock City',
+        status: 'emailed',
+        sequenceStep: 1,
+        nextEmailAt: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
+        isTestData: true
+      });
+      dueFollowUps = [mockFollowUp];
+    }
 
     if (dueFollowUps.length > 0) {
       for (const followUp of dueFollowUps) {
@@ -64,7 +87,7 @@ class OutreachEngine {
     const currentCity = cityRotator.getNextCity();
     let leads = [];
     try {
-      leads = await LeadGenService.findLeads(currentCity, config.serpapiKey);
+      leads = await LeadGenService.findLeads(currentCity, config.serpapiKey, isTest);
     } catch (e) {
       console.error('[Engine] Lead discovery failed:', e.message);
       return { status: 'discovery_failed', count: 0 };
@@ -86,7 +109,7 @@ class OutreachEngine {
 
       if (alreadySent || unsubscribed) continue;
 
-      const email = await EnrichmentService.findEmail(lead.name, currentCity, config.apolloKey);
+      const email = await EnrichmentService.findEmail(lead.name, currentCity, config.apolloKey, isTest);
       if (!email) continue;
 
       const leadStatus = await Lead.findOne({ 
@@ -97,7 +120,7 @@ class OutreachEngine {
       
       if (leadStatus) continue;
 
-      const isValid = await VerificationService.verifyEmail(email, config.verifaliaKey);
+      const isValid = await VerificationService.verifyEmail(email, config.verifaliaKey, isTest);
       if (!isValid) continue;
 
       const content = await EmailService.generateContent(lead, config);

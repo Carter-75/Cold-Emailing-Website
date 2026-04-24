@@ -102,13 +102,9 @@ app.get('/api/debug-bundle', async (req, res) => {
   }
 });
 
-let aiRouter;
-try {
-  // We assume aiRouter might be added later or exist in certain flavors
-  // For the general template, we'll keep it as a placeholder or empty
-} catch (err) {
-  console.error('FATAL: Failed to load aiRouter:', err);
-}
+// --- Feature Routers ---
+// Note: aiRouter is currently optional/flavor-specific
+let aiRouter = null; 
 
 const indexRouter = require('./routes/index');
 const cronRouter = require('./routes/cron');

@@ -185,7 +185,12 @@ class SchedulerService {
     }
 
     // If no userId provided, process one chunk for each active user to progress sequences
-    const users = await User.find({ 'config.outreachEnabled': true }).select('_id email');
+    const users = await User.find({ 
+      $or: [
+        { 'config.outreachEnabled': true },
+        { 'config.testModeActive': true }
+      ]
+    }).select('_id email');
     const results = [];
     for (const user of users) {
       results.push({
