@@ -1,11 +1,12 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { ApiService } from './services/api.service';
 import { RouterOutlet } from '@angular/router';
+import { AuthModalComponent } from './components/auth-modal/auth-modal.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, AuthModalComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

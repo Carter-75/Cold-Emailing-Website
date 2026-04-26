@@ -10,10 +10,19 @@ export class AuthService {
   
   user = signal<any>(null);
   isAuthenticated = signal<boolean>(false);
+  showAuthModal = signal<boolean>(false);
 
   constructor() {
     this.checkAuth();
     this.handleUrlToken();
+  }
+
+  openAuthModal() {
+    this.showAuthModal.set(true);
+  }
+
+  closeAuthModal() {
+    this.showAuthModal.set(false);
   }
 
   // Handle token passed via URL query (Google Redirect Flow)
