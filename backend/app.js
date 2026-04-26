@@ -51,17 +51,6 @@ app.use(helmet({
   frameguard: false
 }));
 
-// --- Session Polyfill (Hardening for Vercel Auth Loops) ---
-app.use((req, res, next) => {
-  if (req.session && !req.session.regenerate) {
-    req.session.regenerate = (cb) => cb();
-  }
-  if (req.session && !req.session.save) {
-    req.session.save = (cb) => cb();
-  }
-  next();
-});
-
 // --- MongoDB Connectivity Middleware ---
 app.use(async (req, res, next) => {
   try {
