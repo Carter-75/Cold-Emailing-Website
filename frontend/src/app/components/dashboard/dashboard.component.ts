@@ -6,7 +6,7 @@ import { OutreachService } from '../../services/outreach.service';
 import { BillingService } from '../../services/billing.service';
 import * as Matter from 'matter-js';
 import anime from 'animejs';
-import { LucideAngularComponent } from 'lucide-angular';
+import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,7 +14,7 @@ import { LucideAngularComponent } from 'lucide-angular';
   imports: [
     CommonModule, 
     FormsModule, 
-    LucideAngularComponent
+    LucideAngularModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'

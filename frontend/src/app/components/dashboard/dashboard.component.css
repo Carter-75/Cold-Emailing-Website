@@ -33,7 +33,7 @@
 
 /* Tour Styles - Revamped for readability */
 .tour-overlay {
-  @apply fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-[2px] transition-all duration-500;
+  @apply fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm transition-all duration-500;
 }
 
 .tour-card {

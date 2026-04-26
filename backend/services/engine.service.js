@@ -55,7 +55,7 @@ class OutreachEngine {
       userId: user._id,
       status: 'emailed',
       nextEmailAt: { $lte: new Date() }
-    }).limit(3);
+    }).populate('userId').limit(3);
 
     if (dueFollowUps.length > 0) {
       for (const followUp of dueFollowUps) {
@@ -70,7 +70,7 @@ class OutreachEngine {
     const currentCity = cityRotator.getNextCity();
     let leads = [];
     try {
-      leads = await LeadGenService.findLeads(currentCity, config.serpapiKey, isTest);
+      leads = await LeadGenService.findLeads(currentCity, config.serpapiKey);
     } catch (e) {
       console.error('[Engine] Lead discovery failed:', e.message);
       return { status: 'discovery_failed', count: 0 };
@@ -92,7 +92,7 @@ class OutreachEngine {
 
       if (alreadySent || unsubscribed) continue;
 
-      const email = await EnrichmentService.findEmail(lead.name, currentCity, config.apolloKey, isTest);
+      const email = await EnrichmentService.findEmail(lead.name, currentCity, config.apolloKey);
       if (!email) continue;
 
       const leadStatus = await Lead.findOne({ 
@@ -103,7 +103,7 @@ class OutreachEngine {
       
       if (leadStatus) continue;
 
-      const isValid = await VerificationService.verifyEmail(email, config.verifaliaKey, isTest);
+      const isValid = await VerificationService.verifyEmail(email, config.verifaliaKey);
       if (!isValid) continue;
 
       const content = await EmailService.generateContent(lead, config);

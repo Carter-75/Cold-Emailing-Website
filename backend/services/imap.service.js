@@ -19,9 +19,13 @@ class IMAPService {
     };
 
     for (const user of users) {
-      const result = await this.checkInbox(user);
-      summary.usersChecked += 1;
-      summary.repliesDetected += result?.repliesDetected ?? 0;
+      try {
+        const result = await this.checkInbox(user);
+        summary.usersChecked += 1;
+        summary.repliesDetected += result?.repliesDetected ?? 0;
+      } catch (err) {
+        console.error(`[IMAP] Failed to check inbox for ${user.email}:`, err.message);
+      }
     }
 
     return summary;
