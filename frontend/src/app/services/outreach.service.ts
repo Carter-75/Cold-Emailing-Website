@@ -3,6 +3,11 @@ import { ApiService } from './api.service';
 import { tap } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 
+export interface LogEntry {
+  message: string;
+  timestamp: Date;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -11,7 +16,7 @@ export class OutreachService {
   private socket: Socket | null = null;
   
   status = signal<string>('stopped');
-  logs = signal<string[]>([]);
+  logs = signal<LogEntry[]>([]);
   stats = signal<any>({ sent: 0 });
 
   constructor() {
@@ -44,7 +49,11 @@ export class OutreachService {
   }
 
   private addLog(msg: string) {
-    this.logs.update(prev => [msg, ...prev].slice(0, 100));
+    const entry: LogEntry = {
+      message: msg,
+      timestamp: new Date()
+    };
+    this.logs.update(prev => [entry, ...prev].slice(0, 100));
   }
 
   startOutreach() {
