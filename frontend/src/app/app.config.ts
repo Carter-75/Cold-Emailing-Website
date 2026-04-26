@@ -24,6 +24,7 @@ export const appConfig: ApplicationConfig = {
               oneTapEnabled: true, // Best practice for modern UX
               prompt: 'select_account',
               ux_mode: 'popup', // Essential to prevent the redirect_uri_mismatch error
+              redirect_uri: 'https://cold-emailing-website.vercel.app/api/auth/google/callback' 
             })
           }
         ],
