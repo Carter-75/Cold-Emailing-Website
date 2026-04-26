@@ -7,7 +7,6 @@ import { tap } from 'rxjs';
 })
 export class AuthService {
   private api = inject(ApiService);
-  private socialAuthService = inject(SocialAuthService);
   
   user = signal<any>(null);
   isAuthenticated = signal<boolean>(false);
@@ -90,6 +89,5 @@ export class AuthService {
     localStorage.removeItem('auth_token');
     this.user.set(null);
     this.isAuthenticated.set(false);
-    this.socialAuthService.signOut().catch(() => {});
   }
 }
