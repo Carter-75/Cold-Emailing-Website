@@ -163,7 +163,7 @@ app.use((req, res, next) => {
   const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
   const currentOrigin = `${protocol}://${host}`;
   
-  const ancestors = ["'self'", "https://*.vercel.app", currentOrigin];
+  const ancestors = ["'self'", "https://*.vercel.app", "https://carter-portfolio.fyi", currentOrigin];
   
   res.setHeader('Content-Security-Policy', `frame-ancestors ${ancestors.join(' ')}`);
   res.setHeader('X-Frame-Options', 'ALLOWALL'); 
@@ -171,14 +171,22 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-  res.send(`API for ${PROJECT_NAME} is running at /api`);
+  res.send(`API for ${PROJECT_NAME} is running`);
 });
 
+// Mount at both /api and root to handle Vercel Service prefix stripping
 app.use('/api/cron', cronRouter);
+app.use('/cron', cronRouter);
+
 app.use('/api', indexRouter);
+app.use('/', indexRouter);
+
 app.use('/api/auth', authRouter);
+app.use('/auth', authRouter);
+
 if (aiRouter) {
   app.use('/api/ai', aiRouter);
+  app.use('/ai', aiRouter);
 }
 
 // Error handler
