@@ -86,10 +86,13 @@
 
         <div *ngIf="auth.isAuthenticated()" class="flex items-center gap-4">
           <button (click)="startTour()" class="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors flex items-center gap-2 bg-indigo-500/10 px-4 py-2 rounded-full border border-indigo-500/20">
-            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <lucide-icon name="help-circle" class="w-3 h-3"></lucide-icon>
             Help
           </button>
-          <button (click)="auth.logout()" class="text-xs font-bold text-white/40 hover:text-white transition-colors">Logout</button>
+          <button (click)="auth.logout()" class="text-xs font-bold text-white/40 hover:text-white transition-colors flex items-center gap-2">
+            <lucide-icon name="log-out" class="w-3 h-3"></lucide-icon>
+            Logout
+          </button>
         </div>
       </div>
     </div>
@@ -102,10 +105,22 @@
       
       <!-- Top Navigation Tabs -->
       <div class="flex items-center gap-2 mb-12 p-1.5 bg-white/5 backdrop-blur-xl rounded-2xl w-fit border border-white/10">
-        <button (click)="setTab('overview')" [ngClass]="activeTab() === 'overview' ? 'tab-btn-active' : 'tab-btn-inactive'" class="tab-btn">Overview</button>
-        <button (click)="setTab('leads')" [ngClass]="activeTab() === 'leads' ? 'tab-btn-active' : 'tab-btn-inactive'" class="tab-btn">Leads & Replies</button>
-        <button (click)="setTab('infra')" [ngClass]="activeTab() === 'infra' ? 'tab-btn-active' : 'tab-btn-inactive'" class="tab-btn">Infrastructure</button>
-        <button (click)="setTab('identity')" [ngClass]="activeTab() === 'identity' ? 'tab-btn-active' : 'tab-btn-inactive'" class="tab-btn">AI Persona</button>
+        <button (click)="setTab('overview')" [ngClass]="activeTab() === 'overview' ? 'tab-btn-active' : 'tab-btn-inactive'" class="tab-btn flex items-center gap-2">
+          <lucide-icon name="layout-dashboard" class="w-4 h-4"></lucide-icon>
+          Overview
+        </button>
+        <button (click)="setTab('leads')" [ngClass]="activeTab() === 'leads' ? 'tab-btn-active' : 'tab-btn-inactive'" class="tab-btn flex items-center gap-2">
+          <lucide-icon name="users" class="w-4 h-4"></lucide-icon>
+          Leads & Replies
+        </button>
+        <button (click)="setTab('infra')" [ngClass]="activeTab() === 'infra' ? 'tab-btn-active' : 'tab-btn-inactive'" class="tab-btn flex items-center gap-2">
+          <lucide-icon name="shield" class="w-4 h-4"></lucide-icon>
+          Infrastructure
+        </button>
+        <button (click)="setTab('identity')" [ngClass]="activeTab() === 'identity' ? 'tab-btn-active' : 'tab-btn-inactive'" class="tab-btn flex items-center gap-2">
+          <lucide-icon name="user" class="w-4 h-4"></lucide-icon>
+          AI Persona
+        </button>
       </div>
 
       <div [ngSwitch]="activeTab()" class="animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -137,7 +152,7 @@
                         <div *ngIf="outreach.status() === 'running'" class="scanline"></div>
                         <span class="relative z-10 flex items-center justify-center gap-3">
                           {{ outreach.status() === 'running' ? 'Abort Engine' : 'Initiate Sequence' }}
-                          <div *ngIf="outreach.status() === 'running'" class="w-2 h-2 bg-indigo-500 rounded-full animate-ping"></div>
+                          <lucide-icon *ngIf="outreach.status() === 'running'" name="zap" class="w-4 h-4 animate-pulse"></lucide-icon>
                         </span>
                       </button>
                     </div>
@@ -196,7 +211,7 @@
           <div class="lg:col-span-4 space-y-6">
             <div class="glass-card p-8 border-indigo-500/10 shadow-indigo-600/5">
               <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                <lucide-icon name="refresh-cw" class="w-4 h-4"></lucide-icon>
                 Quick Settings
               </h3>
               
@@ -217,13 +232,13 @@
                   <label class="text-[10px] font-black uppercase tracking-widest text-white/30">Daily Throttle</label>
                   <div class="relative">
                     <input type="number" [(ngModel)]="config.dailyLeadLimit" class="glass-input w-full !pl-12">
-                    <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <lucide-icon name="zap" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20"></lucide-icon>
                   </div>
                 </div>
 
                 <button (click)="saveConfig()" class="btn-primary w-full mt-4 flex items-center justify-center gap-3">
                   Commit Changes
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  <lucide-icon name="save" class="w-4 h-4"></lucide-icon>
                 </button>
               </div>
             </div>
@@ -268,7 +283,7 @@
                 <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-[10px] font-black text-indigo-400">{{ leads().length }} Leads</span>
               </div>
               <button (click)="fetchLeads()" class="text-xs font-bold text-white/40 hover:text-white transition-colors flex items-center gap-2">
-                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <lucide-icon name="refresh-cw" class="w-3 h-3"></lucide-icon>
                 Sync Leads
               </button>
             </div>
@@ -340,7 +355,7 @@
                             </div>
 
                             <div *ngIf="!lead.thread || lead.thread.length === 0" class="py-12 text-center grayscale opacity-20">
-                              <svg class="w-12 h-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                              <lucide-icon name="mail" class="w-12 h-12 mx-auto mb-4"></lucide-icon>
                               <p class="text-[10px] font-black uppercase tracking-[0.3em]">No detailed logs for this lead</p>
                             </div>
                           </div>
@@ -352,7 +367,7 @@
               </table>
 
               <div *ngIf="leads().length === 0" class="py-40 text-center grayscale opacity-10">
-                <svg class="w-20 h-20 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.3" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                <lucide-icon name="users" class="w-20 h-20 mx-auto mb-6"></lucide-icon>
                 <p class="text-xs font-black uppercase tracking-[0.5em]">No Discovery Data Yet</p>
               </div>
             </div>
@@ -363,7 +378,7 @@
         <div *ngSwitchCase="'infra'" class="max-w-5xl mx-auto" [ngClass]="{'highlight-element': tourStep() === 3}">
           <div class="glass-card p-12 relative overflow-hidden">
              <div class="absolute top-0 right-0 p-8 opacity-5">
-               <svg class="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+               <lucide-icon name="shield" class="w-48 h-48"></lucide-icon>
              </div>
 
              <div class="relative z-10">
@@ -397,7 +412,7 @@
                  <div class="space-y-8">
                    <div class="bg-white/[0.02] border border-white/5 p-8 rounded-[2rem] space-y-6">
                      <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-                       <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                       <lucide-icon name="play" class="w-4 h-4"></lucide-icon>
                        SMTP Outbound
                      </h3>
                      <div class="grid grid-cols-3 gap-4">
@@ -422,9 +437,12 @@
 
                   <div class="bg-white/5 p-6 rounded-[2rem] space-y-6 border border-white/5">
                     <div class="flex items-center justify-between">
-                      <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-400">IMAP Inbound (Replies)</h3>
+                      <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+                        <lucide-icon name="refresh-cw" class="w-4 h-4"></lucide-icon>
+                        IMAP Inbound (Replies)
+                      </h3>
                       <div *ngIf="isUnsubscribed()" class="flex items-center gap-2 px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20">
-                        <div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                        <lucide-icon name="alert-circle" class="w-3 h-3 text-rose-500"></lucide-icon>
                         <span class="text-[9px] font-bold text-rose-500 uppercase tracking-widest">Unsubscribed</span>
                       </div>
                     </div>

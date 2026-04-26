@@ -6,11 +6,55 @@ import { OutreachService } from '../../services/outreach.service';
 import { BillingService } from '../../services/billing.service';
 import * as Matter from 'matter-js';
 import anime from 'animejs';
+import { 
+  LucideAngularModule, 
+  LayoutDashboard, 
+  Users, 
+  Shield, 
+  User, 
+  CreditCard, 
+  RefreshCw, 
+  LogOut, 
+  HelpCircle, 
+  Save, 
+  Zap, 
+  Play, 
+  Square, 
+  ExternalLink, 
+  ChevronDown, 
+  ChevronUp,
+  Mail,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    LucideAngularModule.pick({
+      LayoutDashboard, 
+      Users, 
+      Shield, 
+      User, 
+      CreditCard, 
+      RefreshCw, 
+      LogOut, 
+      HelpCircle, 
+      Save, 
+      Zap, 
+      Play, 
+      Square, 
+      ExternalLink, 
+      ChevronDown, 
+      ChevronUp,
+      Mail,
+      CheckCircle2,
+      AlertCircle
+    })
+  ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
