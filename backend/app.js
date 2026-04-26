@@ -175,10 +175,16 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/cron', cronRouter);
+app.use('/cron', cronRouter);
+
 app.use('/api', indexRouter);
+
 app.use('/api/auth', authRouter);
+app.use('/auth', authRouter);
+
 if (aiRouter) {
   app.use('/api/ai', aiRouter);
+  app.use('/ai', aiRouter);
 }
 
 // Error handler

@@ -1,29 +1,16 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "fluid": true,
-  "installCommand": "npm run install-all",
-  "buildCommand": "npm run vercel-build --prefix frontend",
-  "outputDirectory": "frontend/dist/frontend",
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 300
+  "experimentalServices": {
+    "frontend": {
+      "entrypoint": "frontend",
+      "routePrefix": "/",
+      "framework": "angular"
+    },
+    "backend": {
+      "entrypoint": "backend",
+      "routePrefix": "/api"
     }
   },
-  "rewrites": [
-    {
-      "source": "/api",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -37,20 +24,6 @@
           "value": "frame-ancestors 'self' https://*.vercel.app https://carter-portfolio.fyi http://localhost:3000 http://localhost:4200"
         }
       ]
-    }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/maintenance",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/discovery",
-      "schedule": "0 14 * * *"
-    },
-    {
-      "path": "/api/cron/optimize",
-      "schedule": "0 15 * * 0"
     }
   ]
 }
