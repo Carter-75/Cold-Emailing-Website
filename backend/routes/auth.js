@@ -66,14 +66,6 @@ router.post('/login', (req, res, next) => {
   })(req, res, next);
 });
 
-// --- Legacy Support: Google Verify (for Popups) ---
-router.post('/google/verify', async (req, res) => {
-    const { idToken } = req.body;
-    // Keeping this for backward compatibility if popup mode is still preferred
-    // but the callback method is now the primary "Passport way"
-    res.status(501).json({ message: 'Use /api/auth/google for redirect flow or check passport config.' });
-});
-
 // Get current user via local token payload
 router.get('/user', verifyToken, async (req, res) => {
   try {

@@ -1,6 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
-import { SocialAuthService, GoogleLoginProvider } from '@abacritt/angularx-social-login';
 import { tap } from 'rxjs';
 
 @Injectable({
@@ -16,13 +15,6 @@ export class AuthService {
   constructor() {
     this.checkAuth();
     this.handleUrlToken();
-
-    // Legacy: Still listening to socialAuthService for potential popup usage
-    this.socialAuthService.authState.subscribe((socialUser) => {
-      if (socialUser && socialUser.idToken) {
-        this.verifyGoogleToken(socialUser.idToken);
-      }
-    });
   }
 
   // Handle token passed via URL query (Google Redirect Flow)
@@ -84,23 +76,6 @@ export class AuthService {
       },
       error: () => {
         // Token is invalid or expired
-        this.logoutLocal();
-      }
-    });
-  }
-
-  // Verify token securely on backend
-  private verifyGoogleToken(idToken: string) {
-    this.api.postData<any>('auth/google/verify', { idToken }).subscribe({
-      next: (res) => {
-        if (res.token) {
-          localStorage.setItem('auth_token', res.token);
-          this.user.set(res.user);
-          this.isAuthenticated.set(true);
-        }
-      },
-      error: (err) => {
-        console.error('Failed to verify Google token', err);
         this.logoutLocal();
       }
     });
