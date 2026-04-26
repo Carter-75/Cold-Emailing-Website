@@ -1,92 +1,78 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const passport = require('passport');
+const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
-const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const { verifyToken } = require('../middleware/auth');
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// --- Helper: Generate Token ---
+const generateToken = (user, isShadow = false) => {
+  const payload = {
+    _id: user._id,
+    googleId: user.googleId,
+    email: user.email,
+    displayName: user.displayName,
+    isShadow: !!isShadow,
+    config: user.config
+  };
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
+};
 
-router.post('/google/verify', async (req, res) => {
-  const { idToken } = req.body;
-  
-  if (!idToken) {
-    return res.status(400).json({ message: 'Google ID Token is required' });
-  }
+// --- Google Auth Routes ---
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login?error=google' }), (req, res) => {
+  const token = generateToken(req.user);
+  // Redirect to frontend with token in URL (frontend will save it and redirect)
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+  res.redirect(`${frontendUrl}/dashboard?token=${token}`);
+});
+
+// --- Local Auth Routes ---
+
+// Signup
+router.post('/signup', async (req, res) => {
+  const { email, password, displayName } = req.body;
+  if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
 
   try {
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) return res.status(400).json({ message: 'User already exists' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      displayName: displayName || email.split('@')[0]
     });
-    const payload = ticket.getPayload();
-    
-    if (!payload || !payload['email_verified']) {
-      return res.status(401).json({ message: 'Google account email not verified' });
-    }
 
-    const googleId = payload['sub'];
-    const email = payload['email'];
-    const displayName = payload['name'];
-
-    const isDbConnected = mongoose.connection.readyState === 1;
-
-    let user;
-    let isShadow = false;
-    
-    if (!isDbConnected) {
-      console.log('INFO: Shadow Mode Auth - Creating in-memory user for', email);
-      user = {
-        _id: 'shadow_' + googleId,
-        googleId,
-        email,
-        displayName,
-        isShadow: true,
-        config: {
-          senderName: displayName.split(' ')[0],
-          senderEmail: email
-        },
-        stats: { emailsSent: 0, replies: 0 }
-      };
-      isShadow = true;
-    } else {
-      user = await User.findOne({ googleId });
-      if (!user) {
-        user = await User.findOne({ email });
-        if (user) {
-          user.googleId = googleId;
-          if (!user.displayName) user.displayName = displayName;
-          await user.save();
-        } else {
-          user = await User.create({ googleId, email, displayName });
-        }
-      }
-      // mongoose document to object
-      if (user.toObject) {
-         user = user.toObject();
-      }
-    }
-
-    // Create JWT containing everything needed statelessly
-    const tokenPayload = {
-      _id: user._id,
-      googleId: user.googleId,
-      email: user.email,
-      displayName: user.displayName,
-      isShadow: !!isShadow,
-      config: user.config
-    };
-    
-    const sessionToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-    res.json({ token: sessionToken, user: { ...user, isShadow: !!isShadow, dbStatus: isDbConnected ? 'online' : 'shadow-mode' } });
-  } catch (error) {
-    console.error('Google Auth Error:', error);
-    res.status(401).json({ message: 'Invalid Google token' });
+    const token = generateToken(user);
+    res.status(201).json({ token, user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
+// Login
+router.post('/login', (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (err) return next(err);
+    if (!user) return res.status(401).json({ message: info.message || 'Login failed' });
+
+    const token = generateToken(user);
+    res.json({ token, user });
+  })(req, res, next);
+});
+
+// --- Legacy Support: Google Verify (for Popups) ---
+router.post('/google/verify', async (req, res) => {
+    const { idToken } = req.body;
+    // Keeping this for backward compatibility if popup mode is still preferred
+    // but the callback method is now the primary "Passport way"
+    res.status(501).json({ message: 'Use /api/auth/google for redirect flow or check passport config.' });
+});
 
 // Get current user via local token payload
 router.get('/user', verifyToken, async (req, res) => {

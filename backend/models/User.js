@@ -2,8 +2,9 @@ const mongoose = require('mongoose');
 const { encrypt, decrypt } = require('../utils/encryption');
 
 const UserSchema = new mongoose.Schema({
-  googleId: String,
-  email: String,
+  googleId: { type: String, unique: true, sparse: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String }, // Hashed password for local auth
   displayName: String,
   config: {
     // API Keys

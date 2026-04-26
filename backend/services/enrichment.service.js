@@ -5,8 +5,10 @@ class EnrichmentService {
     if (!apiKey && !isTest) throw new Error('Apollo API Key is required');
 
     if (!apiKey && isTest) {
-      console.log(`[Enrichment] MOCK MODE: Returning shadow email for ${businessName}...`);
-      return 'test@example.com';
+      console.log(`[Enrichment] MOCK MODE: Returning test email for ${businessName}...`);
+      // In a real scenario, this might come from the user's config if passed in, 
+      // but for the service layer mock, a standard test email is used.
+      return 'test@example.com'; 
     }
 
     try {

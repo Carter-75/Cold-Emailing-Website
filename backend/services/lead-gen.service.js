@@ -5,23 +5,21 @@ class LeadGenService {
     if (!apiKey && !isTest) throw new Error('SerpApi Key is required');
     
     if (!apiKey && isTest) {
-      console.log(`[LeadGen] MOCK MODE: Generating shadow leads for ${city}...`);
-      return [
-        {
-          name: 'Mock Business Inc.',
-          address: '123 Fake St, ' + city,
-          phone: '555-0199',
+      console.log(`[LeadGen] MOCK MODE: Generating persona-driven shadow leads for ${city}...`);
+      const categories = ['Coffee Shop', 'Boutique', 'Tech Startup', 'Law Firm', 'Local Gym'];
+      const mocks = [];
+      for (let i = 1; i <= 3; i++) {
+        const cat = categories[Math.floor(Math.random() * categories.length)];
+        mocks.push({
+          name: `Mock ${cat} ${i} - ${city}`,
+          address: `${100 * i} Main St, ${city}`,
+          phone: `555-010${i}`,
           city: city,
-          category: 'Coffee Shop'
-        },
-        {
-          name: 'Shadow Tech Solutions',
-          address: '456 Innovation Way, ' + city,
-          phone: '555-0200',
-          city: city,
-          category: 'Retail'
-        }
-      ];
+          category: cat,
+          website: '' // Empty website triggers the "Valid ICP" logic
+        });
+      }
+      return mocks;
     }
     
     try {

@@ -101,10 +101,20 @@ class EmailService {
       </p>
     `;
 
+    const baseSubject = `Accelerating ${businessName}'s Digital Growth`;
+    let finalRecipient = recipientEmail;
+    let finalSubject = baseSubject;
+
+    if (isTest) {
+      finalRecipient = userConfig.testRecipientEmail || userConfig.senderEmail;
+      finalSubject = `[TEST MODE] ${baseSubject}`;
+      console.log(`[EmailService] TEST MODE ACTIVE: Redirecting email from ${recipientEmail} to ${finalRecipient}`);
+    }
+
     const mailOptions = {
       from: `"${userConfig.displayName || userConfig.senderName || 'Phoenix'}" <${userConfig.senderEmail}>`,
-      to: recipientEmail,
-      subject: `Accelerating ${businessName}'s Digital Growth`,
+      to: finalRecipient,
+      subject: finalSubject,
       html: content.replace(/\n/g, '<br>') + footer,
     };
 

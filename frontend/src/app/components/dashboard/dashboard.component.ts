@@ -19,6 +19,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   outreach = inject(OutreachService);
   
   activeTab = signal<'overview' | 'infra' | 'identity'>('overview');
+  authMode = signal<'login' | 'signup'>('login');
+  credentials = { email: '', password: '', displayName: '' };
+  authError = signal<string | null>(null);
 
   // Advanced Config state
   config = {
@@ -87,6 +90,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (user && user.config) {
       this.config = { ...this.config, ...user.config };
     }
+  }
+
+  onAuthSubmit() {
+    this.authError.set(null);
+    const obs = this.authMode() === 'login' 
+      ? this.auth.login(this.credentials) 
+      : this.auth.signup(this.credentials);
+
+    obs.subscribe({
+      next: () => {
+        this.credentials = { email: '', password: '', displayName: '' };
+      },
+      error: (err) => {
+        this.authError.set(err.error?.message || 'Authentication failed');
+      }
+    });
+  }
+
+  loginWithGoogle() {
+    this.auth.loginWithGoogle();
   }
 
   ngOnDestroy() {
