@@ -13,17 +13,22 @@ router.get('/', function(req, res, next) {
 // Outreach Controls
 router.post('/outreach/start', verifyToken, async (req, res) => {
   try {
-    if (req.user.isShadow) {
-      const config = { ...(req.user.config || {}), outreachEnabled: true };
-      const newToken = jwt.sign({ ...req.user, config }, process.env.JWT_SECRET, { expiresIn: '7d' });
-      return res.json({ message: 'Automation enabled (Shadow Mode)', token: newToken });
-    }
-
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Subscription check
+    const status = user.subscription?.status;
+    const isSubscribed = status === 'active' || status === 'trialing';
+
+    if (!isSubscribed) {
+      return res.status(403).json({ 
+        message: 'Subscription Required: Please upgrade your account to initiate the engine.',
+        needsUpgrade: true
+      });
+    }
+
     user.config.outreachEnabled = true;
     await user.save();
-
     res.json({ message: 'Automation enabled' });
   } catch (err) {
     res.status(500).json({ message: err.message });

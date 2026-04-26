@@ -1,4 +1,57 @@
 <div class="min-h-screen bg-[#050505] text-white font-sans selection:bg-indigo-500/30 overflow-x-hidden">
+
+  <!-- Interactive Tour Overlay -->
+  <div *ngIf="tourStep() !== null" class="tour-overlay"></div>
+  
+  <div *ngIf="tourStep() === 1" class="tour-card top-[30%] left-[10%] animate-in fade-in zoom-in-95">
+    <div class="tour-pulse"></div>
+    <h3 class="text-xl font-black uppercase italic mb-3">01. Mission Control</h3>
+    <p class="text-sm text-white/60 leading-relaxed mb-6">This is your main dashboard. Monitor your outreach volume, replies, and real-time engine logs right here.</p>
+    <div class="flex items-center gap-3">
+      <button (click)="skipTour()" class="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Skip</button>
+      <button (click)="nextTourStep()" class="flex-1 btn-primary !py-3 text-[10px]">Continue</button>
+    </div>
+  </div>
+
+  <div *ngIf="tourStep() === 2" class="tour-card top-[30%] right-[10%] animate-in fade-in zoom-in-95">
+    <div class="tour-pulse"></div>
+    <h3 class="text-xl font-black uppercase italic mb-3">02. Sequence Toggle</h3>
+    <p class="text-sm text-white/60 leading-relaxed mb-6">Use this master switch to start or stop your autonomous outreach. The scan-line indicator shows when the engine is actively processing.</p>
+    <div class="flex items-center gap-3">
+      <button (click)="skipTour()" class="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Skip</button>
+      <button (click)="nextTourStep()" class="flex-1 btn-primary !py-3 text-[10px]">Continue</button>
+    </div>
+  </div>
+
+  <div *ngIf="tourStep() === 3" class="tour-card top-[40%] left-[20%] animate-in fade-in zoom-in-95">
+    <div class="tour-pulse"></div>
+    <h3 class="text-xl font-black uppercase italic mb-3">03. API Infrastructure</h3>
+    <p class="text-sm text-white/60 leading-relaxed mb-6">Configure your OpenAI, SerpApi, and Apollo keys here. These power the discovery and personalization engines.</p>
+    <div class="flex items-center gap-3">
+      <button (click)="skipTour()" class="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Skip</button>
+      <button (click)="nextTourStep()" class="flex-1 btn-primary !py-3 text-[10px]">Continue</button>
+    </div>
+  </div>
+
+  <div *ngIf="tourStep() === 4" class="tour-card top-[40%] right-[20%] animate-in fade-in zoom-in-95">
+    <div class="tour-pulse"></div>
+    <h3 class="text-xl font-black uppercase italic mb-3">04. AI Persona</h3>
+    <p class="text-sm text-white/60 leading-relaxed mb-6">Teach the AI who you are. Define your core value prop and pricing tiers to ensure every email feels authentically you.</p>
+    <div class="flex items-center gap-3">
+      <button (click)="skipTour()" class="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Skip</button>
+      <button (click)="nextTourStep()" class="flex-1 btn-primary !py-3 text-[10px]">Continue</button>
+    </div>
+  </div>
+
+  <div *ngIf="tourStep() === 5" class="tour-card top-[40%] left-[50%] -translate-x-1/2 animate-in fade-in zoom-in-95">
+    <div class="tour-pulse"></div>
+    <h3 class="text-xl font-black uppercase italic mb-3">05. Ready for Launch</h3>
+    <p class="text-sm text-white/60 leading-relaxed mb-6">You're all set. Save your settings, initiate the sequence, and watch the leads roll in. Welcome to the future of outreach.</p>
+    <div class="flex items-center gap-3">
+      <button (click)="tourStep.set(null); skipTour()" class="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Dismiss</button>
+      <button (click)="skipTour()" class="flex-1 btn-primary !py-3 text-[10px]">Finish Guide</button>
+    </div>
+  </div>
   
   <!-- Background Glows -->
   <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
@@ -31,7 +84,13 @@
           </button>
         </div>
 
-        <button *ngIf="auth.isAuthenticated()" (click)="auth.logout()" class="text-xs font-bold text-white/40 hover:text-white transition-colors">Logout</button>
+        <div *ngIf="auth.isAuthenticated()" class="flex items-center gap-4">
+          <button (click)="startTour()" class="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors flex items-center gap-2 bg-indigo-600/10 px-4 py-2 rounded-full border border-indigo-500/20">
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            System Guide
+          </button>
+          <button (click)="auth.logout()" class="text-xs font-bold text-white/40 hover:text-white transition-colors">Logout</button>
+        </div>
       </div>
     </div>
   </nav>
@@ -55,7 +114,7 @@
           
           <div class="lg:col-span-8 space-y-8">
             <!-- Command Center Hero -->
-            <div class="glass-card p-1 relative overflow-hidden group">
+            <div class="glass-card p-1 relative overflow-hidden group" [ngClass]="{'highlight-element': tourStep() === 1}">
               <div #scene class="absolute inset-0 z-0 opacity-40 pointer-events-none transition-opacity group-hover:opacity-60"></div>
               
               <div class="relative z-10 p-10 bg-gradient-to-br from-transparent to-black/40">
@@ -71,7 +130,7 @@
                   <div class="flex items-center gap-4">
                     <button (click)="sendTestEmail()" class="btn-secondary !py-5 !px-8 text-xs uppercase tracking-widest h-full">Send Test</button>
                     
-                    <div class="flex p-1 bg-black/40 rounded-2xl border border-white/5 backdrop-blur-md">
+                    <div class="flex p-1 bg-black/40 rounded-2xl border border-white/5 backdrop-blur-md" [ngClass]="{'highlight-element': tourStep() === 2}">
                       <button (click)="toggleOutreach()" 
                               [ngClass]="outreach.status() === 'running' ? 'btn-abort' : 'btn-initiate'"
                               class="min-w-[220px] relative group">
@@ -182,24 +241,38 @@
             </div>
 
             <div class="glass-card p-8 bg-gradient-to-br from-white/[0.02] to-indigo-600/5">
-              <h3 class="text-xs font-black uppercase tracking-widest text-white/40 mb-4">Pro Status</h3>
-              <div class="flex items-center gap-4 mb-4">
-                <div class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl">🚀</div>
+              <h3 class="text-xs font-black uppercase tracking-widest text-white/40 mb-4">Subscription</h3>
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl">
+                  {{ auth.user()?.subscription?.status === 'active' || auth.user()?.subscription?.status === 'trialing' ? '💎' : '⚡' }}
+                </div>
                 <div>
-                  <p class="text-sm font-black italic">PHOENIX_LEVEL_9</p>
-                  <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Enterprise Access</p>
+                  <p class="text-sm font-black italic uppercase">{{ auth.user()?.subscription?.status || 'NOT ACTIVE' }}</p>
+                  <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">
+                    {{ auth.user()?.subscription?.status === 'active' || auth.user()?.subscription?.status === 'trialing' ? 'Premium Access' : 'Limited Access' }}
+                  </p>
                 </div>
               </div>
-              <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5">
-                <div class="w-[85%] h-full bg-indigo-600 rounded-full shadow-[0_0_8px_rgba(79,70,229,0.5)]"></div>
+              
+              <div *ngIf="auth.user()?.subscription?.status !== 'active' && auth.user()?.subscription?.status !== 'trialing'" class="space-y-4">
+                <p class="text-[10px] text-white/40 italic leading-relaxed">Upgrade to unlock autonomous discovery and 24/7 background sequences.</p>
+                <button (click)="upgradeAccount()" class="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] transition-all shadow-lg shadow-indigo-600/30">
+                  Upgrade to Pro ($25/mo)
+                </button>
               </div>
-              <p class="text-[9px] text-white/20 mt-3 text-center uppercase tracking-widest">85% Optimization Efficiency</p>
+
+              <div *ngIf="auth.user()?.subscription?.status === 'active' || auth.user()?.subscription?.status === 'trialing'" class="space-y-3">
+                <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5">
+                  <div class="w-[100%] h-full bg-indigo-600 rounded-full shadow-[0_0_8px_rgba(79,70,229,0.5)]"></div>
+                </div>
+                <p class="text-[9px] text-white/20 text-center uppercase tracking-widest italic">Renewal: {{ auth.user()?.subscription?.currentPeriodEnd | date:'MMM d, y' }}</p>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Infrastructure Section -->
-        <div *ngSwitchCase="'infra'" class="max-w-5xl mx-auto">
+        <div *ngSwitchCase="'infra'" class="max-w-5xl mx-auto" [ngClass]="{'highlight-element': tourStep() === 3}">
           <div class="glass-card p-12 relative overflow-hidden">
              <div class="absolute top-0 right-0 p-8 opacity-5">
                <svg class="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
@@ -296,7 +369,7 @@
         </div>
 
         <!-- AI Identity Section -->
-        <div *ngSwitchCase="'identity'" class="max-w-5xl mx-auto">
+        <div *ngSwitchCase="'identity'" class="max-w-5xl mx-auto" [ngClass]="{'highlight-element': tourStep() === 4}">
           <div class="glass-card p-12">
             <h2 class="text-4xl font-black uppercase tracking-tighter mb-4 italic">AI Identity</h2>
             <p class="text-white/40 mb-12">Fine-tune the persona and messaging logic the engine uses for outreach.</p>

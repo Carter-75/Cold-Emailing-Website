@@ -46,6 +46,12 @@ const envSchema = z.object({
     FRONTEND_URL: z.string().url().optional(),
     PROD_FRONTEND_URL: z.string().url().optional(),
     PROD_BACKEND_URL: z.string().url().optional(),
+    
+    // Stripe
+    STRIPE_SECRET_KEY: z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    STRIPE_PRICE_ID: z.string().optional(),
+    STRIPE_TRIAL_DAYS: z.string().optional().default('3'),
 });
 
 const validateEnv = () => {

@@ -46,6 +46,12 @@ app.use(cors({
   credentials: true
 }));
 app.use(logger('dev'));
+
+// Stripe Webhook needs raw body - must be BEFORE express.json()
+const billingRouter = require('./routes/billing');
+app.use('/api/billing/webhook', billingRouter);
+app.use('/billing/webhook', billingRouter);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -188,6 +194,9 @@ if (aiRouter) {
   app.use('/api/ai', aiRouter);
   app.use('/ai', aiRouter);
 }
+
+app.use('/api/billing', billingRouter);
+app.use('/billing', billingRouter);
 
 // Error handler
 app.use((err, req, res, next) => {

@@ -77,3 +77,20 @@
 .btn-abort {
   @apply relative overflow-hidden bg-white text-black font-black uppercase tracking-[0.2em] py-5 px-12 rounded-2xl transition-all hover:bg-neutral-100 active:scale-95 shadow-xl shadow-white/10;
 }
+
+/* Tour Styles */
+.tour-overlay {
+  @apply fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm transition-all duration-500;
+}
+
+.tour-card {
+  @apply fixed z-[110] bg-neutral-900 border border-indigo-500/30 p-8 rounded-[2rem] shadow-2xl shadow-indigo-600/20 max-w-sm;
+}
+
+.tour-pulse {
+  @apply absolute -inset-2 rounded-[2rem] border-2 border-indigo-500 animate-ping opacity-20 pointer-events-none;
+}
+
+.highlight-element {
+  @apply relative z-[105] !ring-4 !ring-indigo-500 !ring-offset-8 !ring-offset-black !transition-all !duration-500;
+}

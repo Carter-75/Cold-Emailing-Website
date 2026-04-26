@@ -48,6 +48,13 @@ const UserSchema = new mongoose.Schema({
     emailsSent: { type: Number, default: 0 },
     unsubscribes: { type: Number, default: 0 },
     replies: { type: Number, default: 0 }
+  },
+  subscription: {
+    customerId: String,
+    status: { type: String, default: 'none' }, // 'none', 'trialing', 'active', 'past_due', 'canceled'
+    priceId: String,
+    subscriptionId: String,
+    currentPeriodEnd: Date
   }
 }, { timestamps: true });
 

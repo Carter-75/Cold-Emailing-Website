@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { OutreachService } from '../../services/outreach.service';
+import { BillingService } from '../../services/billing.service';
 import * as Matter from 'matter-js';
 import anime from 'animejs';
 
@@ -16,8 +17,46 @@ import anime from 'animejs';
 export class DashboardComponent implements OnInit, OnDestroy {
   auth = inject(AuthService);
   outreach = inject(OutreachService);
+  billing = inject(BillingService);
   
-  activeTab = signal<'overview' | 'infra' | 'identity'>('overview');
+  activeTab = signal<'overview' | 'infra' | 'identity' | 'billing'>('overview');
+  tourStep = signal<number | null>(null); // null means no tour active
+  
+  startTour() {
+    this.activeTab.set('overview');
+    this.tourStep.set(1);
+    this.animateTourStep();
+  }
+
+  nextTourStep() {
+    const next = (this.tourStep() || 0) + 1;
+    if (next > 5) {
+      this.tourStep.set(null);
+      localStorage.setItem('tour_seen', 'true');
+    } else {
+      if (next === 3) this.activeTab.set('infra');
+      if (next === 4) this.activeTab.set('identity');
+      this.tourStep.set(next);
+      this.animateTourStep();
+    }
+  }
+
+  skipTour() {
+    this.tourStep.set(null);
+    localStorage.setItem('tour_seen', 'true');
+  }
+
+  private animateTourStep() {
+    setTimeout(() => {
+      anime({
+        targets: '.tour-highlight',
+        scale: [0.9, 1.05, 1],
+        opacity: [0, 1],
+        duration: 800,
+        easing: 'easeOutElastic(1, .8)'
+      });
+    }, 100);
+  }
   authMode = signal<'login' | 'signup'>('login');
   credentials = { email: '', password: '', displayName: '' };
   authError = signal<string | null>(null);
@@ -97,6 +136,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.config = { ...this.config, ...user.config };
     }
     this.checkUnsubStatus();
+
+    // Auto-start tour if not seen
+    const tourSeen = localStorage.getItem('tour_seen');
+    if (!tourSeen) {
+      setTimeout(() => this.startTour(), 1500); // Wait for animations to settle
+    }
   }
 
   onAuthSubmit() {
@@ -175,6 +220,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.outreach.clearUnsub().subscribe(res => {
       alert(res.message);
       this.checkUnsubStatus();
+    });
+  }
+
+  upgradeAccount() {
+    this.billing.createCheckoutSession().subscribe({
+      next: (res) => {
+        if (res.url) window.location.href = res.url;
+      },
+      error: (err) => alert('Billing error: ' + (err.error?.message || err.message))
     });
   }
 
