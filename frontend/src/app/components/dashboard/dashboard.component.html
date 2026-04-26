@@ -280,18 +280,22 @@
                   <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">OpenAI Secret</label>
                   <input type="password" [(ngModel)]="config.openaiKey" name="openaiKey" class="input-pro"
                     placeholder="sk-...">
+                  <p class="text-[9px] text-neutral-600 italic">Powering AI personalization and lead scoring logic.</p>
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">SerpApi Key</label>
                   <input type="password" [(ngModel)]="config.serpapiKey" name="serpapiKey" class="input-pro">
+                  <p class="text-[9px] text-neutral-600 italic">Real-time business search and contact finding via Google Maps.</p>
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Apollo API Key</label>
                   <input type="password" [(ngModel)]="config.apolloKey" name="apolloKey" class="input-pro">
+                  <p class="text-[9px] text-neutral-600 italic">High-quality lead enrichment and direct email discovery.</p>
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Verifalia Key</label>
                   <input type="password" [(ngModel)]="config.verifaliaKey" name="verifaliaKey" class="input-pro">
+                  <p class="text-[9px] text-neutral-600 italic">Real-time email validation to keep your sender score healthy.</p>
                 </div>
               </div>
 
@@ -331,6 +335,15 @@
                       <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Port</label>
                       <input type="number" [(ngModel)]="config.imapPort" name="imapPort" class="input-pro text-xs">
                     </div>
+                  </div>
+                </div>
+
+                <div class="bg-white/5 p-6 rounded-3xl space-y-4 border border-white/5">
+                  <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-400">Testing & Validation</h3>
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Test Recipient Email</label>
+                    <input type="email" [(ngModel)]="config.testRecipientEmail" name="testRecipientEmail" class="input-pro text-xs" placeholder="your-email@example.com">
+                    <p class="text-[9px] text-neutral-600 italic">This is where 'Send Test' and 'Test Mode' emails will be sent.</p>
                   </div>
                 </div>
               </div>
