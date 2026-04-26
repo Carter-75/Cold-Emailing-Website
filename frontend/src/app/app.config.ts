@@ -5,7 +5,8 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
 import { authInterceptor } from './services/auth.interceptor';
 import { 
-  provideLucideIcons, 
+  LUCIDE_ICONS, 
+  LucideIconProvider,
   LayoutDashboard, 
   Users, 
   Shield, 
@@ -31,25 +32,29 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
-    provideLucideIcons({
-      LayoutDashboard, 
-      Users, 
-      Shield, 
-      User, 
-      CreditCard, 
-      RefreshCw, 
-      LogOut, 
-      HelpCircle, 
-      Save, 
-      Zap, 
-      Play, 
-      Square, 
-      ExternalLink, 
-      ChevronDown, 
-      ChevronUp,
-      Mail,
-      CheckCircle2,
-      AlertCircle
-    })
+    {
+      provide: LUCIDE_ICONS,
+      multi: true,
+      useValue: new LucideIconProvider({
+        LayoutDashboard, 
+        Users, 
+        Shield, 
+        User, 
+        CreditCard, 
+        RefreshCw, 
+        LogOut, 
+        HelpCircle, 
+        Save, 
+        Zap, 
+        Play, 
+        Square, 
+        ExternalLink, 
+        ChevronDown, 
+        ChevronUp,
+        Mail,
+        CheckCircle2,
+        AlertCircle
+      })
+    }
   ]
 };
