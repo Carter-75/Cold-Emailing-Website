@@ -39,6 +39,13 @@ const envSchema = z.object({
     // but having defaults or checking existence is good practice.
     OPENAI_API_KEY: z.string().optional(),
     SERPAPI_KEY: z.string().optional(),
+
+    // Auth & Integration
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+    FRONTEND_URL: z.string().url().optional(),
+    PROD_FRONTEND_URL: z.string().url().optional(),
+    PROD_BACKEND_URL: z.string().url().optional(),
 });
 
 const validateEnv = () => {
