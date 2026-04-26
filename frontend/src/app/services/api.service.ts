@@ -9,7 +9,7 @@ export class ApiService {
   private http = inject(HttpClient);
 
   get apiUrl(): string {
-    return '/_/backend';
+    return '/api';
   }
 
   /**
