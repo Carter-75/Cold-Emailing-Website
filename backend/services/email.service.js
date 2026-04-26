@@ -56,7 +56,7 @@ class EmailService {
   }
 
   async sendEmail(userConfig, recipientEmail, content, businessName, testMode = false) {
-    const isTest = testMode;
+    const isTest = testMode || userConfig.testMode;
     
     // Check if we have enough SMTP config to actually send
     const canSend = userConfig.senderEmail && userConfig.appPassword && userConfig.smtpHost;
