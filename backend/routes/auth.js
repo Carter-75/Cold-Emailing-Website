@@ -23,11 +23,19 @@ const generateToken = (user, isShadow = false) => {
 // --- Google Auth Routes ---
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login?error=google' }), (req, res) => {
-  const token = generateToken(req.user);
-  // Redirect to frontend with token in URL (frontend will save it and redirect)
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
-  res.redirect(`${frontendUrl}/dashboard?token=${token}`);
+router.get('/google/callback', (req, res, next) => {
+  passport.authenticate('google', (err, user, info) => {
+    if (err || !user) {
+      console.error('❌ Google Auth Error:', err || info);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+      return res.redirect(`${frontendUrl}/dashboard?error=google`);
+    }
+    
+    const token = generateToken(user);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+    console.log(`✅ Google Login Successful: ${user.email}`);
+    res.redirect(`${frontendUrl}/dashboard?token=${token}`);
+  })(req, res, next);
 });
 
 // --- Local Auth Routes ---

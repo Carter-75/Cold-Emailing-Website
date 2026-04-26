@@ -3,14 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { OutreachService } from '../../services/outreach.service';
-import { GoogleSigninButtonModule } from '@abacritt/angularx-social-login';
 import * as Matter from 'matter-js';
 import anime from 'animejs';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, GoogleSigninButtonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -22,6 +21,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   authMode = signal<'login' | 'signup'>('login');
   credentials = { email: '', password: '', displayName: '' };
   authError = signal<string | null>(null);
+
+  scrollToLogin() {
+    const el = document.getElementById('login-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
 
   // Advanced Config state
   config = {

@@ -13,6 +13,7 @@ passport.use(new GoogleStrategy({
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
+      console.log(`🔍 Google Auth Attempt for: ${profile.emails?.[0]?.value || 'No Email'}`);
       let user = await User.findOne({ googleId: profile.id });
       if (!user) {
         // Try to match by email if Google ID not found
