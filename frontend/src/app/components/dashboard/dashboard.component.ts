@@ -96,6 +96,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (user && user.config) {
       this.config = { ...this.config, ...user.config };
     }
+    this.checkUnsubStatus();
   }
 
   onAuthSubmit() {
@@ -149,10 +150,31 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  isUnsubscribed = signal<boolean>(false);
+
   sendTestEmail() {
     this.outreach.sendTestEmail().subscribe({
-      next: () => alert('Test email sent! Check your inbox.'),
-      error: (err) => alert('Test failed: ' + err.message)
+      next: (res: any) => {
+        alert(res.message);
+        this.checkUnsubStatus();
+      },
+      error: (err) => {
+        alert('Test failed: ' + (err.error?.message || err.message));
+        this.checkUnsubStatus();
+      }
+    });
+  }
+
+  checkUnsubStatus() {
+    this.outreach.getUnsubStatus().subscribe(res => {
+      this.isUnsubscribed.set(res.isUnsubscribed);
+    });
+  }
+
+  clearUnsub() {
+    this.outreach.clearUnsub().subscribe(res => {
+      alert(res.message);
+      this.checkUnsubStatus();
     });
   }
 

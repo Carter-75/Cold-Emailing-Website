@@ -53,6 +53,22 @@ router.post('/outreach/test-send', verifyToken, async (req, res) => {
   try {
     const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    const recipient = user.config?.testRecipientEmail || user.config?.senderEmail;
+    
+    // Safety check: Don't send if unsubscribed
+    const isUnsubbed = await Unsubscribe.findOne({ 
+      userId: user._id, 
+      recipientEmail: recipient 
+    });
+    
+    if (isUnsubbed) {
+      console.error(`[Manual Test] Blocked: ${recipient} is in the unsubscribe list.`);
+      return res.status(403).json({ 
+        message: 'Manual test blocked: This email is currently in your unsubscribe list. Clear it in the Infrastructure tab to test again.' 
+      });
+    }
+
     const EmailService = require('../services/email.service');
     
     const companyName = user.config?.companyName || user.companyName || 'Your Company';
@@ -65,9 +81,32 @@ router.post('/outreach/test-send', verifyToken, async (req, res) => {
       userId: user._id,
       displayName: user.displayName,
       testMode: true
-    }, user.config.testRecipientEmail || user.config.senderEmail, `[MANUAL TEST]\n\n` + content, testLead.businessName);
+    }, recipient, `[MANUAL TEST]\n\n` + content, testLead.businessName);
     
-    res.json({ message: 'Test email sent successfully to ' + (user.config.testRecipientEmail || user.config.senderEmail) });
+    res.json({ message: 'Test email sent successfully to ' + recipient });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Unsubscribe Management (Testing)
+router.get('/outreach/unsub-status', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const recipient = user.config?.testRecipientEmail || user.config?.senderEmail;
+    const unsub = await Unsubscribe.findOne({ userId: user._id, recipientEmail: recipient });
+    res.json({ isUnsubscribed: !!unsub, email: recipient });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/outreach/unsub-clear', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const recipient = user.config?.testRecipientEmail || user.config?.senderEmail;
+    await Unsubscribe.deleteOne({ userId: user._id, recipientEmail: recipient });
+    res.json({ message: 'Unsubscribe status cleared for ' + recipient });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

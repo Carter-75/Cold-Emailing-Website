@@ -69,6 +69,14 @@ export class OutreachService {
     return this.api.postData('outreach/test-send', {});
   }
 
+  getUnsubStatus() {
+    return this.api.getData<{ isUnsubscribed: boolean; email: string }>('outreach/unsub-status');
+  }
+
+  clearUnsub() {
+    return this.api.postData<{ message: string }>('outreach/unsub-clear', {});
+  }
+
   saveConfig(config: any) {
     return this.api.postData('config', config);
   }
