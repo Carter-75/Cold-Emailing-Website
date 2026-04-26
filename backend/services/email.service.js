@@ -55,16 +55,15 @@ class EmailService {
     return completion.choices[0].message.content;
   }
 
-  async sendEmail(userConfig, recipientEmail, content, businessName) {
-    const isTest = userConfig.testMode || userConfig.testModeActive || false;
+  async sendEmail(userConfig, recipientEmail, content, businessName, testMode = false) {
+    const isTest = testMode;
     
     // Check if we have enough SMTP config to actually send
     const canSend = userConfig.senderEmail && userConfig.appPassword && userConfig.smtpHost;
 
     if (!canSend && isTest) {
       console.log(`[EmailService] MOCK MODE: Skipping real SMTP send to ${recipientEmail} (Missing credentials).`);
-      console.log(`[EmailService] Content Preview: ${content.substring(0, 100)}...`);
-      return; // Success, but no real email sent
+      return { messageId: 'mock-id-' + Date.now(), html: content };
     }
 
     const transporter = nodemailer.createTransport({
@@ -111,15 +110,22 @@ class EmailService {
       console.log(`[EmailService] TEST MODE ACTIVE: Redirecting email from ${recipientEmail} to ${finalRecipient}`);
     }
 
+    const htmlContent = content.replace(/\n/g, '<br>') + footer;
+
     const mailOptions = {
       from: `"${userConfig.displayName || userConfig.senderName || 'Phoenix'}" <${userConfig.senderEmail}>`,
       to: finalRecipient,
       subject: finalSubject,
-      html: content.replace(/\n/g, '<br>') + footer,
+      html: htmlContent,
     };
 
     try {
-      await transporter.sendMail(mailOptions);
+      const info = await transporter.sendMail(mailOptions);
+      return {
+        messageId: info.messageId,
+        html: htmlContent,
+        subject: finalSubject
+      };
     } catch (err) {
       console.error('Nodemailer Error:', err.message);
       throw err; // Trigger "Kill Switch"

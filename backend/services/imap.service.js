@@ -1,4 +1,5 @@
 const { ImapFlow } = require('imapflow');
+const { simpleParser } = require('mailparser');
 const User = require('../models/User');
 const Lead = require('../models/Lead');
 
@@ -45,8 +46,7 @@ class IMAPService {
       
       try {
         // Fetch last 50 emails to check for replies
-        // In a real SaaS, we would track the last UID checked
-        for await (let message of client.fetch('1:*', { envelope: true })) {
+        for await (let message of client.fetch('1:*', { envelope: true, source: true })) {
           const inReplyTo = message.envelope.inReplyTo;
           if (inReplyTo) {
             // Check if this 'inReplyTo' matches any of our sent Message-IDs
@@ -58,7 +58,20 @@ class IMAPService {
 
             if (lead) {
               console.log(`[IMAP] Reply detected from ${lead.recipientEmail}! Aborting sequence.`);
+              
+              // Parse message source for body
+              const parsed = await simpleParser(message.source);
+              const replyBody = parsed.text || parsed.html || '[No content]';
+              
               lead.status = 'replied';
+              lead.thread.push({
+                from: message.envelope.from[0]?.address || 'Unknown',
+                to: user.config.senderEmail,
+                subject: message.envelope.subject,
+                body: replyBody,
+                timestamp: message.envelope.date || new Date()
+              });
+              
               await lead.save();
               repliesDetected += 1;
               

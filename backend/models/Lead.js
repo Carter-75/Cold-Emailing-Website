@@ -24,7 +24,16 @@ const LeadSchema = new mongoose.Schema({
     opened: { type: Number, default: 0 },
     clicked: { type: Number, default: 0 }
   },
-  isTestData: { type: Boolean, default: false }
+  isTestData: { type: Boolean, default: false },
+  
+  // Message Thread
+  thread: [{
+    from: String,
+    to: String,
+    subject: String,
+    body: String,
+    timestamp: { type: Date, default: Date.now }
+  }]
 }, { timestamps: true });
 
 // Ensure unique outreach per user per email

@@ -117,6 +117,28 @@ router.post('/outreach/unsub-clear', verifyToken, async (req, res) => {
   }
 });
 
+// Lead Management
+router.get('/leads', verifyToken, async (req, res) => {
+  try {
+    const Lead = require('../models/Lead');
+    const leads = await Lead.find({ userId: req.user._id })
+      .sort({ status: 1, updatedAt: -1 }); // 'replied' is alphabetically after 'emailed', wait.
+      // enum: ['discovery', 'emailed', 'replied', 'finished']
+      // Actually, user wants replied at the top.
+    
+    // Sort logic: replied first, then others by date
+    const sortedLeads = leads.sort((a, b) => {
+      if (a.status === 'replied' && b.status !== 'replied') return -1;
+      if (a.status !== 'replied' && b.status === 'replied') return 1;
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+
+    res.json(sortedLeads);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Update Config
 router.post('/config', verifyToken, async (req, res) => {
   try {
@@ -124,7 +146,7 @@ router.post('/config', verifyToken, async (req, res) => {
       'openaiKey', 'serpapiKey', 'apolloKey', 'verifaliaKey', 'senderEmail', 'appPassword', 
       'senderName', 'senderTitle', 'companyName', 'websiteUrl', 'physicalAddress', 'priceTier1', 
       'priceTier2', 'priceTier3', 'valueProp', 'targetOutcome', 'personaContext', 'dailyLeadLimit', 
-      'smtpHost', 'smtpPort', 'smtpSecure', 'testModeActive', 'testRecipientEmail', 'signature'
+      'smtpHost', 'smtpPort', 'smtpSecure', 'testRecipientEmail', 'signature'
     ];
 
     let safeBody = {};

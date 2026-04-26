@@ -32,14 +32,13 @@ class OutreachEngine {
     if (!user) throw new Error('User not found');
     
     const config = user.config;
-    const isTest = !!config.testModeActive;
 
-    // Relaxed check: Only OpenAI is strictly required for generation in Test Mode
+    // OpenAI is strictly required for generation
     if (!config.openaiKey) {
        throw new Error('OpenAI Key is required for core generation.');
     }
 
-    if (!isTest && (!config.serpapiKey || !config.apolloKey || !config.verifaliaKey || !config.senderEmail || !config.appPassword)) {
+    if (!config.serpapiKey || !config.apolloKey || !config.verifaliaKey || !config.senderEmail || !config.appPassword) {
       throw new Error('Incomplete configuration for production outreach.');
     }
 
@@ -57,22 +56,6 @@ class OutreachEngine {
       status: 'emailed',
       nextEmailAt: { $lte: new Date() }
     }).limit(3);
-
-    // [TEST MODE] Simulation: If no follow-ups exist, seed one to test the logic
-    if (isTest && dueFollowUps.length === 0) {
-      console.log('[Engine] TEST MODE: Seeding mock follow-up lead to test sequence logic...');
-      const mockFollowUp = await Lead.create({
-        userId: user._id,
-        businessName: 'Mock Follow-up Business',
-        recipientEmail: config.testRecipientEmail || 'test-followup@example.com',
-        city: 'Mock City',
-        status: 'emailed',
-        sequenceStep: 1,
-        nextEmailAt: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
-        isTestData: true
-      });
-      dueFollowUps = [mockFollowUp];
-    }
 
     if (dueFollowUps.length > 0) {
       for (const followUp of dueFollowUps) {
@@ -125,30 +108,46 @@ class OutreachEngine {
 
       const content = await EmailService.generateContent(lead, config);
 
-      let recipient = email;
-      let emailContent = content;
-      if (config.testModeActive) {
-        recipient = config.testRecipientEmail || email;
-        emailContent = `[TEST MODE] Redirected from ${email}\n\n` + content;
-      }
-
-      await EmailService.sendEmail({
+      const emailResult = await EmailService.sendEmail({
         ...config.toObject ? config.toObject() : config,
         userId: user._id,
-        displayName: user.displayName,
-        testMode: config.testModeActive
-      }, recipient, emailContent, lead.name);
+        displayName: user.displayName
+      }, email, content, lead.name);
 
       await SentEmail.create({
         userId: user._id,
         recipientEmail: email,
         businessName: lead.name,
-        city: currentCity,
-        testMode: !!config.testModeActive
+        city: currentCity
       });
+
+      // Create or update Lead record
+      await Lead.findOneAndUpdate(
+        { userId: user._id, recipientEmail: email },
+        {
+          userId: user._id,
+          businessName: lead.name,
+          recipientEmail: email,
+          city: currentCity,
+          status: 'emailed',
+          sequenceStep: 1,
+          lastEmailedAt: new Date(),
+          nextEmailAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days follow-up
+          $push: { 
+            messageIds: emailResult.messageId,
+            thread: {
+              from: config.senderEmail,
+              to: email,
+              subject: emailResult.subject,
+              body: emailResult.html,
+              timestamp: new Date()
+            }
+          }
+        },
+        { upsert: true }
+      );
       
       discoveryProcessed++;
-      // One discovery lead sent per chunk to keep lambda execution time < 10s
       break; 
     }
     

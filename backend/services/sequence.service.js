@@ -32,7 +32,7 @@ class SequenceService {
 
   async processLead(lead) {
     const user = lead.userId;
-    if (!user || (!user.config?.outreachEnabled && !user.config?.testModeActive) || (user.config.testModeActive === false && lead.status === 'finished')) {
+    if (!user || !user.config?.outreachEnabled || lead.status === 'finished') {
       return 'skipped';
     }
 
@@ -71,37 +71,19 @@ class SequenceService {
       console.log(`[Sequence] Generating AI Step ${currentStep} for ${lead.businessName}...`);
       const body = await EmailService.generateContent(lead, user.config, currentStep);
 
-      // Final Check: Test Mode
-      let recipient = lead.recipientEmail;
-      let finalBody = body;
-
-      if (user.config.testModeActive) {
-        recipient = user.config.testRecipientEmail || lead.recipientEmail;
-        finalBody = `--- DATABASE SNAPSHOT [TEST MODE] ---
-Business: ${lead.businessName}
-Found Email: ${lead.recipientEmail}
-City: ${lead.city}
-Category: ${lead.category || 'N/A'}
-Sequence Step: ${currentStep}
-Variant: ${lead.variant}
-Status: ${lead.status}
---------------------------------------
-\n\n` + body;
-      }
-
       // Send Email
-      console.log(`[Sequence] Sending Step ${currentStep} to ${recipient}...`);
+      console.log(`[Sequence] Sending Step ${currentStep} to ${lead.recipientEmail}...`);
       const sendConfig = user.config?.toObject ? user.config.toObject() : user.config;
 
-      await EmailService.sendEmail({
+      const emailResult = await EmailService.sendEmail({
         ...sendConfig,
         userId: user._id,
         displayName: user.displayName
-      }, recipient, finalBody, lead.businessName);
+      }, lead.recipientEmail, body, lead.businessName);
       
       // Update Lead / Record Sent Email (Crucial for Unified daily limit)
       const SentEmail = require('../models/SentEmail');
-      const sentRecord = await SentEmail.findOneAndUpdate(
+      await SentEmail.findOneAndUpdate(
         {
           userId: user._id,
           recipientEmail: lead.recipientEmail
@@ -112,8 +94,7 @@ Status: ${lead.status}
           businessName: lead.businessName,
           city: lead.city,
           sentAt: new Date(),
-          status: 'follow-up-' + currentStep,
-          testMode: !!user.config.testModeActive
+          status: 'follow-up-' + currentStep
         },
         {
           upsert: true,
@@ -122,20 +103,21 @@ Status: ${lead.status}
         }
       );
 
-      // Cleanup logic for Stateless Testing
-      if (user.config.testModeActive) {
-        console.log(`[Test Mode] Cleaning up stateless data for ${lead.businessName}...`);
-        await Lead.deleteOne({ _id: lead._id });
-        await SentEmail.deleteOne({ _id: sentRecord._id });
-        return 'processed'; // Terminate early for this lead in test mode
-      }
-
       // Update Lead (Production logic)
       lead.sequenceStep += 1;
-      const nextDelay = currentStep === 1 ? 7 : 7; // Day 1 -> 7 -> 14
+      const nextDelay = 7; // Day 1 -> 7 -> 14
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + nextDelay);
       lead.nextEmailAt = nextDate;
+      
+      lead.messageIds.push(emailResult.messageId);
+      lead.thread.push({
+        from: user.config.senderEmail,
+        to: lead.recipientEmail,
+        subject: emailResult.subject,
+        body: emailResult.html,
+        timestamp: new Date()
+      });
 
       if (lead.sequenceStep > 3) {
         lead.status = 'finished';

@@ -1,68 +1,64 @@
+:host {
+  display: block;
+}
+
 .glass-card {
-  @apply bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-2xl;
+  @apply bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-2xl;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .glass-input {
-  @apply bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 outline-none transition-all focus:border-indigo-500/50 focus:bg-white/[0.08];
+  @apply bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all;
 }
 
 .btn-primary {
-  @apply bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-xl transition-all active:scale-95 shadow-lg shadow-indigo-600/20;
+  @apply bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black uppercase tracking-[0.15em] py-4 px-8 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-indigo-600/25;
 }
 
 .btn-secondary {
-  @apply bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-3 px-6 rounded-xl transition-all active:scale-95;
+  @apply bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black uppercase tracking-[0.15em] py-4 px-8 rounded-2xl transition-all;
 }
 
 .tab-btn {
-  @apply px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all;
+  @apply px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all;
 }
 
 .tab-btn-active {
-  @apply bg-white text-black shadow-xl;
+  @apply bg-indigo-600 text-white shadow-lg shadow-indigo-600/20;
 }
 
 .tab-btn-inactive {
   @apply text-white/40 hover:text-white hover:bg-white/5;
 }
 
-/* Custom Scrollbar */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+/* Tour Styles - Revamped for readability */
+.tour-overlay {
+  @apply fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-[2px] transition-all duration-500;
 }
 
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+.tour-card {
+  @apply fixed z-[101] w-[340px] bg-white text-slate-900 p-8 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.3)] border border-white/20;
 }
 
-.float-animation {
-  animation: float 6s ease-in-out infinite;
+.tour-card h3 {
+  @apply text-slate-900 font-black tracking-tight;
 }
 
-.status-glow-running {
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
-  border-color: rgba(16, 185, 129, 0.4) !important;
+.tour-card p {
+  @apply text-slate-600 font-medium;
 }
 
-.status-glow-stopped {
-  box-shadow: 0 0 20px rgba(244, 63, 94, 0.1);
-  border-color: rgba(244, 63, 94, 0.2) !important;
+.tour-pulse {
+  @apply absolute -top-2 -left-2 w-4 h-4 bg-indigo-600 rounded-full animate-ping;
 }
 
+.highlight-element {
+  @apply relative z-[101] shadow-[0_0_0_1000vw_rgba(15,23,42,0.8)] outline outline-4 outline-indigo-500 outline-offset-4 rounded-[2.5rem] transition-all duration-500;
+}
+
+/* Engine Styles */
 .scanline {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(to right, transparent, rgba(99, 102, 241, 0.5), transparent);
-  animation: scan 3s linear infinite;
+  @apply absolute inset-0 bg-gradient-to-b from-transparent via-indigo-500/10 to-transparent h-2 w-full animate-scan pointer-events-none;
 }
 
 @keyframes scan {
@@ -71,26 +67,34 @@
 }
 
 .btn-initiate {
-  @apply relative overflow-hidden bg-indigo-600 text-white font-black uppercase tracking-[0.2em] py-5 px-12 rounded-2xl transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-indigo-600/20;
+  @apply btn-primary w-full;
 }
 
 .btn-abort {
-  @apply relative overflow-hidden bg-white text-black font-black uppercase tracking-[0.2em] py-5 px-12 rounded-2xl transition-all hover:bg-neutral-100 active:scale-95 shadow-xl shadow-white/10;
+  @apply bg-rose-500/10 border border-rose-500/20 text-rose-500 font-black uppercase tracking-widest py-4 px-8 rounded-2xl hover:bg-rose-500 hover:text-white transition-all w-full;
 }
 
-/* Tour Styles */
-.tour-overlay {
-  @apply fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm transition-all duration-500;
+/* Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.tour-card {
-  @apply fixed z-[110] bg-neutral-900 border border-indigo-500/30 p-8 rounded-[2rem] shadow-2xl shadow-indigo-600/20 max-w-sm;
+.lead-row {
+  @apply border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer;
 }
 
-.tour-pulse {
-  @apply absolute -inset-2 rounded-[2rem] border-2 border-indigo-500 animate-ping opacity-20 pointer-events-none;
+.thread-bubble {
+  @apply p-4 rounded-2xl max-w-[80%] mb-4;
 }
 
-.highlight-element {
-  @apply relative z-[105] !ring-4 !ring-indigo-500 !ring-offset-8 !ring-offset-black !transition-all !duration-500;
+.bubble-sent {
+  @apply bg-indigo-600/10 border border-indigo-500/20 self-end ml-auto;
+}
+
+.bubble-received {
+  @apply bg-white/5 border border-white/10 self-start mr-auto;
 }

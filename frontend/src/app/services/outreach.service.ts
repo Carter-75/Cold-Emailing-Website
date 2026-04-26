@@ -89,4 +89,8 @@ export class OutreachService {
   saveConfig(config: any) {
     return this.api.postData('config', config);
   }
+
+  getLeads() {
+    return this.api.getData<any[]>('leads');
+  }
 }

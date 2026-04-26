@@ -19,7 +19,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   outreach = inject(OutreachService);
   billing = inject(BillingService);
   
-  activeTab = signal<'overview' | 'infra' | 'identity' | 'billing'>('overview');
+  activeTab = signal<'overview' | 'leads' | 'infra' | 'identity' | 'billing'>('overview');
+  leads = signal<any[]>([]);
   tourStep = signal<number | null>(null); // null means no tour active
   
   startTour() {
@@ -106,7 +107,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Logic
     dailyLeadLimit: 3,
     outreachEnabled: false,
-    testModeActive: false,
     testRecipientEmail: ''
   };
 
@@ -136,11 +136,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.config = { ...this.config, ...user.config };
     }
     this.checkUnsubStatus();
+    this.fetchLeads();
 
     // Auto-start tour if not seen
     const tourSeen = localStorage.getItem('tour_seen');
     if (!tourSeen) {
       setTimeout(() => this.startTour(), 1500); // Wait for animations to settle
+    }
+  }
+
+  fetchLeads() {
+    this.outreach.getLeads().subscribe(leads => {
+      this.leads.set(leads.map(l => ({ ...l, isExpanded: false })));
+    });
+  }
+
+  setTab(tab: 'overview' | 'leads' | 'infra' | 'identity' | 'billing') {
+    this.activeTab.set(tab);
+    if (tab === 'leads') {
+      this.fetchLeads();
     }
   }
 
@@ -254,7 +268,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
     
     const createParticle = () => {
-      const color = this.config.testModeActive ? '#f59e0b' : '#4f46e5';
+      const color = '#4f46e5';
       const particle = Matter.Bodies.circle(Math.random() * el.clientWidth, -10, 5, {
         restitution: 0.5,
         render: { fillStyle: color }
