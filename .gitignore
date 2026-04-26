@@ -10,3 +10,5 @@ dist/
 frontend/.gitignore
 frontend/vercel.json
 frontend/api/
+
+.vercel
