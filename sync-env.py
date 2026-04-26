@@ -61,30 +61,33 @@ def sync_vercel_env():
                 to_sync.append((key, val))
         
         if not to_sync:
-            print("? Vercel Vault is already up to date. No sync needed.")
+            print("? Vercel Vault already matches your .env.local.")
             return
 
-        print(f"? Found {len(to_sync)} variables to update...")
+        print(f"? Found {len(to_sync)} variables to update. Syncing now...")
         
-        commands = []
-        for key, val in to_sync:
-            # Escape single quotes for PowerShell
-            escaped_val = val.replace("'", "''")
-            # Try rm (ignore failure) then add
-            commands.append(f"Write-Host '   Syncing {key}...'; npx vercel env rm {key} production --yes 2>$null; npx vercel env add {key} production --value '{escaped_val}' --yes")
-
-        if commands:
-            all_commands = "\n".join(commands)
-            result = subprocess.run(
-                ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", all_commands],
-                capture_output=True,
-                text=True
+        for i, (key, val) in enumerate(to_sync, 1):
+            print(f"   [{i}/{len(to_sync)}] Syncing {key}...", end="", flush=True)
+            
+            # 1. Remove existing (ignore error if not exists)
+            subprocess.run(
+                ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", f"vercel env rm {key} production --yes"],
+                capture_output=True
             )
             
-            if result.returncode != 0:
-                print(f"?? Error during sync:\n{result.stderr}")
+            # 2. Add new value
+            # We use stdin to pass the value safely without shell escaping issues
+            res = subprocess.run(
+                ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", f"vercel env add {key} production --yes"],
+                input=val, text=True, capture_output=True
+            )
+            
+            if res.returncode == 0:
+                print(" [OK]")
             else:
-                print("? Vercel Vault updated successfully.")
+                print(f" [FAIL] (Error: {res.stderr.strip()})")
+
+        print("\nVercel Sync Complete!")
 
     finally:
         if remote_tmp.exists():
