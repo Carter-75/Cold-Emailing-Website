@@ -88,12 +88,12 @@
                 <p class="text-[9px] text-white/60 italic">Manual tests and unsub status checks use this address.</p>
               </div>
 
-              <div *ngIf="isUnsubscribed()" class="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 space-y-3">
+              <div class="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 space-y-3">
                 <p class="text-[10px] text-amber-200/60 leading-relaxed italic">
-                  The current test email has opted out.
+                  Reset your test environment by wiping all logs for the current test recipient.
                 </p>
                 <button (click)="clearUnsub()" type="button" class="w-full py-2 rounded-xl bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-all">
-                  Clear Unsubscribe Status
+                  Clear All Test Data
                 </button>
               </div>
             </div>

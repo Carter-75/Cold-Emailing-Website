@@ -177,8 +177,16 @@ router.post('/outreach/unsub-clear', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const recipient = user.config?.testRecipientEmail || user.config?.senderEmail;
+    
+    // Clear suppression record
+    const Unsubscribe = require('../models/Unsubscribe');
     await Unsubscribe.deleteOne({ userId: user._id, recipientEmail: recipient });
-    res.json({ message: 'Unsubscribe status cleared for ' + recipient });
+    
+    // Clear Lead record so it can be emailed again as if it's new
+    const Lead = require('../models/Lead');
+    await Lead.deleteMany({ userId: user._id, recipientEmail: recipient });
+    
+    res.json({ message: 'All test data cleared for ' + recipient + '. You can now re-test from scratch.' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
