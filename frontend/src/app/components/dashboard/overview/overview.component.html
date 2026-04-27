@@ -15,8 +15,8 @@
             <h1 class="text-4xl md:text-6xl font-black uppercase tracking-tighter italic mb-6">
               Smart <span class="text-gradient-stripe">Outreach</span>
             </h1>
-            <p class="max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-              <span class="text-protection text-white/60">Everything is set up and ready for your next campaign.</span>
+            <p class="text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+              Everything is set up and ready for your next campaign.
             </p>
             <div class="flex flex-wrap items-center gap-4 justify-center">
               <button (click)="toggleOutreach()" 
@@ -36,9 +36,7 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
       <div *ngFor="let stat of realStats()" class="glass-premium glass-interactive p-8 group cursor-pointer">
         <div class="glass-edge-highlight"></div>
-        <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4">
-          <span class="text-protection text-white/30">{{ stat.label }}</span>
-        </p>
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-4">{{ stat.label }}</p>
         <div class="flex items-end justify-between">
           <h2 class="text-5xl font-black italic tracking-tighter">{{ stat.value }}</h2>
           <span *ngIf="stat.trend !== '0'" class="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-lg">+{{ stat.trend }}%</span>
@@ -58,14 +56,12 @@
 
         <div class="space-y-4 flex-1 overflow-y-auto no-scrollbar">
           <div *ngFor="let log of realLogs()" class="activity-item opacity-0 flex items-center gap-6 p-5 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.04] transition-all group">
-            <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 group-hover:bg-accent-blue/10 group-hover:text-accent-blue transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/80 group-hover:bg-accent-blue/10 group-hover:text-accent-blue transition-colors">
               <lucide-icon [name]="log.icon" class="w-4 h-4"></lucide-icon>
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-[11px] font-bold text-white/80 truncate mb-1">{{ log.msg }}</p>
-              <p class="text-[9px] font-black uppercase tracking-widest">
-                <span class="text-protection text-white/20">{{ log.time }}</span>
-              </p>
+              <p class="text-[9px] font-black uppercase tracking-widest text-white/60">{{ log.time }}</p>
             </div>
           </div>
           
@@ -74,7 +70,7 @@
           </div>
         </div>
 
-        <button class="w-full mt-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-all">
+        <button class="w-full mt-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/80 hover:text-white transition-all">
           View Full History
         </button>
       </div>

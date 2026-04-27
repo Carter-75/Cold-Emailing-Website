@@ -3,7 +3,7 @@
     <div class="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
       <div>
         <h2 class="text-2xl font-black uppercase tracking-tighter italic">Lead Pipeline</h2>
-        <p class="text-xs text-white/40 uppercase tracking-widest mt-1">Live Discovery Data</p>
+        <p class="text-xs text-white/80 uppercase tracking-widest mt-1">Live Discovery Data</p>
       </div>
       <button (click)="fetchLeads()" class="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
         <lucide-icon name="refresh-cw" class="w-4 h-4"></lucide-icon>
@@ -13,7 +13,7 @@
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
-          <tr class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 border-b border-white/5">
+          <tr class="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 border-b border-white/5">
             <th class="px-8 py-6">Company / Lead</th>
             <th class="px-8 py-6">Status</th>
             <th class="px-8 py-6 text-right">Last Signal</th>
@@ -29,7 +29,7 @@
                   </div>
                   <div>
                     <p class="text-sm font-bold tracking-tight">{{ lead.companyName || 'Unknown Entity' }}</p>
-                    <p class="text-[10px] text-white/30">{{ lead.email }}</p>
+                    <p class="text-[10px] text-white/60">{{ lead.email }}</p>
                   </div>
                 </div>
               </td>
@@ -38,7 +38,7 @@
                   {{ lead.status }}
                 </div>
               </td>
-              <td class="px-8 py-6 text-right font-mono text-[10px] text-white/20">
+              <td class="px-8 py-6 text-right font-mono text-[10px] text-white/60">
                 {{ lead.updatedAt | date:'HH:mm:ss' }}
               </td>
             </tr>
@@ -49,16 +49,16 @@
                      <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Metadata Intelligence</h4>
                      <div class="grid grid-cols-2 gap-4">
                         <div class="p-4 rounded-2xl bg-black/20 border border-white/5">
-                           <p class="text-[9px] text-white/20 uppercase font-black">Domain</p>
+                           <p class="text-[9px] text-white/60 uppercase font-black">Domain</p>
                            <p class="text-xs font-medium truncate">{{ lead.website }}</p>
                         </div>
                         <div class="p-4 rounded-2xl bg-black/20 border border-white/5">
-                           <p class="text-[9px] text-white/20 uppercase font-black">Verified</p>
+                           <p class="text-[9px] text-white/60 uppercase font-black">Verified</p>
                            <p class="text-xs font-medium">{{ lead.isVerified ? 'YES' : 'PENDING' }}</p>
                         </div>
                      </div>
                      <div class="p-6 rounded-2xl bg-black/40 border border-white/5">
-                        <p class="text-[9px] text-white/20 uppercase font-black mb-2">Company Insight</p>
+                        <p class="text-[9px] text-white/60 uppercase font-black mb-2">Company Insight</p>
                         <p class="text-xs leading-relaxed text-white/60 italic">{{ lead.companyDescription || 'No description available.' }}</p>
                      </div>
                   </div>
@@ -72,8 +72,8 @@
                        </div>
                      </div>
                      <div *ngIf="!lead.thread || lead.thread.length === 0" class="h-40 flex flex-col items-center justify-center border border-white/5 border-dashed rounded-3xl">
-                        <lucide-icon name="message-square" class="w-8 h-8 text-white/10 mb-4"></lucide-icon>
-                        <p class="text-[10px] font-black uppercase tracking-widest text-white/10 italic">No communication logged</p>
+                        <lucide-icon name="message-square" class="w-8 h-8 text-white/60 mb-4"></lucide-icon>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-white/60 italic">No communication logged</p>
                      </div>
                   </div>
                 </div>

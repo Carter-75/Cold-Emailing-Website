@@ -6,29 +6,29 @@
 
     <div class="relative z-10">
       <h2 class="text-4xl font-black uppercase tracking-tighter mb-4 italic">Integrations</h2>
-      <p class="text-white/40 mb-12 max-w-xl">Connect your tools to start sending personalized emails at scale.</p>
+      <p class="text-white/80 mb-12 max-w-xl">Connect your tools to start sending personalized emails at scale.</p>
       
       <form (ngSubmit)="saveConfig()" class="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div class="space-y-8">
           <div class="space-y-3">
             <label class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400/80">OpenAI Master Key</label>
             <input type="password" [(ngModel)]="config.openaiKey" name="openaiKey" class="w-full" placeholder="sk-...">
-            <p class="text-[9px] text-white/20 italic">Critical: Used for AI reasoning and sequence generation.</p>
+            <p class="text-[9px] text-white/60 italic">Critical: Used for AI reasoning and sequence generation.</p>
           </div>
           <div class="space-y-3">
-            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">SerpApi Explorer</label>
+            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">SerpApi Explorer</label>
             <input type="password" [(ngModel)]="config.serpapiKey" name="serpapiKey" class="w-full">
-            <p class="text-[9px] text-white/20 italic">Used for live business search via Google Maps engine.</p>
+            <p class="text-[9px] text-white/60 italic">Used for live business search via Google Maps engine.</p>
           </div>
           <div class="space-y-3">
-            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Apollo Intel Key</label>
+            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Apollo Intel Key</label>
             <input type="password" [(ngModel)]="config.apolloKey" name="apolloKey" class="w-full">
-            <p class="text-[9px] text-white/20 italic">Used for deep contact discovery and enrichment.</p>
+            <p class="text-[9px] text-white/60 italic">Used for deep contact discovery and enrichment.</p>
           </div>
           <div class="space-y-3">
-            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Verifalia Validator</label>
+            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Verifalia Validator</label>
             <input type="password" [(ngModel)]="config.verifaliaKey" name="verifaliaKey" class="w-full">
-            <p class="text-[9px] text-white/20 italic">Used for real-time bounce prevention.</p>
+            <p class="text-[9px] text-white/60 italic">Used for real-time bounce prevention.</p>
           </div>
         </div>
 
@@ -40,20 +40,20 @@
             </h3>
             <div class="grid grid-cols-3 gap-4">
               <div class="col-span-2 space-y-2">
-                <label class="text-[10px] font-black uppercase text-white/30">Host</label>
+                <label class="text-[10px] font-black uppercase text-white/70">Host</label>
                 <input type="text" [(ngModel)]="config.smtpHost" name="smtpHost" class="w-full">
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase text-white/30">Port</label>
+                <label class="text-[10px] font-black uppercase text-white/70">Port</label>
                 <input type="number" [(ngModel)]="config.smtpPort" name="smtpPort" class="w-full">
               </div>
             </div>
             <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase text-white/30">Sender Address</label>
+              <label class="text-[10px] font-black uppercase text-white/70">Sender Address</label>
               <input type="email" [(ngModel)]="config.senderEmail" name="senderEmail" class="w-full">
             </div>
             <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase text-white/30">App Secret</label>
+              <label class="text-[10px] font-black uppercase text-white/70">App Secret</label>
               <input type="password" [(ngModel)]="config.appPassword" name="appPassword" class="w-full">
             </div>
           </div>
@@ -73,19 +73,19 @@
             <div class="space-y-4">
               <div class="grid grid-cols-3 gap-4">
                 <div class="col-span-2 space-y-2">
-                  <label class="text-[10px] font-black uppercase text-white/30">IMAP Host</label>
+                  <label class="text-[10px] font-black uppercase text-white/70">IMAP Host</label>
                   <input type="text" [(ngModel)]="config.imapHost" name="imapHost" class="w-full">
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black uppercase text-white/30">IMAP Port</label>
+                  <label class="text-[10px] font-black uppercase text-white/70">IMAP Port</label>
                   <input type="number" [(ngModel)]="config.imapPort" name="imapPort" class="w-full">
                 </div>
               </div>
 
               <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Test Recipient Email</label>
+                <label class="text-[10px] font-black uppercase text-white/70 tracking-widest">Test Recipient Email</label>
                 <input type="email" [(ngModel)]="config.testRecipientEmail" name="testRecipientEmail" (change)="checkUnsubStatus()" class="w-full" placeholder="dev@coldauto.pro">
-                <p class="text-[9px] text-white/20 italic">Manual tests and unsub status checks use this address.</p>
+                <p class="text-[9px] text-white/60 italic">Manual tests and unsub status checks use this address.</p>
               </div>
 
               <div *ngIf="isUnsubscribed()" class="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 space-y-3">
