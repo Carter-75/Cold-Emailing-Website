@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { MeshGradientComponent } from '../shared/mesh-gradient/mesh-gradient.component';
-import { gsap } from 'gsap';
+import anime from 'animejs';
 
 @Component({
   selector: 'app-home',
@@ -105,23 +105,30 @@ export class HomeComponent implements OnInit {
   }
 
   private animateContent() {
-    const tl = gsap.timeline({ defaults: { ease: 'power4.out', duration: 1.5 } });
+    const timeline = anime.timeline({
+      easing: 'easeOutQuart',
+      duration: 1200
+    });
 
-    tl.to('.hero-content', {
-      opacity: 1,
-      y: 0,
-      startAt: { y: 60 }
-    })
-    .to('.activity-strip', {
-      opacity: 1,
-      y: 0,
-      startAt: { y: 40 }
-    }, '-=1')
-    .to('.features-grid', {
-      opacity: 1,
-      y: 0,
-      stagger: 0.2,
-      startAt: { y: 60 }
-    }, '-=1');
+    timeline
+      .add({
+        targets: '.hero-content',
+        opacity: [0, 1],
+        translateY: [40, 0],
+        delay: 300
+      })
+      .add({
+        targets: '.activity-strip .activity-item',
+        opacity: [0, 1],
+        translateY: [20, 0],
+        delay: anime.stagger(100),
+      }, '-=800')
+      .add({
+        targets: '.feature-card',
+        opacity: [0, 1],
+        translateY: [30, 0],
+        scale: [0.95, 1],
+        delay: anime.stagger(150),
+      }, '-=600');
   }
 }

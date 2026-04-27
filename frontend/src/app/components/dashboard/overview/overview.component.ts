@@ -4,7 +4,7 @@ import { AuthService } from '../../../services/auth.service';
 import { OutreachService } from '../../../services/outreach.service';
 import { BillingService } from '../../../services/billing.service';
 import { LucideAngularModule } from 'lucide-angular';
-import { gsap } from 'gsap';
+import anime from 'animejs';
 import { computed } from '@angular/core';
 
 @Component({
@@ -75,13 +75,31 @@ export class OverviewComponent {
   private animateIn() {
     const el = this.container()?.nativeElement;
     if (el) {
-      gsap.to(el, {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: 'power4.out',
-        clearProps: 'opacity,transform'
+      const timeline = anime.timeline({
+        easing: 'easeOutQuart',
+        duration: 800
       });
+
+      timeline
+        .add({
+          targets: el,
+          opacity: [0, 1],
+          translateY: [20, 0],
+          duration: 1000
+        })
+        .add({
+          targets: '.glass-premium',
+          opacity: [0, 1],
+          translateY: [40, 0],
+          scale: [0.98, 1],
+          delay: anime.stagger(100),
+        }, '-=800')
+        .add({
+          targets: '.activity-item',
+          opacity: [0, 1],
+          translateX: [-20, 0],
+          delay: anime.stagger(50),
+        }, '-=400');
     }
   }
 
