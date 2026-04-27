@@ -1,6 +1,7 @@
 import { Component, inject, signal, afterNextRender, ElementRef, viewChild, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OutreachService } from '../../../services/outreach.service';
+import { AuthService } from '../../../services/auth.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { FormsModule } from '@angular/forms';
 import { gsap } from 'gsap';
@@ -14,6 +15,7 @@ import { gsap } from 'gsap';
 })
 export class LeadsComponent {
   outreach = inject(OutreachService);
+  auth = inject(AuthService);
   destroyRef = inject(DestroyRef);
   leads = signal<any[]>([]);
   unsubList = signal<any[]>([]);

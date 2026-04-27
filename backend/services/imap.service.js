@@ -64,7 +64,19 @@ class IMAPService {
             });
 
             if (lead) {
-              console.log(`[IMAP] Reply detected from ${lead.recipientEmail}! Aborting sequence.`);
+              const fromAddress = message.envelope.from[0]?.address || 'Unknown';
+              const isFromMe = fromAddress.toLowerCase() === user.config.senderEmail.toLowerCase();
+              
+              // Only mark as 'replied' if the message is NOT from the user themselves
+              if (!isFromMe) {
+                console.log(`[IMAP] Reply detected from ${lead.recipientEmail}! Aborting sequence.`);
+                lead.status = 'replied';
+                
+                // Update user stats
+                user.stats.replies += 1;
+                await user.save();
+                repliesDetected += 1;
+              }
               
               // Parse message source for body
               const parsed = await simpleParser(message.source);
@@ -73,21 +85,17 @@ class IMAPService {
               const EmailService = require('./email.service');
               const replyBody = await EmailService.cleanMessageWithAI(rawBody, user.config);
               
-              lead.status = 'replied';
+              // Avoid duplicate messages in thread (check messageId)
+              // But for now, let's just ensure the sender is correct
               lead.thread.push({
-                from: message.envelope.from[0]?.address || 'Unknown',
-                to: user.config.senderEmail,
+                from: fromAddress,
+                to: message.envelope.to[0]?.address || user.config.senderEmail,
                 subject: message.envelope.subject,
                 body: replyBody,
                 timestamp: message.envelope.date || new Date()
               });
               
               await lead.save();
-              repliesDetected += 1;
-              
-              // Update user stats
-              user.stats.replies += 1;
-              await user.save();
             }
           }
         }
