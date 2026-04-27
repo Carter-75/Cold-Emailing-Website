@@ -30,14 +30,14 @@ export class App implements OnInit {
     let h = canvas.height = window.innerHeight;
 
     const lines: any[] = [];
-    const count = 40; // More lines
+    const count = 60; // Doubled count
 
     const createLine = (reset = false) => ({
       x: reset ? -800 : Math.random() * w,
       y: reset ? Math.random() * h - h : Math.random() * h,
-      length: Math.random() * 1000 + 500,
+      length: Math.random() * 1200 + 600,
       speed: Math.random() * 1.5 + 0.5,
-      opacity: Math.random() * 0.4 + 0.2, // Slightly brighter
+      opacity: Math.random() * 0.5 + 0.3, // Brighter
       width: Math.random() * 2 + 1
     });
 
