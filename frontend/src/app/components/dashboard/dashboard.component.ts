@@ -7,6 +7,7 @@ import { BillingService } from '../../services/billing.service';
 import * as Matter from 'matter-js';
 import anime from 'animejs';
 import { LucideAngularModule } from 'lucide-angular';
+import { gsap } from 'gsap';
 
 @Component({
   selector: 'app-dashboard',
@@ -130,8 +131,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
 
     afterNextRender(() => {
-      this.initPhysics();
-      this.animateHeader();
+      this.initBackgroundMotion();
+      this.animateEntrance();
     });
   }
 
@@ -251,56 +252,40 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  private initPhysics() {
+  private initBackgroundMotion() {
     const el = this.sceneContainer()?.nativeElement;
     if (!el) return;
 
-    this.engine = Matter.Engine.create();
-    this.render = Matter.Render.create({
-      element: el,
-      engine: this.engine,
-      options: {
-        width: el.clientWidth,
-        height: 150,
-        background: 'transparent',
-        wireframes: false
-      }
-    });
+    // Create floating orbs or lines
+    for (let i = 0; i < 5; i++) {
+      const orb = document.createElement('div');
+      orb.className = 'absolute rounded-full blur-[100px] opacity-20 pointer-events-none';
+      orb.style.width = `${Math.random() * 400 + 200}px`;
+      orb.style.height = orb.style.width;
+      orb.style.background = i % 2 === 0 ? 'var(--accent-blue)' : 'var(--accent-purple)';
+      el.appendChild(orb);
 
-    const ground = Matter.Bodies.rectangle(el.clientWidth / 2, 140, el.clientWidth, 20, { 
-      isStatic: true,
-      render: { fillStyle: 'transparent' }
-    });
-    
-    const createParticle = () => {
-      const color = '#4f46e5';
-      const particle = Matter.Bodies.circle(Math.random() * el.clientWidth, -10, 5, {
-        restitution: 0.5,
-        render: { fillStyle: color }
+      gsap.to(orb, {
+        x: 'random(-100, 100)%',
+        y: 'random(-100, 100)%',
+        duration: 'random(10, 20)',
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut'
       });
-      Matter.World.add(this.engine!.world, particle);
-    };
-
-    this.physicsInterval = setInterval(() => {
-      if (this.outreach.status() === 'running') {
-        createParticle();
-      }
-    }, 2000);
-
-    Matter.World.add(this.engine.world, [ground]);
-    
-    const runner = Matter.Runner.create();
-    Matter.Runner.run(runner, this.engine);
-    Matter.Render.run(this.render);
+    }
   }
 
-  private animateHeader() {
-    anime({
-      targets: '.pro-badge',
-      rotate: '1turn',
-      duration: 5000,
-      loop: true,
-      easing: 'linear'
-    });
+  private animateEntrance() {
+    const tl = gsap.timeline({ defaults: { ease: 'power4.out', duration: 1.2 } });
+
+    tl.from('aside', { x: -100, opacity: 0 })
+      .from('header', { y: -50, opacity: 0 }, '-=0.8')
+      .from('.glass-premium', { 
+        y: 50, 
+        opacity: 0, 
+        stagger: 0.1,
+        clearProps: 'all' 
+      }, '-=1');
   }
 }

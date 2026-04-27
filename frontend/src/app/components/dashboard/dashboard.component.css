@@ -5,10 +5,16 @@
 .glass-premium {
   @apply bg-white/[0.03] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] shadow-2xl;
   box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-premium:hover {
+  @apply border-white/10 bg-white/[0.05];
+  transform: translateY(-2px);
 }
 
 .glass-input {
-  @apply bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-accent-purple/50 focus:ring-1 focus:ring-accent-purple/50 transition-all;
+  @apply bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-accent-blue/50 focus:ring-1 focus:ring-accent-blue/50 transition-all;
 }
 
 .btn-primary {
@@ -19,16 +25,29 @@
   @apply bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black uppercase tracking-[0.15em] py-4 px-8 rounded-2xl transition-all;
 }
 
-.tab-btn {
-  @apply px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all;
+/* Sidebar Styles */
+aside {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.tab-btn-active {
-  @apply bg-accent-purple text-white shadow-lg shadow-accent-purple/20;
+aside button {
+  position: relative;
+  overflow: hidden;
 }
 
-.tab-btn-inactive {
-  @apply text-white/40 hover:text-white hover:bg-white/5;
+aside button::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  @apply bg-accent-blue rounded-r-full transition-all duration-300;
+}
+
+aside button[class*="bg-white/10"]::before {
+  height: 60%;
 }
 
 /* Tour Styles */
@@ -63,12 +82,33 @@
   @apply absolute inset-0 bg-gradient-to-b from-transparent via-accent-blue/10 to-transparent h-2 w-full animate-scan pointer-events-none;
 }
 
+@keyframes scan {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(1000%); }
+}
+
 .btn-initiate {
   @apply btn-primary w-full;
 }
 
 .btn-abort {
   @apply bg-rose-500/10 border border-rose-500/20 text-rose-500 font-black uppercase tracking-widest py-4 px-8 rounded-2xl hover:bg-rose-500 hover:text-white transition-all w-full;
+}
+
+/* Animations */
+.animate-in {
+  animation-fill-mode: both;
+}
+
+.shake-in {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
 }
 
 /* Scrollbar */
@@ -85,13 +125,15 @@
 }
 
 .thread-bubble {
-  @apply p-4 rounded-2xl max-w-[80%] mb-4;
+  @apply p-6 rounded-3xl max-w-[85%] mb-4 backdrop-blur-md;
 }
 
 .bubble-sent {
   @apply bg-accent-purple/10 border border-accent-purple/20 self-end ml-auto;
+  border-bottom-right-radius: 4px;
 }
 
 .bubble-received {
   @apply bg-white/5 border border-white/10 self-start mr-auto;
+  border-bottom-left-radius: 4px;
 }
