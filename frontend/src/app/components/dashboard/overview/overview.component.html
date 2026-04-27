@@ -15,8 +15,8 @@
             <h1 class="text-4xl md:text-6xl font-black uppercase tracking-tighter italic mb-6">
               Smart <span class="text-gradient-stripe">Outreach</span>
             </h1>
-            <p class="text-white/40 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-              Everything is set up and ready for your next campaign.
+            <p class="max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+              <span class="text-protection text-white/60">Everything is set up and ready for your next campaign.</span>
             </p>
             <div class="flex flex-wrap items-center gap-4 justify-center">
               <button (click)="toggleOutreach()" 
@@ -36,7 +36,9 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
       <div *ngFor="let stat of realStats()" class="glass-premium glass-interactive p-8 group cursor-pointer">
         <div class="glass-edge-highlight"></div>
-        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-4">{{ stat.label }}</p>
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+          <span class="text-protection text-white/30">{{ stat.label }}</span>
+        </p>
         <div class="flex items-end justify-between">
           <h2 class="text-5xl font-black italic tracking-tighter">{{ stat.value }}</h2>
           <span *ngIf="stat.trend !== '0'" class="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-lg">+{{ stat.trend }}%</span>
@@ -61,7 +63,9 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-[11px] font-bold text-white/80 truncate mb-1">{{ log.msg }}</p>
-              <p class="text-[9px] font-black uppercase tracking-widest text-white/20">{{ log.time }}</p>
+              <p class="text-[9px] font-black uppercase tracking-widest">
+                <span class="text-protection text-white/20">{{ log.time }}</span>
+              </p>
             </div>
           </div>
           
