@@ -120,12 +120,12 @@
                         </button>
                      </div>
                      <div *ngIf="lead.thread && lead.thread.length > 0" class="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-2 p-4 rounded-3xl bg-black/20 border border-white/5">
-                       <div *ngFor="let msg of lead.thread" class="flex flex-col" [ngClass]="msg.from === outreach.stats().senderEmail ? 'items-end' : 'items-start'">
-                          <div [ngClass]="msg.from === outreach.stats().senderEmail ? 'bg-accent-blue/20 border-accent-blue/30 text-white/90' : 'bg-white/5 border-white/10 text-white/80'" class="max-w-[90%] p-4 rounded-2xl border text-xs leading-relaxed whitespace-pre-line">
+                       <div *ngFor="let msg of lead.thread" class="flex flex-col" [ngClass]="msg.from === auth.user()?.config?.senderEmail ? 'items-end' : 'items-start'">
+                          <div [ngClass]="msg.from === auth.user()?.config?.senderEmail ? 'bg-accent-blue/20 border-accent-blue/30 text-white/90' : 'bg-white/5 border-white/10 text-white/80'" class="max-w-[90%] p-4 rounded-2xl border text-xs leading-relaxed whitespace-pre-line">
                             {{ msg.body }}
                           </div>
                           <p class="text-[8px] mt-1 opacity-40 font-black uppercase tracking-widest px-2">
-                            {{ msg.timestamp | date:'MMM d, HH:mm' }} • {{ msg.from === outreach.stats().senderEmail ? 'ME' : 'THEM' }}
+                            {{ msg.timestamp | date:'MMM d, HH:mm' }} • {{ msg.from === auth.user()?.config?.senderEmail ? 'ME' : 'THEM' }}
                           </p>
                        </div>
                      </div>
