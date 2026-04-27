@@ -49,9 +49,9 @@ export class App implements OnInit {
 
         ctx.beginPath();
         const grad = ctx.createLinearGradient(l.x, l.y, l.x + l.length, l.y + l.length);
-        grad.addColorStop(0, `rgba(79, 70, 229, 0)`);
-        grad.addColorStop(0.5, `rgba(79, 70, 229, ${l.opacity})`);
-        grad.addColorStop(1, `rgba(79, 70, 229, 0)`);
+        grad.addColorStop(0, `rgba(165, 180, 252, 0)`); // Brighter Indigo
+        grad.addColorStop(0.5, `rgba(165, 180, 252, ${l.opacity})`);
+        grad.addColorStop(1, `rgba(165, 180, 252, 0)`);
         
         ctx.strokeStyle = grad;
         ctx.lineWidth = l.width;
@@ -78,10 +78,10 @@ export class App implements OnInit {
     return {
       x: spawnX,
       y: spawnY,
-      length: Math.random() * 400 + 200,
+      length: Math.random() * 500 + 300, // Longer lines
       speed: Math.random() * 1.5 + 0.5,
-      opacity: Math.random() * 0.4 + 0.2, // Increased visibility
-      width: Math.random() * 2 + 1
+      opacity: Math.random() * 0.6 + 0.4, // Brighter
+      width: Math.random() * 3 + 2 // Thicker
     };
   }
   
