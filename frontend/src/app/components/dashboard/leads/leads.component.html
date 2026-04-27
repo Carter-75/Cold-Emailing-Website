@@ -162,7 +162,9 @@
           <p class="text-sm font-bold tracking-tight mb-1">{{ item.businessName || 'Anonymous Business' }}</p>
           <p class="text-[10px] text-white/60 mb-4">{{ item.recipientEmail }}</p>
           <div class="pt-4 border-t border-white/5">
-            <p class="text-[9px] font-black uppercase tracking-widest text-rose-500/60 italic">Suppressed Globally</p>
+            <p class="text-[9px] font-black uppercase tracking-widest italic" [ngClass]="item.isLinkUnsub ? 'text-rose-500/60' : 'text-indigo-400/60'">
+              {{ item.isLinkUnsub ? 'Suppressed Globally' : 'Sequence Completed (3/3)' }}
+            </p>
           </div>
         </div>
       </div>
