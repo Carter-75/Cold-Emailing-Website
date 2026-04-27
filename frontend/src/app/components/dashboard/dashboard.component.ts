@@ -176,6 +176,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   fetchLeads() {
     this.outreach.getLeads().subscribe(leads => {
       this.leads.set(leads.map(l => ({ ...l, isExpanded: false })));
+      
+      const pending = leads.some((l: any) => {
+        if (!l.thread || l.thread.length === 0) return false;
+        const lastMsg = l.thread[l.thread.length - 1];
+        return lastMsg.from !== this.auth.user()?.config?.senderEmail && !l.isUnsubscribed;
+      });
+      this.outreach.hasPendingReplies.set(pending);
     });
   }
 

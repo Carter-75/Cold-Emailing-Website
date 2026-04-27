@@ -41,7 +41,9 @@
         </thead>
         <tbody>
           <ng-container *ngFor="let lead of filteredLeads">
-            <tr (click)="lead.isExpanded = !lead.isExpanded" class="lead-row group border-b border-white/5 last:border-0 cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <tr (click)="lead.isExpanded = !lead.isExpanded" 
+                [class.aura-waiting]="needsResponse(lead)"
+                class="lead-row group border-b border-white/5 last:border-0 cursor-pointer hover:bg-white/[0.02] transition-colors">
               <td class="px-8 py-6">
                 <div class="flex items-center gap-4">
                   <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg shadow-inner group-hover:border-accent-blue/30 transition-all">

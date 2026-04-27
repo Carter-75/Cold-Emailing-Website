@@ -18,6 +18,7 @@ export class OutreachService {
   status = signal<string>('stopped');
   logs = signal<LogEntry[]>([]);
   stats = signal<any>({ sent: 0 });
+  hasPendingReplies = signal<boolean>(false);
 
   constructor() {
     if (this.isSocketSupported()) {

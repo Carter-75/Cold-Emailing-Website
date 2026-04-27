@@ -59,6 +59,13 @@ export class LeadsComponent {
   fetchLeads() {
     this.outreach.getLeads().subscribe(leads => {
       this.leads.set(leads.map(l => ({ ...l, isExpanded: false })));
+      
+      const pending = leads.some((l: any) => {
+        if (!l.thread || l.thread.length === 0) return false;
+        const lastMsg = l.thread[l.thread.length - 1];
+        return lastMsg.from !== this.auth.user()?.config?.senderEmail && !l.isUnsubscribed;
+      });
+      this.outreach.hasPendingReplies.set(pending);
     });
     this.fetchUnsubList();
   }
@@ -148,5 +155,11 @@ export class LeadsComponent {
         this.isCleaningHistory.set(false);
       }
     });
+  }
+
+  needsResponse(lead: any): boolean {
+    if (!lead.thread || lead.thread.length === 0) return false;
+    const lastMsg = lead.thread[lead.thread.length - 1];
+    return lastMsg.from !== this.auth.user()?.config?.senderEmail;
   }
 }
