@@ -291,55 +291,76 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!el || el.getAttribute('data-motion-active')) return;
     el.setAttribute('data-motion-active', 'true');
 
-    // Create a dynamic grid of moving points
+    this.engine = Matter.Engine.create();
+    this.engine.gravity.y = 0; // No gravity for floating effect
+
     const canvas = document.createElement('canvas');
-    canvas.className = 'absolute inset-0 w-full h-full opacity-30';
+    canvas.className = 'absolute inset-0 w-full h-full opacity-60';
     el.appendChild(canvas);
     
     const ctx = canvas.getContext('2d')!;
     let w = canvas.width = el.clientWidth;
     let h = canvas.height = el.clientHeight;
 
-    const points: any[] = [];
-    for(let i=0; i<40; i++) {
-      points.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        r: Math.random() * 2 + 1
-      });
+    const bodies: Matter.Body[] = [];
+    const count = 35;
+    
+    for (let i = 0; i < count; i++) {
+      const body = Matter.Bodies.circle(
+        Math.random() * w,
+        Math.random() * h,
+        Math.random() * 3 + 1,
+        {
+          frictionAir: 0.02,
+          restitution: 1,
+          velocity: { x: (Math.random() - 0.5) * 1.5, y: (Math.random() - 0.5) * 1.5 },
+          render: { fillStyle: 'rgba(139, 92, 246, 0.5)' } // accent-vibrant
+        }
+      );
+      bodies.push(body);
     }
+
+    Matter.Composite.add(this.engine.world, bodies);
 
     const animate = () => {
       if (!document.contains(canvas)) return;
+      Matter.Engine.update(this.engine!, 1000 / 60);
+      
       ctx.clearRect(0, 0, w, h);
-      ctx.strokeStyle = 'rgba(79, 70, 229, 0.1)';
-      ctx.fillStyle = 'rgba(79, 70, 229, 0.3)';
+      
+      // Draw Connections
+      ctx.lineWidth = 1;
+      for (let i = 0; i < bodies.length; i++) {
+        const b1 = bodies[i];
+        
+        // Bounce off walls manually since we don't have walls
+        if (b1.position.x < 0 || b1.position.x > w) Matter.Body.setVelocity(b1, { x: -b1.velocity.x, y: b1.velocity.y });
+        if (b1.position.y < 0 || b1.position.y > h) Matter.Body.setVelocity(b1, { x: b1.velocity.x, y: -b1.velocity.y });
 
-      points.forEach((p, i) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0 || p.x > w) p.vx *= -1;
-        if (p.y < 0 || p.y > h) p.vy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-        ctx.fill();
-
-        for(let j=i+1; j<points.length; j++) {
-          const p2 = points[j];
-          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if (dist < 150) {
+        for (let j = i + 1; j < bodies.length; j++) {
+          const b2 = bodies[j];
+          const dist = Math.hypot(b1.position.x - b2.position.x, b1.position.y - b2.position.y);
+          
+          if (dist < 180) {
+            const opacity = 1 - (dist / 180);
+            ctx.strokeStyle = `rgba(30, 58, 138, ${opacity * 0.2})`; // accent-blue
             ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
+            ctx.moveTo(b1.position.x, b1.position.y);
+            ctx.lineTo(b2.position.x, b2.position.y);
             ctx.stroke();
           }
         }
-      });
+
+        // Draw Dot
+        ctx.fillStyle = (b1.render as any).fillStyle;
+        ctx.beginPath();
+        ctx.arc(b1.position.x, b1.position.y, (b1 as any).circleRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
       requestAnimationFrame(animate);
     };
+
     animate();
 
     window.addEventListener('resize', () => {

@@ -6,19 +6,18 @@
       <div class="glass-premium p-1 relative overflow-hidden group">
         <div class="absolute inset-0 bg-gradient-to-br from-accent-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
         
-        <div class="relative p-12 flex flex-col md:flex-row items-center gap-10">
-          <div class="flex-1 text-center md:text-left">
+        <div class="relative p-12 flex flex-col items-center gap-10">
+          <div class="flex-1 text-center">
             <div class="mb-6 inline-flex items-center gap-2 rounded-full bg-accent-blue/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-accent-blue border border-accent-blue/20">
               Status: {{ outreach.status() === 'running' ? 'Active' : 'Ready' }}
             </div>
-            <h1 class="text-4xl md:text-5xl font-black uppercase tracking-tighter italic mb-6">
-              Smart <br/>
-              <span class="text-gradient-stripe">Outreach</span>
+            <h1 class="text-4xl md:text-6xl font-black uppercase tracking-tighter italic mb-6">
+              Smart <span class="text-gradient-stripe">Outreach</span>
             </h1>
-            <p class="text-white/40 max-w-sm mb-10 leading-relaxed font-medium">
+            <p class="text-white/40 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
               Everything is set up and ready for your next campaign.
             </p>
-            <div class="flex flex-wrap items-center gap-4 justify-center md:justify-start">
+            <div class="flex flex-wrap items-center gap-4 justify-center">
               <button (click)="toggleOutreach()" 
                       [ngClass]="outreach.status() === 'running' ? 'bg-rose-500 hover:bg-rose-600' : 'bg-emerald-500 hover:bg-emerald-600'"
                       class="px-8 py-4 rounded-2xl text-black font-black uppercase tracking-widest text-[10px] transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-emerald-500/20">
