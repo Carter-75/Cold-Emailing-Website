@@ -65,10 +65,16 @@ export class App implements OnInit {
 
     animate();
 
-    window.addEventListener('resize', () => {
+    const resize = () => {
       w = canvas.width = window.innerWidth;
       h = canvas.height = window.innerHeight;
-    });
+    };
+    resize();
+
+    const resizeObserver = new ResizeObserver(() => resize());
+    resizeObserver.observe(document.body);
+
+    window.addEventListener('resize', resize);
   }
 
   private createLine(w: number, h: number, reset = false) {

@@ -363,10 +363,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     animate();
 
-    window.addEventListener('resize', () => {
+    const resize = () => {
       w = canvas.width = el.clientWidth;
       h = canvas.height = el.clientHeight;
-    });
+    };
+    resize();
+
+    const resizeObserver = new ResizeObserver(() => resize());
+    resizeObserver.observe(el);
+
+    window.addEventListener('resize', resize);
   }
 
   private animateEntrance() {
