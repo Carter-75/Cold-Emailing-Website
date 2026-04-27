@@ -3,9 +3,8 @@
 }
 
 .glass-premium {
-  @apply bg-white/[0.1] backdrop-blur-xl border border-white/20 rounded-[2.5rem] shadow-2xl;
+  @apply bg-white/[0.04] backdrop-blur-md border border-white/20 rounded-[2.5rem] shadow-2xl;
   box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-premium:hover {
