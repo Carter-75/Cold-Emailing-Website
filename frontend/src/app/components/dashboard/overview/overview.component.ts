@@ -5,6 +5,7 @@ import { OutreachService } from '../../../services/outreach.service';
 import { BillingService } from '../../../services/billing.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { gsap } from 'gsap';
+import { computed } from '@angular/core';
 
 @Component({
   selector: 'app-overview',
@@ -19,22 +20,54 @@ export class OverviewComponent {
   billing = inject(BillingService);
   container = viewChild<ElementRef<HTMLDivElement>>('container');
 
-  stats = [
-    { label: 'Active Streams', value: '42', trend: '12' },
-    { label: 'Success Velocity', value: '98%', trend: '4' },
-    { label: 'Network Reach', value: '1.2k', trend: '28' }
-  ];
+  leads = signal<any[]>([]);
+  
+  realStats = computed(() => {
+    const list = this.leads();
+    if (!list.length) return [
+      { label: 'Active Streams', value: '0', trend: '0' },
+      { label: 'Success Velocity', value: '0%', trend: '0' },
+      { label: 'Network Reach', value: '0', trend: '0' }
+    ];
 
-  logs = [
-    { icon: 'search', msg: 'Lead Signal Detected: Acme Corp', time: '2m ago' },
-    { icon: 'zap', msg: 'AI Sequence Optimized', time: '14m ago' },
-    { icon: 'send', msg: 'Deployment Successful', time: '1h ago' },
-    { icon: 'check-circle', msg: 'Verification Complete', time: '3h ago' }
-  ];
+    const active = list.filter(l => l.status === 'emailed').length;
+    const replied = list.filter(l => l.status === 'replied').length;
+    const velocity = ((replied / list.length) * 100).toFixed(0);
+
+    return [
+      { label: 'Active Streams', value: active.toString(), trend: '0' },
+      { label: 'Success Velocity', value: `${velocity}%`, trend: '0' },
+      { label: 'Network Reach', value: list.length.toString(), trend: '0' }
+    ];
+  });
+
+  realLogs = computed(() => {
+    const list = this.leads();
+    return list.slice(0, 5).map(l => {
+      let icon = 'mail';
+      let msg = `Contacted ${l.businessName}`;
+      if (l.status === 'replied') { icon = 'message-square'; msg = `Reply from ${l.businessName}`; }
+      if (l.status === 'discovery') { icon = 'search'; msg = `Discovered ${l.businessName}`; }
+      
+      const date = new Date(l.updatedAt);
+      const diff = Math.floor((new Date().getTime() - date.getTime()) / 60000);
+      let time = diff < 60 ? `${diff}m ago` : `${Math.floor(diff/60)}h ago`;
+      if (diff < 1) time = 'Just now';
+
+      return { icon, msg, time };
+    });
+  });
 
   constructor() {
     afterNextRender(() => {
       this.animateIn();
+      this.fetchLeads();
+    });
+  }
+
+  fetchLeads() {
+    this.outreach.getLeads().subscribe(leads => {
+      this.leads.set(leads);
     });
   }
 
