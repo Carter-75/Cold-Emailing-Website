@@ -13,6 +13,9 @@
   .glass-premium {
     @apply bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[2.5rem];
     box-shadow: 0 8px 32px 0 rgba(0,0,0,0.37);
+    will-change: backdrop-filter;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .text-gradient-stripe {

@@ -394,7 +394,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         y: 50, 
         opacity: 0, 
         stagger: 0.1,
-        clearProps: 'all' 
+        clearProps: 'opacity,transform' 
       }, '-=1');
     }
   }
