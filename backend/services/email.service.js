@@ -35,6 +35,7 @@ class EmailService {
     - Zero passive phrasing.
     - **CRITICAL**: Do NOT include a sign-off or signature.
     - **CRITICAL**: Do NOT include a subject line. Start directly with the email body.
+    - **CRITICAL**: Do NOT include any conversational filler or meta-commentary (e.g. "Sure, here is your email").
     
     Email Structure:
     - Personalized context regarding """${safeBusinessName}""".
@@ -155,7 +156,9 @@ class EmailService {
     - Keep it professional, concise, and high-impact.
     - Maintain the context of the previous conversation.
     - Follow these linguistic rules: Zero passive phrasing, no generic signatures (already handled by system).
-    - **CRITICAL**: Output ONLY the refined email body text. Do NOT include a subject line.
+    - **CRITICAL**: Output ONLY the refined email body text. 
+    - **CRITICAL**: Do NOT include any conversational filler, meta-commentary, or introductory phrases (e.g., "Certainly!", "Here is the refined version", "I've optimized this for you"). 
+    - **CRITICAL**: Do NOT include a subject line.
 
     Full Thread History:
     ${threadContext || 'No previous messages.'}`;
@@ -192,7 +195,8 @@ class EmailService {
     3. Strip ALL quote history (the "On [Date], [Name] wrote:" sections).
     4. Strip repeated headers (From, Sent, To, Subject).
     5. If the message is just a signature or empty noise, return "[Noise/Signature Only]".
-    6. Return ONLY the cleaned message body. No commentary.`;
+    6. **CRITICAL**: Output ONLY the cleaned content. Do NOT include any conversational filler or meta-commentary (e.g., "Here is the cleaned email").
+    7. Return ONLY the cleaned message body. No commentary.`;
 
     const userPrompt = `Clean up this email body:
     """
