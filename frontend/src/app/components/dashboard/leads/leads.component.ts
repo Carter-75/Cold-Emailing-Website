@@ -77,9 +77,9 @@ export class LeadsComponent {
   get filteredLeads() {
     const all = this.leads();
     if (this.activeTab() === 'pipeline') {
-      return all.filter(l => l.status === 'emailed' || l.status === 'discovery');
+      return all.filter(l => !l.isUnsubscribed && (l.status === 'emailed' || l.status === 'discovery'));
     } else if (this.activeTab() === 'replied') {
-      return all.filter(l => l.status === 'replied');
+      return all.filter(l => !l.isUnsubscribed && l.status === 'replied');
     }
     return []; // Unsubscribed handled separately
   }

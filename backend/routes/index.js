@@ -205,11 +205,19 @@ router.post('/outreach/sync-inbox', verifyToken, async (req, res) => {
 router.get('/leads', verifyToken, async (req, res) => {
   try {
     const Lead = require('../models/Lead');
+    const Unsubscribe = require('../models/Unsubscribe');
     const leads = await Lead.find({ userId: req.user._id })
       .sort({ updatedAt: -1 }); 
     
-    // The sorting logic below is handled in the frontend now for tabs
-    res.json(leads);
+    const unsubList = await Unsubscribe.find({ userId: req.user._id });
+    const unsubEmails = new Set(unsubList.map(u => u.recipientEmail.toLowerCase()));
+
+    const leadsWithUnsub = leads.map(l => ({
+      ...l.toObject ? l.toObject() : l,
+      isUnsubscribed: unsubEmails.has(l.recipientEmail.toLowerCase())
+    }));
+
+    res.json(leadsWithUnsub);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -228,6 +236,12 @@ router.post('/leads/:id/reply', verifyToken, async (req, res) => {
 
     const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found.' });
+
+    const Unsubscribe = require('../models/Unsubscribe');
+    const isUnsubscribed = await Unsubscribe.findOne({ userId: user._id, recipientEmail: lead.recipientEmail.toLowerCase() });
+    if (isUnsubscribed) {
+      return res.status(403).json({ message: 'Cannot send manual reply: Lead is on the suppression (unsubscribe) list.' });
+    }
 
     const sendConfig = user.config?.toObject ? user.config.toObject() : user.config;
 
@@ -252,9 +266,10 @@ router.post('/leads/:id/reply', verifyToken, async (req, res) => {
     // If we reply, we might want to change status back to 'emailed' to continue sequence
     // OR keep it at 'replied' if we are handling it manually.
     // Let's keep it at 'replied' but updated.
-    if (lead.status !== 'replied') {
-      lead.status = 'emailed'; // Resume sequence if it was discovery or finished? 
-      // Actually, if it was finished/replied, let's keep it there.
+    // Only set to emailed if it's currently discovery (to start sequence)
+    // If it's already replied or finished, keep that status.
+    if (lead.status === 'discovery') {
+      lead.status = 'emailed';
     }
 
     await lead.save();
