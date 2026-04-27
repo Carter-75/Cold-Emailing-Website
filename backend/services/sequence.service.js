@@ -123,7 +123,7 @@ class SequenceService {
         from: user.config.senderEmail,
         to: lead.recipientEmail,
         subject: emailResult.subject,
-        body: emailResult.html,
+        body: body,
         timestamp: new Date()
       });
 

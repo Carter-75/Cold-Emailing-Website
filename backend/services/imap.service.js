@@ -68,7 +68,10 @@ class IMAPService {
               
               // Parse message source for body
               const parsed = await simpleParser(message.source);
-              const replyBody = parsed.text || parsed.html || '[No content]';
+              const rawBody = parsed.text || parsed.html || '[No content]';
+              
+              const EmailService = require('./email.service');
+              const replyBody = await EmailService.cleanMessageWithAI(rawBody, user.config);
               
               lead.status = 'replied';
               lead.thread.push({

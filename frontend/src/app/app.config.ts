@@ -35,7 +35,8 @@ import {
   Sparkles,
   MailSearch,
   UserX,
-  Loader2
+  Loader2,
+  Wand2
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -75,7 +76,8 @@ export const appConfig: ApplicationConfig = {
         Sparkles,
         MailSearch,
         UserX,
-        Loader2
+        Loader2,
+        Wand2
       })
     }
   ]

@@ -285,6 +285,36 @@ router.post('/leads/:id/refine-reply', verifyToken, async (req, res) => {
   }
 });
 
+router.post('/leads/:id/clean-thread', verifyToken, async (req, res) => {
+  try {
+    const Lead = require('../models/Lead');
+    const EmailService = require('../services/email.service');
+    const lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
+    
+    if (!lead) return res.status(404).json({ message: 'Lead not found.' });
+
+    const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+
+    // Clean each message in the thread
+    const cleanedThread = [];
+    for (const msg of lead.thread) {
+      const cleanedBody = await EmailService.cleanMessageWithAI(msg.body, user.config);
+      cleanedThread.push({
+        ...msg.toObject ? msg.toObject() : msg,
+        body: cleanedBody
+      });
+    }
+
+    lead.thread = cleanedThread;
+    await lead.save();
+
+    res.json({ message: 'Thread cleaned successfully', lead });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Update Config
 router.post('/config', verifyToken, async (req, res) => {
   try {

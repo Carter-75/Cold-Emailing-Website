@@ -178,6 +178,42 @@ class EmailService {
     const content = completion.choices[0].message.content;
     return content.replace(/^Subject:\s*.*\n?/mi, '').trim();
   }
+
+  async cleanMessageWithAI(body, config) {
+    if (!config.openaiKey) return body;
+    const openai = new OpenAI({ apiKey: config.openaiKey });
+
+    const systemPrompt = `You are an AI specialized in cleaning up messy email conversation logs.
+    Your task is to extract ONLY the actual new content of the message.
+    
+    Rules:
+    1. Strip ALL HTML tags (return plain text or very simple line breaks).
+    2. Strip ALL signatures, business disclaimers, and footers.
+    3. Strip ALL quote history (the "On [Date], [Name] wrote:" sections).
+    4. Strip repeated headers (From, Sent, To, Subject).
+    5. If the message is just a signature or empty noise, return "[Noise/Signature Only]".
+    6. Return ONLY the cleaned message body. No commentary.`;
+
+    const userPrompt = `Clean up this email body:
+    """
+    ${body}
+    """`;
+
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini", // Using mini for cost/speed
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+      });
+
+      return completion.choices[0].message.content.trim();
+    } catch (err) {
+      console.error('[AI Cleanup] Failed:', err.message);
+      return body; // Fallback to raw if AI fails
+    }
+  }
 }
 
 module.exports = new EmailService();

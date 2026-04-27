@@ -109,4 +109,8 @@ export class OutreachService {
   refineReply(leadId: string, draft: string) {
     return this.api.postData<{ refinedText: string }>(`leads/${leadId}/refine-reply`, { draft });
   }
+
+  cleanThread(leadId: string) {
+    return this.api.postData<{ message: string, lead: any }>(`leads/${leadId}/clean-thread`, {});
+  }
 }
