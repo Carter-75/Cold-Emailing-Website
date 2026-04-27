@@ -22,6 +22,7 @@ export class LeadsComponent {
   isReplying = signal<boolean>(false);
   isRefining = signal<boolean>(false);
   isSyncing = signal<boolean>(false);
+  isCleaningHistory = signal<boolean>(false);
   lastSynced = signal<Date>(new Date());
   container = viewChild<ElementRef<HTMLDivElement>>('container');
 
@@ -127,6 +128,22 @@ export class LeadsComponent {
       },
       error: () => {
         this.isSyncing.set(false);
+      }
+    });
+  }
+
+  cleanHistory(lead: any) {
+    if (this.isCleaningHistory()) return;
+    this.isCleaningHistory.set(true);
+    this.outreach.cleanThread(lead._id).subscribe({
+      next: (res: any) => {
+        this.leads.update(prev => prev.map(l => 
+          l._id === lead._id ? { ...l, thread: res.lead.thread } : l
+        ));
+        this.isCleaningHistory.set(false);
+      },
+      error: () => {
+        this.isCleaningHistory.set(false);
       }
     });
   }

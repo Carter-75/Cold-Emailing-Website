@@ -139,7 +139,7 @@ class OutreachEngine {
               from: config.senderEmail,
               to: email,
               subject: emailResult.subject,
-              body: emailResult.html,
+              body: content,
               timestamp: new Date()
             }
           }
