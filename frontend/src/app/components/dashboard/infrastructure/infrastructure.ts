@@ -1,0 +1,195 @@
+import { Component, inject, signal, afterNextRender, ElementRef, viewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../services/auth.service';
+import { OutreachService } from '../../../services/outreach.service';
+import { LucideAngularModule } from 'lucide-angular';
+import { gsap } from 'gsap';
+
+@Component({
+  selector: 'app-infrastructure',
+  standalone: true,
+  imports: [CommonModule, FormsModule, LucideAngularModule],
+  template: `
+    <div #container class="max-w-5xl mx-auto opacity-0 translate-y-4">
+      <div class="glass-premium p-12 relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-8 opacity-5">
+          <lucide-icon name="shield" class="w-48 h-48"></lucide-icon>
+        </div>
+
+        <div class="relative z-10">
+          <h2 class="text-4xl font-black uppercase tracking-tighter mb-4 italic">Security Core</h2>
+          <p class="text-white/40 mb-12 max-w-xl">Configure the heavy-duty APIs that power your autonomous engine. All keys are encrypted at rest.</p>
+          
+          <form (ngSubmit)="saveConfig()" class="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div class="space-y-8">
+              <div class="space-y-3">
+                <label class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400/80">OpenAI Master Key</label>
+                <input type="password" [(ngModel)]="config.openaiKey" name="openaiKey" class="glass-input w-full" placeholder="sk-...">
+                <p class="text-[9px] text-white/20 italic">Critical: Used for AI reasoning and sequence generation.</p>
+              </div>
+              <div class="space-y-3">
+                <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">SerpApi Explorer</label>
+                <input type="password" [(ngModel)]="config.serpapiKey" name="serpapiKey" class="glass-input w-full">
+                <p class="text-[9px] text-white/20 italic">Used for live business search via Google Maps engine.</p>
+              </div>
+              <div class="space-y-3">
+                <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Apollo Intel Key</label>
+                <input type="password" [(ngModel)]="config.apolloKey" name="apolloKey" class="glass-input w-full">
+                <p class="text-[9px] text-white/20 italic">Used for deep contact discovery and enrichment.</p>
+              </div>
+              <div class="space-y-3">
+                <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Verifalia Validator</label>
+                <input type="password" [(ngModel)]="config.verifaliaKey" name="verifaliaKey" class="glass-input w-full">
+                <p class="text-[9px] text-white/20 italic">Used for real-time bounce prevention.</p>
+              </div>
+            </div>
+
+            <div class="space-y-8">
+              <div class="bg-white/[0.02] border border-white/5 p-8 rounded-[2rem] space-y-6">
+                <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+                  <lucide-icon name="play" class="w-4 h-4"></lucide-icon>
+                  SMTP Outbound
+                </h3>
+                <div class="grid grid-cols-3 gap-4">
+                  <div class="col-span-2 space-y-2">
+                    <label class="text-[10px] font-black uppercase text-white/30">Host</label>
+                    <input type="text" [(ngModel)]="config.smtpHost" name="smtpHost" class="glass-input w-full !py-2 !text-xs">
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase text-white/30">Port</label>
+                    <input type="number" [(ngModel)]="config.smtpPort" name="smtpPort" class="glass-input w-full !py-2 !text-xs">
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black uppercase text-white/30">Sender Address</label>
+                  <input type="email" [(ngModel)]="config.senderEmail" name="senderEmail" class="glass-input w-full !py-2 !text-xs">
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black uppercase text-white/30">App Secret</label>
+                  <input type="password" [(ngModel)]="config.appPassword" name="appPassword" class="glass-input w-full !py-2 !text-xs">
+                </div>
+              </div>
+
+              <div class="bg-white/5 p-6 rounded-[2rem] space-y-6 border border-white/5">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+                    <lucide-icon name="refresh-cw" class="w-4 h-4"></lucide-icon>
+                    IMAP Inbound (Replies)
+                  </h3>
+                  <div *ngIf="isUnsubscribed()" class="flex items-center gap-2 px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20">
+                    <lucide-icon name="alert-circle" class="w-3 h-3 text-rose-500"></lucide-icon>
+                    <span class="text-[9px] font-bold text-rose-500 uppercase tracking-widest">Unsubscribed</span>
+                  </div>
+                </div>
+                
+                <div class="space-y-4">
+                  <div class="grid grid-cols-3 gap-4">
+                    <div class="col-span-2 space-y-2">
+                      <label class="text-[10px] font-black uppercase text-white/30">IMAP Host</label>
+                      <input type="text" [(ngModel)]="config.imapHost" name="imapHost" class="glass-input w-full !py-2 !text-xs">
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-[10px] font-black uppercase text-white/30">IMAP Port</label>
+                      <input type="number" [(ngModel)]="config.imapPort" name="imapPort" class="glass-input w-full !py-2 !text-xs">
+                    </div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Test Recipient Email</label>
+                    <input type="email" [(ngModel)]="config.testRecipientEmail" name="testRecipientEmail" (change)="checkUnsubStatus()" class="glass-input w-full !py-2 !text-xs" placeholder="dev@coldauto.pro">
+                    <p class="text-[9px] text-white/20 italic">Manual tests and unsub status checks use this address.</p>
+                  </div>
+
+                  <div *ngIf="isUnsubscribed()" class="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 space-y-3">
+                    <p class="text-[10px] text-amber-200/60 leading-relaxed italic">
+                      The current test email has opted out.
+                    </p>
+                    <button (click)="clearUnsub()" type="button" class="w-full py-2 rounded-xl bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-all">
+                      Clear Unsubscribe Status
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="col-span-full btn-primary !py-6 !text-lg uppercase tracking-[0.2em] mt-4 shadow-indigo-600/40">
+              Synchronize Infrastructure
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    :host { display: block; }
+  `]
+})
+export class InfrastructureComponent {
+  auth = inject(AuthService);
+  outreach = inject(OutreachService);
+  container = viewChild<ElementRef<HTMLDivElement>>('container');
+
+  config = {
+    openaiKey: '',
+    serpapiKey: '',
+    apolloKey: '',
+    verifaliaKey: '',
+    senderEmail: '',
+    appPassword: '',
+    smtpHost: '',
+    smtpPort: 465,
+    imapHost: '',
+    imapPort: 993,
+    testRecipientEmail: ''
+  };
+
+  isUnsubscribed = signal(false);
+
+  constructor() {
+    const user = this.auth.user();
+    if (user?.config) {
+      this.config = { ...this.config, ...user.config };
+    }
+
+    afterNextRender(() => {
+      this.animateIn();
+      this.checkUnsubStatus();
+    });
+  }
+
+  private animateIn() {
+    const el = this.container()?.nativeElement;
+    if (el) {
+      gsap.to(el, {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        ease: 'power4.out'
+      });
+    }
+  }
+
+  saveConfig() {
+    this.outreach.saveConfig(this.config).subscribe((res: any) => {
+      if (res && res.token) localStorage.setItem('auth_token', res.token);
+      alert('Infrastructure Synchronized!');
+      this.auth.checkAuth();
+    });
+  }
+
+  checkUnsubStatus() {
+    if (this.config.testRecipientEmail) {
+      this.outreach.getUnsubStatus().subscribe((res: any) => {
+        this.isUnsubscribed.set(res.isUnsubscribed);
+      });
+    }
+  }
+
+  clearUnsub() {
+    this.outreach.clearUnsub().subscribe((res: any) => {
+      alert(res.message);
+      this.checkUnsubStatus();
+    });
+  }
+}

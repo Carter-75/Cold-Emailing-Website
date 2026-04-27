@@ -84,8 +84,8 @@ import { gsap } from 'gsap';
 
         <!-- Tech Cards -->
         <div class="features-grid grid max-w-7xl gap-10 opacity-0 md:grid-cols-3 mb-40">
-          <div *ngFor="let f of features" (click)="handleAction()" 
-               class="feature-card group">
+          <div *ngFor="let f of features; let i = index" (click)="handleAction()" 
+               class="feature-card group" [ngClass]="'delay-' + (i * 200)" style="animation: float 6s ease-in-out infinite" [style.animation-delay]="i * 0.5 + 's'">
             <div class="card-inner">
               <div class="mb-10 text-6xl transform group-hover:scale-110 transition-transform duration-700">{{ f.icon }}</div>
               <h3 class="mb-6 text-3xl font-black tracking-tighter uppercase italic">{{ f.title }}</h3>

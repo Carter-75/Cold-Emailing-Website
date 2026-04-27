@@ -9,13 +9,22 @@ import anime from 'animejs';
 import { LucideAngularModule } from 'lucide-angular';
 import { gsap } from 'gsap';
 
+import { OverviewComponent } from './overview/overview';
+import { LeadsComponent } from './leads/leads';
+import { InfrastructureComponent } from './infrastructure/infrastructure';
+import { IdentityComponent } from './identity/identity';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
     CommonModule, 
     FormsModule, 
-    LucideAngularModule
+    LucideAngularModule,
+    OverviewComponent,
+    LeadsComponent,
+    InfrastructureComponent,
+    IdentityComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
@@ -163,9 +172,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   setTab(tab: 'overview' | 'leads' | 'infra' | 'identity' | 'billing') {
-    this.activeTab.set(tab);
-    if (tab === 'leads') {
-      this.fetchLeads();
+    const container = document.getElementById('tab-content-container');
+    if (container) {
+      gsap.to(container, {
+        opacity: 0,
+        y: 20,
+        duration: 0.2,
+        onComplete: () => {
+          this.activeTab.set(tab);
+          if (tab === 'leads') this.fetchLeads();
+          
+          setTimeout(() => {
+            gsap.to(container, {
+              opacity: 1,
+              y: 0,
+              duration: 0.4,
+              ease: 'power2.out'
+            });
+          }, 50);
+        }
+      });
+    } else {
+      this.activeTab.set(tab);
+      if (tab === 'leads') this.fetchLeads();
     }
   }
 

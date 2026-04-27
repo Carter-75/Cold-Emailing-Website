@@ -46,6 +46,16 @@ aside button::before {
   @apply bg-accent-blue rounded-r-full transition-all duration-300;
 }
 
+aside button[class*="bg-white/10"] {
+  @apply shadow-[0_0_20px_rgba(79,70,229,0.1)];
+  animation: sidebar-active 2s infinite alternate;
+}
+
+@keyframes sidebar-active {
+  from { @apply border-white/5; }
+  to { @apply border-accent-blue/20; }
+}
+
 aside button[class*="bg-white/10"]::before {
   height: 60%;
 }

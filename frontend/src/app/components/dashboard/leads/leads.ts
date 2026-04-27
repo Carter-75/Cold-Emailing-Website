@@ -1,0 +1,151 @@
+import { Component, inject, signal, afterNextRender, ElementRef, viewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { OutreachService } from '../../../services/outreach.service';
+import { LucideAngularModule } from 'lucide-angular';
+import { gsap } from 'gsap';
+
+@Component({
+  selector: 'app-leads',
+  standalone: true,
+  imports: [CommonModule, LucideAngularModule],
+  template: `
+    <div #container class="opacity-0 translate-y-4">
+      <div class="glass-premium overflow-hidden">
+        <div class="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
+          <div>
+            <h2 class="text-2xl font-black uppercase tracking-tighter italic">Lead Pipeline</h2>
+            <p class="text-xs text-white/40 uppercase tracking-widest mt-1">Live Discovery Data</p>
+          </div>
+          <button (click)="fetchLeads()" class="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+            <lucide-icon name="refresh-cw" class="w-4 h-4"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 border-b border-white/5">
+                <th class="px-8 py-6">Company / Lead</th>
+                <th class="px-8 py-6">Status</th>
+                <th class="px-8 py-6 text-right">Last Signal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let lead of leads()">
+                <tr (click)="lead.isExpanded = !lead.isExpanded" class="lead-row group border-b border-white/5 last:border-0">
+                  <td class="px-8 py-6">
+                    <div class="flex items-center gap-4">
+                      <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg shadow-inner group-hover:border-accent-blue/30 transition-all">
+                        {{ lead.companyName?.charAt(0) || '?' }}
+                      </div>
+                      <div>
+                        <p class="text-sm font-bold tracking-tight">{{ lead.companyName || 'Unknown Entity' }}</p>
+                        <p class="text-[10px] text-white/30">{{ lead.email }}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-8 py-6">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                      {{ lead.status }}
+                    </div>
+                  </td>
+                  <td class="px-8 py-6 text-right font-mono text-[10px] text-white/20">
+                    {{ lead.updatedAt | date:'HH:mm:ss' }}
+                  </td>
+                </tr>
+                <tr *ngIf="lead.isExpanded" class="bg-white/[0.01]">
+                  <td colspan="3" class="px-8 py-10">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 animate-in fade-in slide-in-from-top-2 duration-500">
+                      <div class="space-y-6">
+                         <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Metadata Intelligence</h4>
+                         <div class="grid grid-cols-2 gap-4">
+                            <div class="p-4 rounded-2xl bg-black/20 border border-white/5">
+                               <p class="text-[9px] text-white/20 uppercase font-black">Domain</p>
+                               <p class="text-xs font-medium truncate">{{ lead.website }}</p>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-black/20 border border-white/5">
+                               <p class="text-[9px] text-white/20 uppercase font-black">Verified</p>
+                               <p class="text-xs font-medium">{{ lead.isVerified ? 'YES' : 'PENDING' }}</p>
+                            </div>
+                         </div>
+                         <div class="p-6 rounded-2xl bg-black/40 border border-white/5">
+                            <p class="text-[9px] text-white/20 uppercase font-black mb-2">Company Insight</p>
+                            <p class="text-xs leading-relaxed text-white/60 italic">{{ lead.companyDescription || 'No description available.' }}</p>
+                         </div>
+                      </div>
+                      
+                      <div class="space-y-6">
+                         <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Interaction History</h4>
+                         <div *ngIf="lead.thread && lead.thread.length > 0" class="space-y-4 max-h-[300px] overflow-y-auto no-scrollbar pr-2">
+                           <div *ngFor="let msg of lead.thread" class="thread-bubble" [ngClass]="msg.role === 'assistant' ? 'bubble-sent' : 'bubble-received'">
+                             <p class="text-xs leading-relaxed">{{ msg.content }}</p>
+                             <p class="text-[9px] mt-3 opacity-30 font-bold uppercase">{{ msg.timestamp | date:'MMM d, HH:mm' }}</p>
+                           </div>
+                         </div>
+                         <div *ngIf="!lead.thread || lead.thread.length === 0" class="h-40 flex flex-col items-center justify-center border border-white/5 border-dashed rounded-3xl">
+                            <lucide-icon name="message-square" class="w-8 h-8 text-white/10 mb-4"></lucide-icon>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-white/10 italic">No communication logged</p>
+                         </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+
+          <div *ngIf="leads().length === 0" class="py-40 text-center grayscale opacity-10">
+            <lucide-icon name="users" class="w-20 h-20 mx-auto mb-6"></lucide-icon>
+            <p class="text-xs font-black uppercase tracking-[0.5em]">No Discovery Data Yet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    :host { display: block; }
+    .lead-row {
+      @apply cursor-pointer transition-colors hover:bg-white/[0.02];
+    }
+    .thread-bubble {
+      @apply p-4 rounded-2xl max-w-[90%];
+    }
+    .bubble-sent {
+      @apply bg-indigo-500/10 border border-indigo-500/20 ml-auto;
+    }
+    .bubble-received {
+      @apply bg-white/5 border border-white/10 mr-auto;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+  `]
+})
+export class LeadsComponent {
+  outreach = inject(OutreachService);
+  leads = signal<any[]>([]);
+  container = viewChild<ElementRef<HTMLDivElement>>('container');
+
+  constructor() {
+    afterNextRender(() => {
+      this.animateIn();
+      this.fetchLeads();
+    });
+  }
+
+  private animateIn() {
+    const el = this.container()?.nativeElement;
+    if (el) {
+      gsap.to(el, {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        ease: 'power4.out'
+      });
+    }
+  }
+
+  fetchLeads() {
+    this.outreach.getLeads().subscribe(leads => {
+      this.leads.set(leads.map(l => ({ ...l, isExpanded: false })));
+    });
+  }
+}

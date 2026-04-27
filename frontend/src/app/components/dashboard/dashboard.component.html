@@ -1,111 +1,47 @@
-<div class="min-h-screen bg-charcoal text-white font-sans selection:bg-stripe-purple/30 overflow-x-hidden">
+<div class="relative min-h-screen w-full overflow-hidden bg-charcoal text-white selection:bg-accent-blue/30">
+  <!-- Dynamic Background Motion -->
+  <div #scene class="absolute inset-0 z-0 pointer-events-none overflow-hidden"></div>
 
-  <!-- Interactive Tour Overlay -->
-  <div *ngIf="tourStep() !== null" class="tour-overlay"></div>
-  
-  <div *ngIf="tourStep() === 1" class="tour-card top-[30%] left-[10%] animate-in fade-in zoom-in-95">
-    <div class="tour-pulse"></div>
-    <h3 class="text-xl font-black uppercase italic mb-3">01. Mission Control</h3>
-    <p class="text-sm leading-relaxed mb-6">This is your main dashboard. Monitor your outreach volume, replies, and real-time engine logs right here.</p>
-    <div class="flex items-center gap-3">
-      <button (click)="skipTour()" class="flex-1 py-3 rounded-xl bg-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">Skip</button>
-      <button (click)="nextTourStep()" class="flex-1 btn-primary !py-3 text-[10px] !rounded-xl">Continue</button>
-    </div>
-  </div>
-
-  <div *ngIf="tourStep() === 2" class="tour-card top-[30%] right-[10%] animate-in fade-in zoom-in-95">
-    <div class="tour-pulse"></div>
-    <h3 class="text-xl font-black uppercase italic mb-3">02. Sequence Toggle</h3>
-    <p class="text-sm leading-relaxed mb-6">Use this master switch to start or stop your autonomous outreach. The scan-line indicator shows when the engine is actively processing.</p>
-    <div class="flex items-center gap-3">
-      <button (click)="skipTour()" class="flex-1 py-3 rounded-xl bg-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">Skip</button>
-      <button (click)="nextTourStep()" class="flex-1 btn-primary !py-3 text-[10px] !rounded-xl">Continue</button>
-    </div>
-  </div>
-
-  <div *ngIf="tourStep() === 3" class="tour-card top-[40%] left-[20%] animate-in fade-in zoom-in-95">
-    <div class="tour-pulse"></div>
-    <h3 class="text-xl font-black uppercase italic mb-3">03. API Infrastructure</h3>
-    <p class="text-sm leading-relaxed mb-6">Configure your OpenAI, SerpApi, and Apollo keys here. These power the discovery and personalization engines.</p>
-    <div class="flex items-center gap-3">
-      <button (click)="skipTour()" class="flex-1 py-3 rounded-xl bg-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">Skip</button>
-      <button (click)="nextTourStep()" class="flex-1 btn-primary !py-3 text-[10px] !rounded-xl">Continue</button>
-    </div>
-  </div>
-
-  <div *ngIf="tourStep() === 4" class="tour-card top-[40%] right-[20%] animate-in fade-in zoom-in-95">
-    <div class="tour-pulse"></div>
-    <h3 class="text-xl font-black uppercase italic mb-3">04. AI Persona</h3>
-    <p class="text-sm leading-relaxed mb-6">Teach the AI who you are. Define your core value prop and pricing tiers to ensure every email feels authentically you.</p>
-    <div class="flex items-center gap-3">
-      <button (click)="skipTour()" class="flex-1 py-3 rounded-xl bg-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">Skip</button>
-      <button (click)="nextTourStep()" class="flex-1 btn-primary !py-3 text-[10px] !rounded-xl">Continue</button>
-    </div>
-  </div>
-
-  <div *ngIf="tourStep() === 5" class="tour-card top-[40%] left-[50%] -translate-x-1/2 animate-in fade-in zoom-in-95">
-    <div class="tour-pulse"></div>
-    <h3 class="text-xl font-black uppercase italic mb-3">05. Ready for Launch</h3>
-    <p class="text-sm leading-relaxed mb-6">You're all set. Save your settings, initiate the sequence, and watch the leads roll in. Welcome to the future of outreach.</p>
-    <div class="flex items-center gap-3">
-      <button (click)="tourStep.set(null); skipTour()" class="flex-1 py-3 rounded-xl bg-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">Dismiss</button>
-      <button (click)="skipTour()" class="flex-1 btn-primary !py-3 text-[10px] !rounded-xl">Finish Guide</button>
-    </div>
-  </div>
-  
-  <!-- Background Glows -->
-  <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
-    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-accent-purple/5 blur-[150px] rounded-full"></div>
-    <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent-blue/5 blur-[150px] rounded-full"></div>
-  </div>
-
-  <!-- Dashboard Layout -->
-  <div *ngIf="auth.isAuthenticated()" class="flex min-h-screen relative z-10">
+  <!-- Authenticated View -->
+  <div *ngIf="auth.isAuthenticated()" class="relative z-10 flex min-h-screen">
     
-    <!-- Sidebar Navigation -->
-    <aside class="w-72 fixed h-screen border-r border-white/5 bg-charcoal/40 backdrop-blur-3xl p-8 flex flex-col z-[60]">
-      <div class="flex items-center gap-4 mb-16 group cursor-pointer" (click)="setTab('overview')">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center font-bold shadow-lg shadow-accent-blue/20 group-hover:scale-110 transition-transform">
-          C
-        </div>
-        <div class="flex flex-col">
-          <span class="font-black tracking-tight text-xl leading-none">ColdAuto</span>
-          <span class="text-[10px] text-white/30 font-mono tracking-[0.2em] uppercase">Enterprise v3</span>
-        </div>
+    <!-- Glass Sidebar -->
+    <aside class="w-72 border-r border-white/5 bg-black/20 backdrop-blur-3xl flex flex-col fixed inset-y-0 z-50">
+      <div class="p-8 border-b border-white/5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center text-xl shadow-lg">⚛️</div>
+        <span class="text-xl font-black uppercase tracking-tighter italic">Outreach</span>
       </div>
 
-      <nav class="flex-1 space-y-2">
-        <button (click)="setTab('overview')" 
-                [ngClass]="activeTab() === 'overview' ? 'bg-white/10 text-white' : 'text-white/40 hover:bg-white/5 hover:text-white'"
-                class="w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group">
-          <lucide-icon name="layout-dashboard" class="w-5 h-5" [ngClass]="activeTab() === 'overview' ? 'text-accent-blue' : ''"></lucide-icon>
-          <span class="text-sm font-bold tracking-wide">Command Center</span>
+      <nav class="flex-1 p-6 space-y-2 overflow-y-auto no-scrollbar">
+        <button (click)="setTab('overview')" [ngClass]="activeTab() === 'overview' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'"
+                class="w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-300 text-xs font-black uppercase tracking-widest relative group">
+          <lucide-icon name="layout-dashboard" class="w-4 h-4"></lucide-icon>
+          Command Center
         </button>
-        
-        <button (click)="setTab('leads')" 
-                [ngClass]="activeTab() === 'leads' ? 'bg-white/10 text-white' : 'text-white/40 hover:bg-white/5 hover:text-white'"
-                class="w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group">
-          <lucide-icon name="users" class="w-5 h-5" [ngClass]="activeTab() === 'leads' ? 'text-accent-purple' : ''"></lucide-icon>
-          <span class="text-sm font-bold tracking-wide">Lead Pipeline</span>
+        <button (click)="setTab('leads')" [ngClass]="activeTab() === 'leads' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'"
+                class="w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-300 text-xs font-black uppercase tracking-widest relative group">
+          <lucide-icon name="users" class="w-4 h-4"></lucide-icon>
+          Lead Pipeline
         </button>
-
-        <button (click)="setTab('infra')" 
-                [ngClass]="activeTab() === 'infra' ? 'bg-white/10 text-white' : 'text-white/40 hover:bg-white/5 hover:text-white'"
-                class="w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group">
-          <lucide-icon name="shield" class="w-5 h-5" [ngClass]="activeTab() === 'infra' ? 'text-accent-blue' : ''"></lucide-icon>
-          <span class="text-sm font-bold tracking-wide">Infrastructure</span>
+        <button (click)="setTab('infra')" [ngClass]="activeTab() === 'infra' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'"
+                class="w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-300 text-xs font-black uppercase tracking-widest relative group">
+          <lucide-icon name="shield" class="w-4 h-4"></lucide-icon>
+          Infrastructure
         </button>
-
-        <button (click)="setTab('identity')" 
-                [ngClass]="activeTab() === 'identity' ? 'bg-white/10 text-white' : 'text-white/40 hover:bg-white/5 hover:text-white'"
-                class="w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group">
-          <lucide-icon name="user" class="w-5 h-5" [ngClass]="activeTab() === 'identity' ? 'text-accent-purple' : ''"></lucide-icon>
-          <span class="text-sm font-bold tracking-wide">AI Persona</span>
+        <button (click)="setTab('identity')" [ngClass]="activeTab() === 'identity' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'"
+                class="w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-300 text-xs font-black uppercase tracking-widest relative group">
+          <lucide-icon name="user" class="w-4 h-4"></lucide-icon>
+          AI Persona
+        </button>
+        <button (click)="setTab('billing')" [ngClass]="activeTab() === 'billing' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'"
+                class="w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-300 text-xs font-black uppercase tracking-widest relative group">
+          <lucide-icon name="credit-card" class="w-4 h-4"></lucide-icon>
+          Capacity
         </button>
       </nav>
 
-      <div class="pt-8 border-t border-white/5 space-y-4">
-        <button (click)="startTour()" class="w-full flex items-center gap-4 px-6 py-3 text-white/40 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest">
+      <div class="p-6 border-t border-white/5 space-y-4">
+        <button (click)="startTour()" class="w-full flex items-center gap-4 px-6 py-3 text-accent-blue hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest">
           <lucide-icon name="help-circle" class="w-4 h-4"></lucide-icon>
           Help & Guide
         </button>
@@ -138,495 +74,81 @@
       </header>
 
       <div class="p-12">
-        <div [ngSwitch]="activeTab()" class="animate-in fade-in slide-in-from-bottom-4 duration-700">
-
-      <div [ngSwitch]="activeTab()" class="animate-in fade-in slide-in-from-bottom-4 duration-700">
-
-        <!-- Overview Section -->
-        <div *ngSwitchCase="'overview'" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div id="tab-content-container" [ngSwitch]="activeTab()" class="min-h-[60vh]">
+          <app-overview *ngSwitchCase="'overview'"></app-overview>
+          <app-leads *ngSwitchCase="'leads'"></app-leads>
+          <app-infrastructure *ngSwitchCase="'infra'"></app-infrastructure>
+          <app-identity *ngSwitchCase="'identity'"></app-identity>
           
-          <div class="lg:col-span-8 space-y-8">
-            <!-- Command Center Hero -->
-            <div class="glass-premium p-1 relative overflow-hidden group" [ngClass]="{'highlight-element': tourStep() === 1}">
-              <div #scene class="absolute inset-0 z-0 opacity-30 pointer-events-none transition-opacity group-hover:opacity-50"></div>
-              
-              <div class="relative z-10 p-10 bg-gradient-to-br from-transparent to-charcoal-light/60">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-8">
-                  <div>
-                    <div class="flex items-center gap-3 mb-3">
-                      <h1 class="text-5xl font-black tracking-tighter uppercase italic">Control Room</h1>
-                    </div>
-                    <p class="text-white/40 text-lg font-medium">Autonomous discovery & hyper-personalized outreach sequences.</p>
-                  </div>
-
-                  <div class="flex items-center gap-4">
-                    <button (click)="sendTestEmail()" class="btn-secondary !py-5 !px-8 text-xs uppercase tracking-widest h-full">Send Test</button>
-                    
-                    <div class="flex p-1 bg-black/40 rounded-2xl border border-white/5 backdrop-blur-md" [ngClass]="{'highlight-element': tourStep() === 2}">
-                      <button (click)="toggleOutreach()" 
-                              [ngClass]="outreach.status() === 'running' ? 'btn-abort' : 'btn-initiate'"
-                              class="min-w-[220px] relative group">
-                        <div *ngIf="outreach.status() === 'running'" class="scanline"></div>
-                        <span class="relative z-10 flex items-center justify-center gap-3">
-                          {{ outreach.status() === 'running' ? 'Abort Engine' : 'Initiate Sequence' }}
-                          <lucide-icon *ngIf="outreach.status() === 'running'" name="zap" class="w-4 h-4 animate-pulse"></lucide-icon>
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div class="bg-white/5 border border-white/5 p-6 rounded-3xl group hover:border-white/20 transition-all">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Total Outreach</p>
-                    <p class="text-4xl font-black tracking-tight">{{ (auth.user()?.stats?.emailsSent || 0) + (outreach.stats().sent || 0) }}</p>
-                  </div>
-                  <div class="bg-white/5 border border-white/5 p-6 rounded-3xl group hover:border-white/20 transition-all">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Total Replies</p>
-                    <p class="text-4xl font-black tracking-tight">{{ auth.user()?.stats?.replies || 0 }}</p>
-                  </div>
-                  <div class="bg-white/5 border border-white/5 p-6 rounded-3xl group hover:border-white/20 transition-all">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Conversion</p>
-                    <p class="text-4xl font-black tracking-tight text-emerald-400">{{ (auth.user()?.stats?.emailsSent + outreach.stats().sent) > 0 ? ((auth.user()?.stats?.replies / (auth.user()?.stats?.emailsSent + outreach.stats().sent)) * 100 | number:'1.1-1') : '0.0' }}%</p>
-                  </div>
-                  <div class="bg-white/5 border border-white/5 p-6 rounded-3xl group hover:border-white/20 transition-all">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Daily Limit</p>
-                    <p class="text-4xl font-black tracking-tight text-indigo-400">{{ config.dailyLeadLimit }}/d</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Activity Stream -->
-            <div class="glass-premium flex flex-col h-[450px] overflow-hidden border-white/5 shadow-none">
-              <div class="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
-                <div class="flex items-center gap-3">
-                  <div class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
-                  <h2 class="text-xs font-black uppercase tracking-[0.25em] text-white/60">Live Engine Stream</h2>
-                </div>
-                <span class="text-[10px] font-mono text-white/20 italic">v3.0_logs_active</span>
-              </div>
-              
-              <div class="flex-1 overflow-y-auto p-8 flex flex-col-reverse gap-4 no-scrollbar">
-                <div *ngFor="let log of outreach.logs()" class="p-5 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all group animate-in slide-in-from-left-4 duration-500">
-                  <div class="flex items-center gap-3 mb-1">
-                    <span class="text-[10px] font-black text-indigo-500/80 tracking-widest">SYSTEM_NODE</span>
-                    <span class="text-[10px] text-white/10 font-mono">{{ log.timestamp | date:'HH:mm:ss' }}</span>
-                  </div>
-                  <p class="text-sm text-white/70 group-hover:text-white transition-colors">{{ log.message || log }}</p>
-                </div>
-                
-                <div *ngIf="outreach.logs().length === 0" class="h-full flex flex-col items-center justify-center opacity-20 py-20 grayscale">
-                  <svg class="w-16 h-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  <p class="text-xs font-black uppercase tracking-[0.3em]">Engine Warm-up Required</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sidebar Controls -->
-          <div class="lg:col-span-4 space-y-6">
-            <div class="glass-premium p-8 border-accent-purple/10 shadow-accent-purple/5">
-              <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center gap-2">
-                <lucide-icon name="refresh-cw" class="w-4 h-4"></lucide-icon>
-                Quick Settings
-              </h3>
-              
-              <div class="space-y-6">
-                <div class="flex items-center justify-between group p-3 rounded-2xl bg-white/[0.02] border border-white/5 transition-all hover:bg-white/[0.04]">
-                  <div>
-                    <p class="text-sm font-bold text-white/80">Master Engine</p>
-                    <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">{{ outreach.status() === 'running' ? 'Active' : 'Offline' }}</p>
-                  </div>
-                  <button (click)="toggleOutreach()" 
-                          [ngClass]="outreach.status() === 'running' ? 'bg-emerald-500' : 'bg-white/10'"
-                          class="w-12 h-6 rounded-full relative transition-all shadow-inner border border-white/5">
-                    <div [ngClass]="outreach.status() === 'running' ? 'translate-x-6' : 'translate-x-1'" class="absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-md"></div>
-                  </button>
-                </div>
-
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black uppercase tracking-widest text-white/30">Daily Throttle</label>
-                  <div class="relative">
-                    <input type="number" [(ngModel)]="config.dailyLeadLimit" class="glass-input w-full !pl-12">
-                    <lucide-icon name="zap" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20"></lucide-icon>
-                  </div>
-                </div>
-
-                <button (click)="saveConfig()" class="btn-primary w-full mt-4 flex items-center justify-center gap-3">
-                  Commit Changes
-                  <lucide-icon name="save" class="w-4 h-4"></lucide-icon>
+          <div *ngSwitchCase="'billing'" class="max-w-4xl mx-auto">
+             <div class="glass-premium p-12 text-center">
+                <h2 class="text-4xl font-black uppercase tracking-tighter mb-4 italic">Billing Protocol</h2>
+                <p class="text-white/40 mb-12 leading-relaxed">Manage your engine's power allocation and subscription tiers.</p>
+                <button (click)="upgradeAccount()" class="btn-primary !px-12 !py-6 !text-lg uppercase tracking-widest shadow-xl shadow-accent-blue/20">
+                  Upgrade Capacity
                 </button>
-              </div>
-            </div>
-
-            <div class="glass-premium p-8 bg-gradient-to-br from-white/[0.02] to-accent-purple/5">
-              <h3 class="text-xs font-black uppercase tracking-widest text-white/40 mb-4">Subscription</h3>
-              <div class="flex items-center gap-4 mb-6">
-                <div class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl">
-                  {{ auth.user()?.subscription?.status === 'active' || auth.user()?.subscription?.status === 'trialing' ? '💎' : '⚡' }}
-                </div>
-                <div>
-                  <p class="text-sm font-black italic uppercase">{{ auth.user()?.subscription?.status || 'NOT ACTIVE' }}</p>
-                  <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">
-                    {{ auth.user()?.subscription?.status === 'active' || auth.user()?.subscription?.status === 'trialing' ? 'Premium Access' : 'Limited Access' }}
-                  </p>
-                </div>
-              </div>
-              
-              <div *ngIf="auth.user()?.subscription?.status !== 'active' && auth.user()?.subscription?.status !== 'trialing'" class="space-y-4">
-                <p class="text-[10px] text-white/40 italic leading-relaxed">Upgrade to unlock autonomous discovery and 24/7 background sequences.</p>
-                <button (click)="upgradeAccount()" class="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] transition-all shadow-lg shadow-indigo-600/30">
-                  Upgrade to Pro ($25/mo)
-                </button>
-              </div>
-
-              <div *ngIf="auth.user()?.subscription?.status === 'active' || auth.user()?.subscription?.status === 'trialing'" class="space-y-3">
-                <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5">
-                  <div class="w-[100%] h-full bg-indigo-600 rounded-full shadow-[0_0_8px_rgba(79,70,229,0.5)]"></div>
-                </div>
-                <p class="text-[9px] text-white/20 text-center uppercase tracking-widest italic">Renewal: {{ auth.user()?.subscription?.currentPeriodEnd | date:'MMM d, y' }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Leads Section -->
-        <div *ngSwitchCase="'leads'" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div class="glass-premium overflow-hidden">
-            <div class="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
-              <div class="flex items-center gap-3">
-                <h2 class="text-sm font-black uppercase tracking-widest">Outreach Pipeline</h2>
-                <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-[10px] font-black text-indigo-400">{{ leads().length }} Leads</span>
-              </div>
-              <button (click)="fetchLeads()" class="text-xs font-bold text-white/40 hover:text-white transition-colors flex items-center gap-2">
-                <lucide-icon name="refresh-cw" class="w-3 h-3"></lucide-icon>
-                Sync Leads
-              </button>
-            </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="text-[10px] font-black uppercase tracking-widest text-white/20 border-b border-white/5">
-                    <th class="px-8 py-4">Lead / Business</th>
-                    <th class="px-8 py-4">Status</th>
-                    <th class="px-8 py-4">Last Activity</th>
-                    <th class="px-8 py-4">Sequence</th>
-                    <th class="px-8 py-4">Action</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5">
-                  <ng-container *ngFor="let lead of leads()">
-                    <tr class="lead-row group" (click)="lead.isExpanded = !lead.isExpanded">
-                      <td class="px-8 py-6">
-                        <div class="flex flex-col">
-                          <span class="font-black text-sm group-hover:text-indigo-400 transition-colors">{{ lead.businessName }}</span>
-                          <span class="text-[10px] text-white/40">{{ lead.recipientEmail }}</span>
-                        </div>
-                      </td>
-                      <td class="px-8 py-6">
-                        <span [ngClass]="{
-                          'bg-emerald-500/10 text-emerald-500 border-emerald-500/20': lead.status === 'replied',
-                          'bg-indigo-500/10 text-indigo-500 border-indigo-500/20': lead.status === 'emailed',
-                          'bg-white/5 text-white/40 border-white/10': lead.status === 'finished',
-                          'bg-amber-500/10 text-amber-500 border-amber-500/20': lead.status === 'discovery'
-                        }" class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border">
-                          {{ lead.status }}
-                        </span>
-                      </td>
-                      <td class="px-8 py-6">
-                        <span class="text-xs text-white/60 font-mono">{{ (lead.lastEmailedAt || lead.updatedAt) | date:'MMM d, HH:mm' }}</span>
-                      </td>
-                      <td class="px-8 py-6">
-                        <div class="flex items-center gap-1.5">
-                          <div *ngFor="let i of [1,2,3]" class="w-4 h-1 rounded-full" 
-                               [ngClass]="lead.sequenceStep >= i ? 'bg-indigo-500' : 'bg-white/10'"></div>
-                        </div>
-                      </td>
-                      <td class="px-8 py-6">
-                        <button class="text-[10px] font-black uppercase tracking-widest text-indigo-400 group-hover:text-white transition-all">
-                          {{ lead.isExpanded ? 'Hide Thread' : 'View Thread' }}
-                        </button>
-                      </td>
-                    </tr>
-                    <!-- Thread Detail -->
-                    <tr *ngIf="lead.isExpanded" class="bg-black/20">
-                      <td colspan="5" class="px-8 py-8 animate-in slide-in-from-top-2 duration-300">
-                        <div class="max-w-4xl mx-auto space-y-6">
-                          <div class="flex items-center justify-between mb-8">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400">Message History</h3>
-                            <span class="text-[10px] text-white/20 uppercase tracking-widest font-mono">Thread ID: {{ lead._id }}</span>
-                          </div>
-                          
-                          <div class="flex flex-col space-y-4">
-                            <div *ngFor="let msg of lead.thread" [ngClass]="msg.from === lead.recipientEmail ? 'bubble-received' : 'bubble-sent'" class="thread-bubble">
-                              <div class="flex items-center justify-between mb-2">
-                                <span class="text-[9px] font-black uppercase tracking-widest" [ngClass]="msg.from === lead.recipientEmail ? 'text-emerald-400' : 'text-indigo-400'">
-                                  {{ msg.from === lead.recipientEmail ? 'REPLY RECEIVED' : 'OUTBOUND EMAIL' }}
-                                </span>
-                                <span class="text-[9px] text-white/20 font-mono">{{ msg.timestamp | date:'MMM d, HH:mm' }}</span>
-                              </div>
-                              <p class="text-[13px] text-white/80 leading-relaxed font-medium mb-2">{{ msg.subject }}</p>
-                              <div class="text-xs text-white/60 leading-relaxed space-y-2 whitespace-pre-wrap" [innerHTML]="msg.body"></div>
-                            </div>
-
-                            <div *ngIf="!lead.thread || lead.thread.length === 0" class="py-12 text-center grayscale opacity-20">
-                              <lucide-icon name="mail" class="w-12 h-12 mx-auto mb-4"></lucide-icon>
-                              <p class="text-[10px] font-black uppercase tracking-[0.3em]">No detailed logs for this lead</p>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  </ng-container>
-                </tbody>
-              </table>
-
-              <div *ngIf="leads().length === 0" class="py-40 text-center grayscale opacity-10">
-                <lucide-icon name="users" class="w-20 h-20 mx-auto mb-6"></lucide-icon>
-                <p class="text-xs font-black uppercase tracking-[0.5em]">No Discovery Data Yet</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Infrastructure Section -->
-        <div *ngSwitchCase="'infra'" class="max-w-5xl mx-auto" [ngClass]="{'highlight-element': tourStep() === 3}">
-          <div class="glass-premium p-12 relative overflow-hidden">
-             <div class="absolute top-0 right-0 p-8 opacity-5">
-               <lucide-icon name="shield" class="w-48 h-48"></lucide-icon>
-             </div>
-
-             <div class="relative z-10">
-               <h2 class="text-4xl font-black uppercase tracking-tighter mb-4 italic">Security Core</h2>
-               <p class="text-white/40 mb-12 max-w-xl">Configure the heavy-duty APIs that power your autonomous engine. All keys are encrypted at rest.</p>
-               
-               <form (ngSubmit)="saveConfig()" class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                 <div class="space-y-8">
-                   <div class="space-y-3">
-                     <label class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400/80">OpenAI Master Key</label>
-                     <input type="password" [(ngModel)]="config.openaiKey" name="openaiKey" class="glass-input w-full" placeholder="sk-...">
-                     <p class="text-[9px] text-white/20 italic">Critical: Used for AI reasoning and sequence generation.</p>
-                   </div>
-                   <div class="space-y-3">
-                     <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">SerpApi Explorer</label>
-                     <input type="password" [(ngModel)]="config.serpapiKey" name="serpapiKey" class="glass-input w-full">
-                     <p class="text-[9px] text-white/20 italic">Used for live business search via Google Maps engine.</p>
-                   </div>
-                   <div class="space-y-3">
-                     <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Apollo Intel Key</label>
-                     <input type="password" [(ngModel)]="config.apolloKey" name="apolloKey" class="glass-input w-full">
-                     <p class="text-[9px] text-white/20 italic">Used for deep contact discovery and enrichment.</p>
-                   </div>
-                   <div class="space-y-3">
-                     <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Verifalia Validator</label>
-                     <input type="password" [(ngModel)]="config.verifaliaKey" name="verifaliaKey" class="glass-input w-full">
-                     <p class="text-[9px] text-white/20 italic">Used for real-time bounce prevention.</p>
-                   </div>
-                 </div>
-
-                 <div class="space-y-8">
-                   <div class="bg-white/[0.02] border border-white/5 p-8 rounded-[2rem] space-y-6">
-                     <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-                       <lucide-icon name="play" class="w-4 h-4"></lucide-icon>
-                       SMTP Outbound
-                     </h3>
-                     <div class="grid grid-cols-3 gap-4">
-                       <div class="col-span-2 space-y-2">
-                         <label class="text-[10px] font-black uppercase text-white/30">Host</label>
-                         <input type="text" [(ngModel)]="config.smtpHost" name="smtpHost" class="glass-input w-full !py-2 !text-xs">
-                       </div>
-                       <div class="space-y-2">
-                         <label class="text-[10px] font-black uppercase text-white/30">Port</label>
-                         <input type="number" [(ngModel)]="config.smtpPort" name="smtpPort" class="glass-input w-full !py-2 !text-xs">
-                       </div>
-                     </div>
-                     <div class="space-y-2">
-                       <label class="text-[10px] font-black uppercase text-white/30">Sender Address</label>
-                       <input type="email" [(ngModel)]="config.senderEmail" name="senderEmail" class="glass-input w-full !py-2 !text-xs">
-                     </div>
-                     <div class="space-y-2">
-                       <label class="text-[10px] font-black uppercase text-white/30">App Secret</label>
-                       <input type="password" [(ngModel)]="config.appPassword" name="appPassword" class="glass-input w-full !py-2 !text-xs">
-                     </div>
-                   </div>
-
-                  <div class="bg-white/5 p-6 rounded-[2rem] space-y-6 border border-white/5">
-                    <div class="flex items-center justify-between">
-                      <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-                        <lucide-icon name="refresh-cw" class="w-4 h-4"></lucide-icon>
-                        IMAP Inbound (Replies)
-                      </h3>
-                      <div *ngIf="isUnsubscribed()" class="flex items-center gap-2 px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20">
-                        <lucide-icon name="alert-circle" class="w-3 h-3 text-rose-500"></lucide-icon>
-                        <span class="text-[9px] font-bold text-rose-500 uppercase tracking-widest">Unsubscribed</span>
-                      </div>
-                    </div>
-                    
-                    <div class="space-y-4">
-                      <div class="grid grid-cols-3 gap-4">
-                        <div class="col-span-2 space-y-2">
-                          <label class="text-[10px] font-black uppercase text-white/30">IMAP Host</label>
-                          <input type="text" [(ngModel)]="config.imapHost" name="imapHost" class="glass-input w-full !py-2 !text-xs">
-                        </div>
-                        <div class="space-y-2">
-                          <label class="text-[10px] font-black uppercase text-white/30">IMAP Port</label>
-                          <input type="number" [(ngModel)]="config.imapPort" name="imapPort" class="glass-input w-full !py-2 !text-xs">
-                        </div>
-                      </div>
-
-                      <div class="space-y-2">
-                        <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Test Recipient Email</label>
-                        <input type="email" [(ngModel)]="config.testRecipientEmail" name="testRecipientEmail" (change)="checkUnsubStatus()" class="glass-input w-full !py-2 !text-xs" placeholder="dev@coldauto.pro">
-                        <p class="text-[9px] text-white/20 italic">Manual tests and unsub status checks use this address.</p>
-                      </div>
-
-                      <div *ngIf="isUnsubscribed()" class="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 space-y-3">
-                        <p class="text-[10px] text-amber-200/60 leading-relaxed italic">
-                          The current test email has opted out.
-                        </p>
-                        <button (click)="clearUnsub()" type="button" class="w-full py-2 rounded-xl bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-all">
-                          Clear Unsubscribe Status
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                 </div>
-
-                 <button type="submit" class="col-span-full btn-primary !py-6 !text-lg uppercase tracking-[0.2em] mt-4 shadow-indigo-600/40">
-                   Synchronize Infrastructure
-                 </button>
-               </form>
              </div>
           </div>
         </div>
-
-        <!-- AI Identity Section -->
-        <div *ngSwitchCase="'identity'" class="max-w-5xl mx-auto" [ngClass]="{'highlight-element': tourStep() === 4}">
-          <div class="glass-premium p-12">
-            <h2 class="text-4xl font-black uppercase tracking-tighter mb-4 italic">AI Identity</h2>
-            <p class="text-white/40 mb-12">Fine-tune the persona and messaging logic the engine uses for outreach.</p>
-
-            <form (ngSubmit)="saveConfig()" class="space-y-12">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <div class="space-y-6">
-                  <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-indigo-400/80">Primary Sender</label>
-                    <input type="text" [(ngModel)]="config.senderName" name="senderName" class="glass-input w-full" placeholder="e.g. John Doe">
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-white/30">Professional Role</label>
-                    <input type="text" [(ngModel)]="config.senderTitle" name="senderTitle" class="glass-input w-full" placeholder="e.g. Founder">
-                  </div>
-                </div>
-                <div class="space-y-6">
-                  <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-white/30">Organization Name</label>
-                    <input type="text" [(ngModel)]="config.companyName" name="companyName" class="glass-input w-full">
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-white/30">HQ Address</label>
-                    <input type="text" [(ngModel)]="config.physicalAddress" name="physicalAddress" class="glass-input w-full">
-                  </div>
-                </div>
-              </div>
-
-              <div class="space-y-3">
-                <label class="text-[10px] font-black uppercase tracking-widest text-indigo-400">Knowledge Base & Context</label>
-                <textarea [(ngModel)]="config.personaContext" name="personaContext" rows="5" class="glass-input w-full !py-4 text-sm leading-relaxed" placeholder="Explain your core value proposition and what makes you unique..."></textarea>
-                <p class="text-[10px] text-white/20 italic">This context is used by the AI to synthesize every single email generated.</p>
-              </div>
-
-              <div class="space-y-6 pt-12 border-t border-white/5">
-                <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400">Offer Architecture</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                   <div class="space-y-2">
-                     <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Entry Tier</label>
-                     <input type="text" [(ngModel)]="config.priceTier1" name="priceTier1" class="glass-input w-full text-xs" placeholder="Basic Setup">
-                   </div>
-                   <div class="space-y-2">
-                     <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Standard Tier</label>
-                     <input type="text" [(ngModel)]="config.priceTier2" name="priceTier2" class="glass-input w-full text-xs" placeholder="Full Build">
-                   </div>
-                   <div class="space-y-2">
-                     <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Premium Tier</label>
-                     <input type="text" [(ngModel)]="config.priceTier3" name="priceTier3" class="glass-input w-full text-xs" placeholder="Enterprise">
-                   </div>
-                </div>
-              </div>
-
-              <div class="space-y-3">
-                <label class="text-[10px] font-black uppercase tracking-widest text-indigo-400">Digital Signature (HTML)</label>
-                <textarea [(ngModel)]="config.signature" name="signature" rows="5" class="glass-input w-full font-mono text-[11px] leading-tight" placeholder="<table...>...</table>"></textarea>
-              </div>
-
-              <button type="submit" class="w-full btn-primary !py-6 !text-lg uppercase tracking-[0.2em]">Update AI Identity</button>
-            </form>
-          </div>
-        </div>
-
       </div>
     </div>
   </div>
-</div>
 
-    <!-- Login View (Revamped with Email Login) -->
-    <div *ngIf="!auth.isAuthenticated()" class="min-h-screen flex flex-col items-center justify-center relative p-6">
-      <div class="glass-premium p-12 max-w-md w-full text-center relative z-10 overflow-hidden">
-        <div class="absolute -top-24 -left-24 w-48 h-48 bg-accent-blue/10 rounded-full blur-3xl"></div>
-        <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-accent-purple/10 rounded-full blur-3xl"></div>
-        
-        <div class="flex justify-center mb-8">
-          <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center text-3xl shadow-2xl shadow-accent-blue/20">⚛️</div>
-        </div>
-        
-        <h2 class="text-4xl font-black uppercase tracking-tighter italic mb-2">Initialize</h2>
-        <p class="text-white/40 mb-10 leading-relaxed text-sm">Access the autonomous networking engine.</p>
-        
-        <div class="space-y-4">
-          <!-- Local Login Form -->
-          <div class="space-y-3">
-            <div class="relative">
-              <lucide-icon name="mail" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20"></lucide-icon>
-              <input type="email" [(ngModel)]="credentials.email" placeholder="Email Address" 
-                     class="glass-input w-full !pl-12 !py-4">
-            </div>
-            <div class="relative">
-              <lucide-icon name="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20"></lucide-icon>
-              <input type="password" [(ngModel)]="credentials.password" placeholder="Password" 
-                     class="glass-input w-full !pl-12 !py-4">
-            </div>
-            
-            <button (click)="onAuthSubmit()" 
-                    class="btn-primary w-full !py-5 uppercase tracking-widest font-black text-xs shadow-accent-blue/20 group">
-              <span class="flex items-center justify-center gap-3">
-                Authorize Session
-                <lucide-icon name="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></lucide-icon>
-              </span>
-            </button>
+  <!-- Login View (Revamped with Email Login) -->
+  <div *ngIf="!auth.isAuthenticated()" class="min-h-screen flex flex-col items-center justify-center relative p-6">
+    <div class="glass-premium p-12 max-w-md w-full text-center relative z-10 overflow-hidden">
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-accent-blue/10 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-accent-purple/10 rounded-full blur-3xl"></div>
+      
+      <div class="flex justify-center mb-8">
+        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center text-3xl shadow-2xl shadow-accent-blue/20">⚛️</div>
+      </div>
+      
+      <h2 class="text-4xl font-black uppercase tracking-tighter italic mb-2">Initialize</h2>
+      <p class="text-white/40 mb-10 leading-relaxed text-sm">Access the autonomous networking engine.</p>
+      
+      <div class="space-y-4">
+        <!-- Local Login Form -->
+        <div class="space-y-3">
+          <div class="relative">
+            <lucide-icon name="mail" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20"></lucide-icon>
+            <input type="email" [(ngModel)]="credentials.email" placeholder="Email Address" 
+                   class="glass-input w-full !pl-12 !py-4">
           </div>
-
-          <div class="flex items-center gap-4 py-4">
-            <div class="h-px flex-1 bg-white/5"></div>
-            <span class="text-[10px] font-black uppercase tracking-widest text-white/20">OR</span>
-            <div class="h-px flex-1 bg-white/5"></div>
+          <div class="relative">
+            <lucide-icon name="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20"></lucide-icon>
+            <input type="password" [(ngModel)]="credentials.password" placeholder="Password" 
+                   class="glass-input w-full !pl-12 !py-4">
           </div>
-
-          <button (click)="loginWithGoogle()" class="btn-secondary w-full !py-5 flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest font-black border-white/5 bg-white/[0.02]">
-            <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-            Sync with Google
+          
+          <button (click)="onAuthSubmit()" 
+                  class="btn-primary w-full !py-5 uppercase tracking-widest font-black text-xs shadow-accent-blue/20 group">
+            <span class="flex items-center justify-center gap-3">
+              Authorize Session
+              <lucide-icon name="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></lucide-icon>
+            </span>
           </button>
         </div>
 
-        <div *ngIf="authError()" class="mt-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold animate-in shake-in duration-300">
-          {{ authError() }}
+        <div class="flex items-center gap-4 py-4">
+          <div class="h-px flex-1 bg-white/5"></div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/20">OR</span>
+          <div class="h-px flex-1 bg-white/5"></div>
         </div>
+
+        <button (click)="loginWithGoogle()" class="btn-secondary w-full !py-5 flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest font-black border-white/5 bg-white/[0.02]">
+          <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Sync with Google
+        </button>
       </div>
-      
-      <div class="mt-8 text-center text-[10px] font-black uppercase tracking-[0.4em] text-white/10 italic">
-        Systems Active. Monitoring Integrity.
+
+      <div *ngIf="authError()" class="mt-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold animate-in shake-in duration-300">
+        {{ authError() }}
       </div>
     </div>
-
+    
+    <div class="mt-8 text-center text-[10px] font-black uppercase tracking-[0.4em] text-white/10 italic">
+      Systems Active. Monitoring Integrity.
+    </div>
+  </div>
 </div>
