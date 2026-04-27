@@ -12,9 +12,9 @@ class EmailService {
     if (step === 1) {
       stepInstructions = `This is the INITIAL outreach. Focus on a personalized hook regarding """${safeBusinessName}""" and a brief intro.`;
     } else if (step === 2) {
-      stepInstructions = `This is the FIRST FOLLOW-UP. Acknowledge that you emailed them previously about """${safeBusinessName}""". Keep it shorter and focus on the "bump" of the value prop.`;
+      stepInstructions = `This is the FIRST FOLLOW-UP (Cold). Acknowledge that you sent a previous email which may have been missed regarding """${safeBusinessName}""". DO NOT assume they have responded or shown interest yet. Keep it shorter and focus on the "bump" of the value prop.`;
     } else {
-      stepInstructions = `This is the FINAL FOLLOW-UP. Be professional but direct. Mention this is the last time you'll be reaching out personally about optimizing """${safeBusinessName}"""'s presence.`;
+      stepInstructions = `This is the FINAL FOLLOW-UP (Cold). Be professional but direct. Mention this is the last time you'll be reaching out personally about optimizing """${safeBusinessName}"""'s presence. Assume they have not responded to your previous two emails.`;
     }
 
     const systemPrompt = `You are a world-class cold email expert representing ${config.senderName} (${config.senderTitle}) from ${config.companyName}.
@@ -34,6 +34,7 @@ class EmailService {
     - Max 3-5 sentences for follow-ups.
     - Zero passive phrasing.
     - **CRITICAL**: Do NOT include a sign-off or signature.
+    - **CRITICAL**: Do NOT include a subject line. Start directly with the email body.
     
     Email Structure:
     - Personalized context regarding """${safeBusinessName}""".
@@ -52,7 +53,12 @@ class EmailService {
       ],
     });
 
-    return completion.choices[0].message.content;
+    const content = completion.choices[0].message.content;
+    
+    // Strip any AI-generated "Subject: ..." or "Subject\n..." prefix
+    const cleanContent = content.replace(/^Subject:\s*.*\n?/mi, '').trim();
+
+    return cleanContent;
   }
 
   async sendEmail(userConfig, recipientEmail, content, businessName, testMode = false) {
@@ -129,6 +135,46 @@ class EmailService {
       console.error('Nodemailer Error:', err.message);
       throw err; // Trigger "Kill Switch"
     }
+  async refineReply(lead, config, draft) {
+    const openai = new OpenAI({ apiKey: config.openaiKey });
+    
+    const threadContext = lead.thread.map(msg => 
+      `${msg.from === config.senderEmail ? 'ME' : 'THEM'}: ${msg.body}`
+    ).join('\n---\n');
+
+    const systemPrompt = `You are a world-class communication expert. Your goal is to refine a manual email reply draft to a lead.
+    
+    Lead Business: ${lead.businessName}
+    Your Persona: ${config.senderName} (${config.senderTitle}) from ${config.companyName}
+    Value Prop: ${config.valueProp}
+    Target Outcome: ${config.targetOutcome}
+
+    Communication Rules:
+    - Keep it professional, concise, and high-impact.
+    - Maintain the context of the previous conversation.
+    - Follow these linguistic rules: Zero passive phrasing, no generic signatures (already handled by system).
+    - **CRITICAL**: Output ONLY the refined email body text. Do NOT include a subject line.
+
+    Full Thread History:
+    ${threadContext || 'No previous messages.'}`;
+
+    const userPrompt = `Here is my rough draft for the reply:
+    """
+    ${draft}
+    """
+
+    Please refine this draft to be more professional and effective while staying true to my intent.`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+    });
+
+    const content = completion.choices[0].message.content;
+    return content.replace(/^Subject:\s*.*\n?/mi, '').trim();
   }
 }
 

@@ -82,8 +82,16 @@ export class OutreachService {
     return this.api.getData<{ isUnsubscribed: boolean; email: string }>('outreach/unsub-status');
   }
 
+  getUnsubList() {
+    return this.api.getData<any[]>('outreach/unsub-list');
+  }
+
   clearUnsub() {
     return this.api.postData<{ message: string }>('outreach/unsub-clear', {});
+  }
+
+  syncInbox() {
+    return this.api.postData<{ message: string }>('outreach/sync-inbox', {});
   }
 
   saveConfig(config: any) {
@@ -92,5 +100,13 @@ export class OutreachService {
 
   getLeads() {
     return this.api.getData<any[]>('leads');
+  }
+
+  replyToLead(leadId: string, body: string) {
+    return this.api.postData(`leads/${leadId}/reply`, { body });
+  }
+
+  refineReply(leadId: string, draft: string) {
+    return this.api.postData<{ refinedText: string }>(`leads/${leadId}/refine-reply`, { draft });
   }
 }

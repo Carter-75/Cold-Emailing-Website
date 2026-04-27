@@ -2,24 +2,36 @@ import { Component, inject, signal, afterNextRender, ElementRef, viewChild } fro
 import { CommonModule } from '@angular/common';
 import { OutreachService } from '../../../services/outreach.service';
 import { LucideAngularModule } from 'lucide-angular';
+import { FormsModule } from '@angular/forms';
 import { gsap } from 'gsap';
 
 @Component({
   selector: 'app-leads',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, FormsModule],
   templateUrl: './leads.component.html',
   styleUrl: './leads.component.css'
 })
 export class LeadsComponent {
   outreach = inject(OutreachService);
   leads = signal<any[]>([]);
+  unsubList = signal<any[]>([]);
+  activeTab = signal<'pipeline' | 'replied' | 'unsubscribed'>('pipeline');
+  replyContent = signal<string>('');
+  isReplying = signal<boolean>(false);
+  isRefining = signal<boolean>(false);
+  isSyncing = signal<boolean>(false);
   container = viewChild<ElementRef<HTMLDivElement>>('container');
 
   constructor() {
     afterNextRender(() => {
       this.animateIn();
       this.fetchLeads();
+      
+      // Auto-sync every minute
+      setInterval(() => {
+        this.syncInbox();
+      }, 60000);
     });
   }
 
@@ -38,6 +50,77 @@ export class LeadsComponent {
   fetchLeads() {
     this.outreach.getLeads().subscribe(leads => {
       this.leads.set(leads.map(l => ({ ...l, isExpanded: false })));
+    });
+    this.fetchUnsubList();
+  }
+
+  fetchUnsubList() {
+    this.outreach.getUnsubList().subscribe(list => {
+      this.unsubList.set(list);
+    });
+  }
+
+  switchTab(tab: 'pipeline' | 'replied' | 'unsubscribed') {
+    this.activeTab.set(tab);
+    this.animateIn();
+  }
+
+  get filteredLeads() {
+    const all = this.leads();
+    if (this.activeTab() === 'pipeline') {
+      return all.filter(l => l.status === 'emailed' || l.status === 'discovery');
+    } else if (this.activeTab() === 'replied') {
+      return all.filter(l => l.status === 'replied');
+    }
+    return []; // Unsubscribed handled separately
+  }
+
+  sendReply(lead: any) {
+    if (!this.replyContent().trim() || this.isReplying()) return;
+
+    this.isReplying.set(true);
+    this.outreach.replyToLead(lead._id, this.replyContent()).subscribe({
+      next: (res: any) => {
+        // Update local lead state
+        this.leads.update(prev => prev.map(l => 
+          l._id === lead._id ? { ...l, thread: res.lead.thread, updatedAt: res.lead.updatedAt } : l
+        ));
+        this.replyContent.set('');
+        this.isReplying.set(false);
+        this.syncInbox(); // Sync immediately after reply
+      },
+      error: () => {
+        this.isReplying.set(false);
+      }
+    });
+  }
+
+  refineReply(lead: any) {
+    if (!this.replyContent().trim() || this.isRefining()) return;
+
+    this.isRefining.set(true);
+    this.outreach.refineReply(lead._id, this.replyContent()).subscribe({
+      next: (res: any) => {
+        this.replyContent.set(res.refinedText);
+        this.isRefining.set(false);
+      },
+      error: () => {
+        this.isRefining.set(false);
+      }
+    });
+  }
+
+  syncInbox() {
+    if (this.isSyncing()) return;
+    this.isSyncing.set(true);
+    this.outreach.syncInbox().subscribe({
+      next: () => {
+        this.isSyncing.set(false);
+        this.fetchLeads();
+      },
+      error: () => {
+        this.isSyncing.set(false);
+      }
     });
   }
 }
