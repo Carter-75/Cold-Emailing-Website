@@ -112,6 +112,20 @@
       </div>
       
       <h2 class="text-4xl font-black uppercase tracking-tighter italic mb-2">Initialize</h2>
+      
+      <!-- Rotating Market Wheel -->
+      <div class="h-8 overflow-hidden mb-8 flex justify-center items-center gap-2">
+        <span class="text-[10px] font-black uppercase tracking-widest text-white/30">Market For</span>
+        <div class="relative h-full flex flex-col items-center">
+          <ng-container *ngFor="let niche of marketNiches; let i = index">
+            <div *ngIf="i === currentNicheIndex()" 
+                 class="niche-item text-[10px] font-black uppercase tracking-widest text-accent-blue bg-accent-blue/10 px-3 py-1 rounded-full border border-accent-blue/20">
+              {{ niche }}
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
       <p class="text-white/40 mb-10 leading-relaxed text-sm">Access the autonomous networking engine.</p>
       
       <div class="space-y-4">

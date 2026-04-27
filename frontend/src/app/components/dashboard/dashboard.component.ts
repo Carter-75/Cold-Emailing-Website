@@ -37,6 +37,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   activeTab = signal<'overview' | 'leads' | 'infra' | 'identity' | 'billing'>('overview');
   leads = signal<any[]>([]);
   tourStep = signal<number | null>(null); // null means no tour active
+
+  marketNiches = ['Building Websites', 'Selling Apps', 'Selling AI', 'Making Products', 'SaaS Growth', 'Agency Scale'];
+  currentNicheIndex = signal(0);
   
   startTour() {
     this.activeTab.set('overview');
@@ -163,6 +166,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!tourSeen) {
       setTimeout(() => this.startTour(), 1500); // Wait for animations to settle
     }
+
+    // Market Niche Rotation
+    setInterval(() => {
+      this.currentNicheIndex.update(i => (i + 1) % this.marketNiches.length);
+    }, 3000);
   }
 
   fetchLeads() {
