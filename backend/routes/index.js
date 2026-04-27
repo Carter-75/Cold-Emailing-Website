@@ -106,20 +106,30 @@ router.post('/outreach/test-send', verifyToken, async (req, res) => {
       // Sync recipient email in case user changed it in config
       if (testLead.recipientEmail !== recipient) {
         testLead.recipientEmail = recipient;
+        // If recipient changed, we might want to reset status if it was finished/replied
+        // but let's assume the user wants to test the sequence for the NEW recipient
+        testLead.status = 'emailed';
+        testLead.sequenceStep = 1;
         await testLead.save();
       }
     }
 
-    // 4. Mimic Suppression Logic
+    // 4. Mimic Suppression Logic (Sync status with Unsubscribe list if needed)
+    if (isUnsubbed && testLead.status !== 'finished') {
+      testLead.status = 'finished';
+      await testLead.save();
+    }
+
     if (testLead.status === 'replied') {
       return res.status(403).json({ 
-        message: 'Logic Conflict: Lead has already replied. Real outreach would be suppressed. Test send blocked.' 
+        message: 'Logic Conflict: This test lead has already "replied". Real outreach would be suppressed. Reset the lead or clear its status to test again.' 
       });
     }
 
     if (testLead.status === 'finished') {
+      const reason = isUnsubbed ? 'Lead has unsubscribed.' : 'Sequence complete (3/3 emails sent).';
       return res.status(403).json({ 
-        message: 'Sequence Complete: This lead has already received all 3 emails. Real outreach is finished.' 
+        message: `Sequence Suppressed: ${reason} Real outreach is finished for this contact.` 
       });
     }
 
@@ -141,7 +151,17 @@ router.post('/outreach/test-send', verifyToken, async (req, res) => {
   }
 });
 
-// Unsubscribe Management (Testing)
+// Unsubscribe Management (Testing/UI)
+router.get('/outreach/unsub-list', verifyToken, async (req, res) => {
+  try {
+    const Unsubscribe = require('../models/Unsubscribe');
+    const list = await Unsubscribe.find({ userId: req.user._id }).sort({ unsubscribedAt: -1 });
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.get('/outreach/unsub-status', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -164,23 +184,102 @@ router.post('/outreach/unsub-clear', verifyToken, async (req, res) => {
   }
 });
 
+router.post('/outreach/sync-inbox', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    const IMAPService = require('../services/imap.service');
+    const result = await IMAPService.checkInbox(user);
+    
+    res.json({ 
+      message: `Inbox synced. Detected ${result.repliesDetected} new replies.`,
+      result 
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Lead Management
 router.get('/leads', verifyToken, async (req, res) => {
   try {
     const Lead = require('../models/Lead');
     const leads = await Lead.find({ userId: req.user._id })
-      .sort({ status: 1, updatedAt: -1 }); // 'replied' is alphabetically after 'emailed', wait.
-      // enum: ['discovery', 'emailed', 'replied', 'finished']
-      // Actually, user wants replied at the top.
+      .sort({ updatedAt: -1 }); 
     
-    // Sort logic: replied first, then others by date
-    const sortedLeads = leads.sort((a, b) => {
-      if (a.status === 'replied' && b.status !== 'replied') return -1;
-      if (a.status !== 'replied' && b.status === 'replied') return 1;
-      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    // The sorting logic below is handled in the frontend now for tabs
+    res.json(leads);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/leads/:id/reply', verifyToken, async (req, res) => {
+  try {
+    const { body } = req.body;
+    if (!body) return res.status(400).json({ message: 'Reply content is required.' });
+
+    const Lead = require('../models/Lead');
+    const EmailService = require('../services/email.service');
+    const lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
+    
+    if (!lead) return res.status(404).json({ message: 'Lead not found.' });
+
+    const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+
+    const sendConfig = user.config?.toObject ? user.config.toObject() : user.config;
+
+    // Send the manual reply
+    const emailResult = await EmailService.sendEmail({
+      ...sendConfig,
+      userId: user._id,
+      displayName: user.displayName || user.config.senderName
+    }, lead.recipientEmail, body, lead.businessName);
+
+    // Update Lead Thread
+    lead.thread.push({
+      from: user.config.senderEmail,
+      to: lead.recipientEmail,
+      subject: emailResult.subject,
+      body: body, // Use original body to avoid <br> tags if not needed, but sendEmail adds them for HTML
+      timestamp: new Date()
     });
 
-    res.json(sortedLeads);
+    lead.messageIds.push(emailResult.messageId);
+    
+    // If we reply, we might want to change status back to 'emailed' to continue sequence
+    // OR keep it at 'replied' if we are handling it manually.
+    // Let's keep it at 'replied' but updated.
+    if (lead.status !== 'replied') {
+      lead.status = 'emailed'; // Resume sequence if it was discovery or finished? 
+      // Actually, if it was finished/replied, let's keep it there.
+    }
+
+    await lead.save();
+    res.json({ message: 'Reply sent successfully', lead });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/leads/:id/refine-reply', verifyToken, async (req, res) => {
+  try {
+    const { draft } = req.body;
+    if (!draft) return res.status(400).json({ message: 'Draft is required for refinement.' });
+
+    const Lead = require('../models/Lead');
+    const EmailService = require('../services/email.service');
+    const lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
+    
+    if (!lead) return res.status(404).json({ message: 'Lead not found.' });
+
+    const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+
+    const refinedText = await EmailService.refineReply(lead, user.config, draft);
+    res.json({ refinedText });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

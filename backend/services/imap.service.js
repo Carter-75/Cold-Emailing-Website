@@ -49,8 +49,11 @@ class IMAPService {
       let repliesDetected = 0;
       
       try {
+        const mailbox = await client.status('INBOX', { messages: true });
+        const startSeq = Math.max(1, (mailbox.messages || 0) - 49);
+        
         // Fetch last 50 emails to check for replies
-        for await (let message of client.fetch('1:*', { envelope: true, source: true })) {
+        for await (let message of client.fetch(`${startSeq}:*`, { envelope: true, source: true })) {
           const inReplyTo = message.envelope.inReplyTo;
           if (inReplyTo) {
             // Check if this 'inReplyTo' matches any of our sent Message-IDs

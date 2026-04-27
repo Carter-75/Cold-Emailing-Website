@@ -40,8 +40,8 @@ class SequenceService {
       return 'skipped';
     }
 
-    if (lead.status === 'finished') {
-       return 'finished';
+    if (lead.status === 'finished' || lead.status === 'replied') {
+       return lead.status;
     }
 
     try {
