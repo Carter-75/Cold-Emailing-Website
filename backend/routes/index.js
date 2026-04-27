@@ -106,7 +106,6 @@ router.post('/outreach/test-send', verifyToken, async (req, res) => {
       // Sync recipient email in case user changed it in config
       if (testLead.recipientEmail !== recipient) {
         testLead.recipientEmail = recipient;
-        // If recipient changed, we might want to reset status if it was finished/replied
         // but let's assume the user wants to test the sequence for the NEW recipient
         testLead.status = 'emailed';
         testLead.sequenceStep = 1;
@@ -155,8 +154,27 @@ router.post('/outreach/test-send', verifyToken, async (req, res) => {
 router.get('/outreach/unsub-list', verifyToken, async (req, res) => {
   try {
     const Unsubscribe = require('../models/Unsubscribe');
-    const list = await Unsubscribe.find({ userId: req.user._id }).sort({ unsubscribedAt: -1 });
-    res.json(list);
+    const Lead = require('../models/Lead');
+    
+    const suppressionList = await Unsubscribe.find({ userId: req.user._id });
+    const finishedLeads = await Lead.find({ userId: req.user._id, status: 'finished' });
+
+    const formattedFinished = finishedLeads.map(l => ({
+      recipientEmail: l.recipientEmail,
+      businessName: l.businessName,
+      unsubscribedAt: l.updatedAt,
+      isAutoFinished: true
+    }));
+
+    const combined = [
+      ...suppressionList.map(u => ({ ...u.toObject ? u.toObject() : u, isLinkUnsub: true })),
+      ...formattedFinished
+    ];
+
+    // Sort by most recent
+    combined.sort((a, b) => new Date(b.unsubscribedAt).getTime() - new Date(a.unsubscribedAt).getTime());
+    
+    res.json(combined);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

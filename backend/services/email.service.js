@@ -10,11 +10,11 @@ class EmailService {
 
     let stepInstructions = '';
     if (step === 1) {
-      stepInstructions = `This is the INITIAL outreach. Focus on a personalized hook regarding """${safeBusinessName}""" and a brief intro.`;
+      stepInstructions = `This is the INITIAL outreach. Focus on a personalized hook regarding [${safeBusinessName}] and a brief intro.`;
     } else if (step === 2) {
-      stepInstructions = `This is the FIRST FOLLOW-UP (Cold). Acknowledge that you sent a previous email which may have been missed regarding """${safeBusinessName}""". DO NOT assume they have responded or shown interest yet. Keep it shorter and focus on the "bump" of the value prop.`;
+      stepInstructions = `This is the FIRST FOLLOW-UP (Cold). Acknowledge that you sent a previous email which may have been missed regarding [${safeBusinessName}]. DO NOT assume they have responded or shown interest yet. Keep it shorter and focus on the "bump" of the value prop.`;
     } else {
-      stepInstructions = `This is the FINAL FOLLOW-UP (Cold). Be professional but direct. Mention this is the last time you'll be reaching out personally about optimizing """${safeBusinessName}"""'s presence. Assume they have not responded to your previous two emails.`;
+      stepInstructions = `This is the FINAL FOLLOW-UP (Cold). Be professional but direct. Mention this is the last time you'll be reaching out personally about optimizing [${safeBusinessName}]'s presence. Assume they have not responded to your previous two emails.`;
     }
 
     const systemPrompt = `You are a world-class cold email expert representing ${config.senderName} (${config.senderTitle}) from ${config.companyName}.
@@ -33,12 +33,14 @@ class EmailService {
     Linguistic Rules:
     - Max 3-5 sentences for follow-ups.
     - Zero passive phrasing.
+    - **CRITICAL**: Use ONLY plain text. Do NOT use markdown (no asterisks, no hashes, no bolding).
+    - **CRITICAL**: NEVER put quotation marks around business names or links unless grammatically required.
     - **CRITICAL**: Do NOT include a sign-off or signature.
     - **CRITICAL**: Do NOT include a subject line. Start directly with the email body.
-    - **CRITICAL**: Do NOT include any conversational filler or meta-commentary (e.g. "Sure, here is your email").
+    - **CRITICAL**: Do NOT include any conversational filler or meta-commentary.
     
     Email Structure:
-    - Personalized context regarding """${safeBusinessName}""".
+    - Personalized context regarding [${safeBusinessName}].
     - The value prop: ${config.valueProp}.
     - Clear Call to Action: ${config.targetOutcome}.`;
 
@@ -59,7 +61,20 @@ class EmailService {
     // Strip any AI-generated "Subject: ..." or "Subject\n..." prefix
     const cleanContent = content.replace(/^Subject:\s*.*\n?/mi, '').trim();
 
-    return cleanContent;
+    return this.sanitizeContent(cleanContent);
+  }
+
+  sanitizeContent(text) {
+    if (!text) return '';
+    return text
+      .replace(/#{1,6}\s?/g, '') // Strip hashes
+      .replace(/\*\*/g, '')      // Strip bold asterisks
+      .replace(/\*/g, '')       // Strip single asterisks
+      .replace(/["']{2,}/g, '"') // Normalize multiple quotes to single
+      .replace(/"""/g, '"')      // Strip triple quotes
+      .replace(/`{1,3}/g, '')    // Strip backticks
+      .replace(/\[|\]/g, '')     // Strip brackets we used for delineators
+      .trim();
   }
 
   async sendEmail(userConfig, recipientEmail, content, businessName, testMode = false) {
@@ -179,7 +194,8 @@ class EmailService {
     });
 
     const content = completion.choices[0].message.content;
-    return content.replace(/^Subject:\s*.*\n?/mi, '').trim();
+    const cleanContent = content.replace(/^Subject:\s*.*\n?/mi, '').trim();
+    return this.sanitizeContent(cleanContent);
   }
 
   async cleanMessageWithAI(body, config) {
