@@ -19,7 +19,6 @@ export class OverviewComponent {
   outreach = inject(OutreachService);
   billing = inject(BillingService);
   container = viewChild<ElementRef<HTMLDivElement>>('container');
-  heroCanvas = viewChild<ElementRef<HTMLCanvasElement>>('heroCanvas');
 
   leads = signal<any[]>([]);
   
@@ -63,64 +62,9 @@ export class OverviewComponent {
     afterNextRender(() => {
       this.animateIn();
       this.fetchLeads();
-      this.initHeroAnimation();
     });
   }
 
-  private initHeroAnimation() {
-    const canvas = this.heroCanvas()?.nativeElement;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d')!;
-    let w = canvas.width = canvas.offsetWidth;
-    let h = canvas.height = canvas.offsetHeight;
-
-    const lines: any[] = [];
-    for(let i=0; i<15; i++) {
-      lines.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        length: Math.random() * 200 + 100,
-        speed: Math.random() * 2 + 1,
-        opacity: Math.random() * 0.2 + 0.1
-      });
-    }
-
-    const animate = () => {
-      if (!document.contains(canvas)) return;
-      ctx.clearRect(0, 0, w, h);
-      
-      ctx.lineWidth = 1.5;
-      lines.forEach(l => {
-        l.x += l.speed;
-        l.y += l.speed;
-
-        if (l.x > w || l.y > h) {
-          l.x = Math.random() * w - w;
-          l.y = Math.random() * h - h;
-        }
-
-        const grad = ctx.createLinearGradient(l.x, l.y, l.x + l.length, l.y + l.length);
-        grad.addColorStop(0, `rgba(79, 70, 229, 0)`);
-        grad.addColorStop(0.5, `rgba(79, 70, 229, ${l.opacity})`);
-        grad.addColorStop(1, `rgba(79, 70, 229, 0)`);
-
-        ctx.strokeStyle = grad;
-        ctx.beginPath();
-        ctx.moveTo(l.x, l.y);
-        ctx.lineTo(l.x + l.length, l.y + l.length);
-        ctx.stroke();
-      });
-
-      requestAnimationFrame(animate);
-    };
-    animate();
-
-    window.addEventListener('resize', () => {
-      w = canvas.width = canvas.offsetWidth;
-      h = canvas.height = canvas.offsetHeight;
-    });
-  }
 
   fetchLeads() {
     this.outreach.getLeads().subscribe(leads => {

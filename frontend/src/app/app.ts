@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, viewChild, ElementRef, afterNextRender } from '@angular/core';
 import { ApiService } from './services/api.service';
 import { RouterOutlet } from '@angular/router';
 import { AuthModalComponent } from './components/auth-modal/auth-modal.component';
@@ -13,6 +13,77 @@ import { AuthModalComponent } from './components/auth-modal/auth-modal.component
 export class App implements OnInit {
   private api = inject(ApiService);
   protected readonly title = signal('Cold-Emailing-Website');
+  bgCanvas = viewChild<ElementRef<HTMLCanvasElement>>('bgCanvas');
+
+  constructor() {
+    afterNextRender(() => {
+      this.initBackground();
+    });
+  }
+
+  private initBackground() {
+    const canvas = this.bgCanvas()?.nativeElement;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d')!;
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+
+    const lines: any[] = [];
+    const count = 25;
+
+    for (let i = 0; i < count; i++) {
+      lines.push(this.createLine(w, h));
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, w, h);
+      
+      lines.forEach((l, i) => {
+        l.x += l.speed;
+        l.y += l.speed;
+
+        if (l.x > w || l.y > h) {
+          lines[i] = this.createLine(w, h, true);
+        }
+
+        ctx.beginPath();
+        const grad = ctx.createLinearGradient(l.x, l.y, l.x + l.length, l.y + l.length);
+        grad.addColorStop(0, `rgba(79, 70, 229, 0)`);
+        grad.addColorStop(0.5, `rgba(79, 70, 229, ${l.opacity})`);
+        grad.addColorStop(1, `rgba(79, 70, 229, 0)`);
+        
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = l.width;
+        ctx.moveTo(l.x, l.y);
+        ctx.lineTo(l.x + l.length, l.y + l.length);
+        ctx.stroke();
+      });
+
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    });
+  }
+
+  private createLine(w: number, h: number, reset = false) {
+    const spawnX = reset ? Math.random() * w - w : Math.random() * w;
+    const spawnY = reset ? Math.random() * h - h : Math.random() * h;
+    
+    return {
+      x: spawnX,
+      y: spawnY,
+      length: Math.random() * 400 + 200,
+      speed: Math.random() * 1.5 + 0.5,
+      opacity: Math.random() * 0.4 + 0.2, // Increased visibility
+      width: Math.random() * 2 + 1
+    };
+  }
   
   ngOnInit() {
     this.api.getData<{status: string}>('ping').subscribe({
