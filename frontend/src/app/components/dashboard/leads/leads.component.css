@@ -12,3 +12,22 @@
   @apply bg-white/5 border border-white/10 mr-auto;
 }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+.aura-waiting {
+  animation: aura-pulse 3s infinite ease-in-out;
+  border-color: rgba(79, 70, 229, 0.6) !important;
+  background: rgba(79, 70, 229, 0.08) !important;
+  position: relative;
+  z-index: 10;
+}
+
+@keyframes aura-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 15px rgba(79, 70, 229, 0.3), inset 0 0 10px rgba(79, 70, 229, 0.1); 
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(79, 70, 229, 0.6), inset 0 0 20px rgba(79, 70, 229, 0.3); 
+    transform: scale(1.002);
+  }
+}

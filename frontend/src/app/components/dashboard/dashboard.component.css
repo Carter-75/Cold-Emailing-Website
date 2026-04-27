@@ -52,6 +52,17 @@ aside button[class*="bg-white/10"] {
   to { @apply border-accent-blue/20; }
 }
 
+@keyframes nav-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(79, 70, 229, 0.2); border-color: rgba(79, 70, 229, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.6); border-color: rgba(79, 70, 229, 0.5); }
+}
+
+.nav-glow {
+  animation: nav-glow 2s infinite alternate ease-in-out;
+  background: rgba(79, 70, 229, 0.1) !important;
+  color: #8b5cf6 !important;
+}
+
 aside button[class*="bg-white/10"]::before {
   height: 60%;
 }
