@@ -12,8 +12,9 @@
 @layer components {
   .glass-premium {
     @apply bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-[2.5rem] relative overflow-hidden;
+    backdrop-filter: blur(40px) brightness(1.1) contrast(1.1);
     box-shadow: 
-      0 4px 24px -1px rgba(0, 0, 0, 0.2),
+      0 4px 24px -1px rgba(0, 0, 0, 0.4),
       0 0 1px 0 rgba(255, 255, 255, 0.1) inset;
     will-change: backdrop-filter;
     transform: translateZ(0);

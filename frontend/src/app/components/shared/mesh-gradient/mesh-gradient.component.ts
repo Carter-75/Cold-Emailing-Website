@@ -7,7 +7,7 @@ import { gsap } from 'gsap';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="mesh-container relative h-full w-full overflow-hidden bg-charcoal">
+    <div class="mesh-container relative h-full w-full overflow-hidden">
       <canvas #meshCanvas class="absolute inset-0 h-full w-full opacity-60 blur-[100px]"></canvas>
       <div class="noise-overlay absolute inset-0 opacity-[0.03] pointer-events-none"></div>
     </div>
