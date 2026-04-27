@@ -176,4 +176,66 @@
       Systems Active. Monitoring Integrity.
     </div>
   </div>
+
+  <!-- Full Interactive System Guide -->
+  <div *ngIf="tourStep()" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+    <div class="glass-premium p-10 max-w-lg w-full relative overflow-hidden tour-highlight shadow-[0_0_50px_rgba(139,92,246,0.2)] border-accent-blue/30">
+      
+      <div class="flex justify-between items-start mb-8">
+        <div class="px-3 py-1 rounded-full bg-accent-blue/10 border border-accent-blue/20 text-[10px] font-black uppercase tracking-widest text-accent-blue">
+          Step {{ tourStep() }} of 5
+        </div>
+        <button (click)="skipTour()" class="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">Skip Guide</button>
+      </div>
+
+      <div [ngSwitch]="tourStep()">
+        <!-- Step 1: Overview -->
+        <div *ngSwitchCase="1" class="space-y-6">
+          <h3 class="text-3xl font-black uppercase tracking-tighter italic">Engine Overview</h3>
+          <p class="text-white/80 leading-relaxed">Welcome to your autonomous outreach command center. This dashboard provides real-time telemetry on your active streams and success velocity.</p>
+          <div class="p-4 rounded-2xl bg-white/5 border border-white/10 text-xs text-white/60 italic leading-relaxed">
+            Monitor the "System Status" in the header to ensure your autonomous worker is active.
+          </div>
+        </div>
+
+        <!-- Step 2: Lead Pipeline -->
+        <div *ngSwitchCase="2" class="space-y-6">
+          <h3 class="text-3xl font-black uppercase tracking-tighter italic">Discovery Pipeline</h3>
+          <p class="text-white/80 leading-relaxed">The Leads tab displays live data captured by the discovery engine. You can expand any row to see AI-generated insights and communication history.</p>
+        </div>
+
+        <!-- Step 3: Infrastructure -->
+        <div *ngSwitchCase="3" class="space-y-6">
+          <h3 class="text-3xl font-black uppercase tracking-tighter italic">Infrastructure</h3>
+          <p class="text-white/80 leading-relaxed">Critical: You must connect your **OpenAI** and **SerpApi** keys here. The engine uses these for reasoning and finding business targets.</p>
+          <p class="text-white/80 leading-relaxed">Ensure your **SMTP Outbound** settings are correct to allow the AI to send emails on your behalf.</p>
+        </div>
+
+        <!-- Step 4: AI Persona -->
+        <div *ngSwitchCase="4" class="space-y-6">
+          <h3 class="text-3xl font-black uppercase tracking-tighter italic">Identity Protocol</h3>
+          <p class="text-white/80 leading-relaxed">Define your brand voice in the Persona tab. The AI will use this context to personalize every outreach attempt it makes.</p>
+        </div>
+
+        <!-- Step 5: Launch -->
+        <div *ngSwitchCase="5" class="space-y-6">
+          <h3 class="text-3xl font-black uppercase tracking-tighter italic">Full Initialization</h3>
+          <p class="text-white/80 leading-relaxed">Once your keys are saved and your persona is defined, toggle the "Outreach Engine" to **Running**.</p>
+          <div class="p-6 rounded-2xl bg-accent-blue/10 border border-accent-blue/20 flex items-center gap-4">
+             <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+             <span class="text-xs font-black uppercase tracking-widest text-accent-blue">Engine is ready for ignition.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-12 pt-8 border-t border-white/5 flex justify-between items-center">
+        <button *ngIf="tourStep() < 5" (click)="nextTourStep()" class="btn-primary w-full !py-5 uppercase tracking-widest font-black text-xs">
+          Next Protocol Step
+        </button>
+        <button *ngIf="tourStep() === 5" (click)="skipTour()" class="btn-primary w-full !py-5 uppercase tracking-widest font-black text-xs">
+          Initialize System
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
