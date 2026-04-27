@@ -24,7 +24,13 @@ import {
   ChevronUp,
   Mail,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  ArrowRight,
+  Search,
+  Send,
+  CheckCircle,
+  MessageSquare
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -53,7 +59,13 @@ export const appConfig: ApplicationConfig = {
         ChevronUp,
         Mail,
         CheckCircle2,
-        AlertCircle
+        AlertCircle,
+        Lock,
+        ArrowRight,
+        Search,
+        Send,
+        CheckCircle,
+        MessageSquare
       })
     }
   ]

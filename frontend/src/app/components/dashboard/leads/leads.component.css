@@ -1,0 +1,14 @@
+:host { display: block; }
+.lead-row {
+  @apply cursor-pointer transition-colors hover:bg-white/[0.02];
+}
+.thread-bubble {
+  @apply p-4 rounded-2xl max-w-[90%];
+}
+.bubble-sent {
+  @apply bg-indigo-500/10 border border-indigo-500/20 ml-auto;
+}
+.bubble-received {
+  @apply bg-white/5 border border-white/10 mr-auto;
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }

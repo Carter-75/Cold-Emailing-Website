@@ -9,10 +9,10 @@ import anime from 'animejs';
 import { LucideAngularModule } from 'lucide-angular';
 import { gsap } from 'gsap';
 
-import { OverviewComponent } from './overview/overview';
-import { LeadsComponent } from './leads/leads';
-import { InfrastructureComponent } from './infrastructure/infrastructure';
-import { IdentityComponent } from './identity/identity';
+import { OverviewComponent } from './overview/overview.component';
+import { LeadsComponent } from './leads/leads.component';
+import { InfrastructureComponent } from './infrastructure/infrastructure.component';
+import { IdentityComponent } from './identity/identity.component';
 
 @Component({
   selector: 'app-dashboard',
