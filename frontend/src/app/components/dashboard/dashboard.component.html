@@ -178,17 +178,17 @@
   </div>
 
   <!-- Full Interactive System Guide -->
-  <div *ngIf="tourStep()" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+  <div *ngIf="tourStep() as step" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
     <div class="glass-premium p-10 max-w-lg w-full relative overflow-hidden tour-highlight shadow-[0_0_50px_rgba(139,92,246,0.2)] border-accent-blue/30">
       
       <div class="flex justify-between items-start mb-8">
         <div class="px-3 py-1 rounded-full bg-accent-blue/10 border border-accent-blue/20 text-[10px] font-black uppercase tracking-widest text-accent-blue">
-          Step {{ tourStep() }} of 5
+          Step {{ step }} of 5
         </div>
         <button (click)="skipTour()" class="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">Skip Guide</button>
       </div>
 
-      <div [ngSwitch]="tourStep()">
+      <div [ngSwitch]="step">
         <!-- Step 1: Overview -->
         <div *ngSwitchCase="1" class="space-y-6">
           <h3 class="text-3xl font-black uppercase tracking-tighter italic">Engine Overview</h3>
@@ -229,10 +229,10 @@
       </div>
 
       <div class="mt-12 pt-8 border-t border-white/5 flex justify-between items-center">
-        <button *ngIf="tourStep() < 5" (click)="nextTourStep()" class="btn-primary w-full !py-5 uppercase tracking-widest font-black text-xs">
+        <button *ngIf="step < 5" (click)="nextTourStep()" class="btn-primary w-full !py-5 uppercase tracking-widest font-black text-xs">
           Next Protocol Step
         </button>
-        <button *ngIf="tourStep() === 5" (click)="skipTour()" class="btn-primary w-full !py-5 uppercase tracking-widest font-black text-xs">
+        <button *ngIf="step === 5" (click)="skipTour()" class="btn-primary w-full !py-5 uppercase tracking-widest font-black text-xs">
           Initialize System
         </button>
       </div>
