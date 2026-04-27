@@ -130,9 +130,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
     });
 
-    afterNextRender(() => {
-      this.initBackgroundMotion();
-      this.animateEntrance();
+    effect(() => {
+      if (this.auth.isAuthenticated()) {
+        // Wait for DOM to catch up with signal
+        setTimeout(() => {
+          this.initBackgroundMotion();
+          this.animateEntrance();
+        }, 100);
+      }
     });
   }
 
@@ -254,38 +259,86 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private initBackgroundMotion() {
     const el = this.sceneContainer()?.nativeElement;
-    if (!el) return;
+    if (!el || el.getAttribute('data-motion-active')) return;
+    el.setAttribute('data-motion-active', 'true');
 
-    // Create floating orbs or lines
-    for (let i = 0; i < 5; i++) {
-      const orb = document.createElement('div');
-      orb.className = 'absolute rounded-full blur-[100px] opacity-20 pointer-events-none';
-      orb.style.width = `${Math.random() * 400 + 200}px`;
-      orb.style.height = orb.style.width;
-      orb.style.background = i % 2 === 0 ? 'var(--accent-blue)' : 'var(--accent-purple)';
-      el.appendChild(orb);
+    // Create a dynamic grid of moving points
+    const canvas = document.createElement('canvas');
+    canvas.className = 'absolute inset-0 w-full h-full opacity-30';
+    el.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d')!;
+    let w = canvas.width = el.clientWidth;
+    let h = canvas.height = el.clientHeight;
 
-      gsap.to(orb, {
-        x: 'random(-100, 100)%',
-        y: 'random(-100, 100)%',
-        duration: 'random(10, 20)',
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut'
+    const points: any[] = [];
+    for(let i=0; i<40; i++) {
+      points.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        r: Math.random() * 2 + 1
       });
     }
+
+    const animate = () => {
+      if (!document.contains(canvas)) return;
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = 'rgba(79, 70, 229, 0.1)';
+      ctx.fillStyle = 'rgba(79, 70, 229, 0.3)';
+
+      points.forEach((p, i) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fill();
+
+        for(let j=i+1; j<points.length; j++) {
+          const p2 = points[j];
+          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+          if (dist < 150) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+      });
+      requestAnimationFrame(animate);
+    };
+    animate();
+
+    window.addEventListener('resize', () => {
+      w = canvas.width = el.clientWidth;
+      h = canvas.height = el.clientHeight;
+    });
   }
 
   private animateEntrance() {
+    // Only animate if elements exist
+    const aside = document.querySelector('aside');
+    const header = document.querySelector('header');
+    const cards = document.querySelectorAll('.glass-premium');
+
+    if (!aside || !header) return;
+
     const tl = gsap.timeline({ defaults: { ease: 'power4.out', duration: 1.2 } });
 
-    tl.from('aside', { x: -100, opacity: 0 })
-      .from('header', { y: -50, opacity: 0 }, '-=0.8')
-      .from('.glass-premium', { 
+    tl.from(aside, { x: -100, opacity: 0 })
+      .from(header, { y: -50, opacity: 0 }, '-=0.8');
+
+    if (cards.length > 0) {
+      tl.from(cards, { 
         y: 50, 
         opacity: 0, 
         stagger: 0.1,
         clearProps: 'all' 
       }, '-=1');
+    }
   }
 }
