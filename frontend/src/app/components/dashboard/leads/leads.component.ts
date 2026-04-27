@@ -1,4 +1,4 @@
-import { Component, inject, signal, afterNextRender, ElementRef, viewChild } from '@angular/core';
+import { Component, inject, signal, afterNextRender, ElementRef, viewChild, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OutreachService } from '../../../services/outreach.service';
 import { LucideAngularModule } from 'lucide-angular';
@@ -14,6 +14,7 @@ import { gsap } from 'gsap';
 })
 export class LeadsComponent {
   outreach = inject(OutreachService);
+  destroyRef = inject(DestroyRef);
   leads = signal<any[]>([]);
   unsubList = signal<any[]>([]);
   activeTab = signal<'pipeline' | 'replied' | 'unsubscribed'>('pipeline');
@@ -21,6 +22,7 @@ export class LeadsComponent {
   isReplying = signal<boolean>(false);
   isRefining = signal<boolean>(false);
   isSyncing = signal<boolean>(false);
+  lastSynced = signal<Date>(new Date());
   container = viewChild<ElementRef<HTMLDivElement>>('container');
 
   constructor() {
@@ -29,9 +31,13 @@ export class LeadsComponent {
       this.fetchLeads();
       
       // Auto-sync every minute
-      setInterval(() => {
+      const interval = setInterval(() => {
         this.syncInbox();
       }, 60000);
+
+      this.destroyRef.onDestroy(() => {
+        clearInterval(interval);
+      });
     });
   }
 
@@ -116,6 +122,7 @@ export class LeadsComponent {
     this.outreach.syncInbox().subscribe({
       next: () => {
         this.isSyncing.set(false);
+        this.lastSynced.set(new Date());
         this.fetchLeads();
       },
       error: () => {
