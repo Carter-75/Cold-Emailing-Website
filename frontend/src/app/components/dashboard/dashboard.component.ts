@@ -389,13 +389,5 @@ export class DashboardComponent implements OnInit, OnDestroy {
     tl.from(aside, { x: -100, opacity: 0 })
       .from(header, { y: -50, opacity: 0 }, '-=0.8');
 
-    if (cards.length > 0) {
-      tl.from(cards, { 
-        y: 50, 
-        opacity: 0, 
-        stagger: 0.1,
-        clearProps: 'opacity,transform' 
-      }, '-=1');
-    }
   }
 }
