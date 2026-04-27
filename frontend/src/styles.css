@@ -11,7 +11,7 @@
 
 @layer components {
   .glass-premium {
-    @apply bg-white/[0.04] backdrop-blur-md border border-white/20 rounded-[2.5rem] relative overflow-hidden;
+    @apply bg-white/[0.04] border border-white/20 rounded-[2.5rem] relative overflow-hidden;
     box-shadow: 
       0 4px 24px -1px rgba(0, 0, 0, 0.4),
       0 0 1px 0 rgba(255, 255, 255, 0.05) inset;

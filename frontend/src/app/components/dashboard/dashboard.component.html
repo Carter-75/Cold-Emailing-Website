@@ -13,7 +13,7 @@
   <div *ngIf="auth.isAuthenticated()" class="relative z-10 flex min-h-screen" style="isolation: isolate;">
     
     <!-- Glass Sidebar -->
-    <aside class="w-72 border-r border-white/5 bg-white/[0.01] backdrop-blur-xl flex flex-col fixed inset-y-0 z-50">
+    <aside class="w-72 border-r border-white/5 bg-white/[0.01] flex flex-col fixed inset-y-0 z-50">
       <div class="p-8 border-b border-white/5 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center text-xl shadow-lg">⚛️</div>
         <span class="text-xl font-black uppercase tracking-tighter italic">Outreach</span>
@@ -61,7 +61,7 @@
 
     <!-- Main Content Area -->
     <div class="flex-1 ml-72">
-      <header class="h-20 border-b border-white/5 bg-white/[0.005] backdrop-blur-lg px-12 flex items-center justify-between sticky top-0 z-50">
+      <header class="h-20 border-b border-white/5 bg-white/[0.005] px-12 flex items-center justify-between sticky top-0 z-50">
         <div class="flex items-center gap-6">
           <div class="px-4 py-2 rounded-full bg-white/5 border border-white/10 flex items-center gap-3">
             <div class="w-2 h-2 rounded-full" [ngClass]="outreach.status() === 'running' ? 'bg-emerald-500 animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.4)]' : 'bg-rose-500'"></div>
