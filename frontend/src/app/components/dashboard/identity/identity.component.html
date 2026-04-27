@@ -8,28 +8,28 @@
         <div class="space-y-6">
           <div class="space-y-2">
             <label class="text-[10px] font-black uppercase tracking-widest text-indigo-400/80">Primary Sender</label>
-            <input type="text" [(ngModel)]="config.senderName" name="senderName" class="glass-input w-full" placeholder="e.g. John Doe">
+            <input type="text" [(ngModel)]="config.senderName" name="senderName" class="w-full" placeholder="e.g. John Doe">
           </div>
           <div class="space-y-2">
             <label class="text-[10px] font-black uppercase tracking-widest text-white/30">Professional Role</label>
-            <input type="text" [(ngModel)]="config.senderTitle" name="senderTitle" class="glass-input w-full" placeholder="e.g. Founder">
+            <input type="text" [(ngModel)]="config.senderTitle" name="senderTitle" class="w-full" placeholder="e.g. Founder">
           </div>
         </div>
         <div class="space-y-6">
           <div class="space-y-2">
             <label class="text-[10px] font-black uppercase tracking-widest text-white/30">Organization Name</label>
-            <input type="text" [(ngModel)]="config.companyName" name="companyName" class="glass-input w-full">
+            <input type="text" [(ngModel)]="config.companyName" name="companyName" class="w-full">
           </div>
           <div class="space-y-2">
             <label class="text-[10px] font-black uppercase tracking-widest text-white/30">HQ Address</label>
-            <input type="text" [(ngModel)]="config.physicalAddress" name="physicalAddress" class="glass-input w-full">
+            <input type="text" [(ngModel)]="config.physicalAddress" name="physicalAddress" class="w-full">
           </div>
         </div>
       </div>
 
       <div class="space-y-3">
         <label class="text-[10px] font-black uppercase tracking-widest text-indigo-400">About You & Your Brand</label>
-        <textarea [(ngModel)]="config.personaContext" name="personaContext" rows="5" class="glass-input w-full !py-4 text-sm leading-relaxed" placeholder="Tell the AI about your value proposition and brand voice..."></textarea>
+        <textarea [(ngModel)]="config.personaContext" name="personaContext" rows="5" class="w-full" placeholder="Tell the AI about your value proposition and brand voice..."></textarea>
         <p class="text-[10px] text-white/20 italic">This information helps the AI write personalized emails for you.</p>
       </div>
 
@@ -38,22 +38,22 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
            <div class="space-y-2">
              <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Entry Tier</label>
-             <input type="text" [(ngModel)]="config.priceTier1" name="priceTier1" class="glass-input w-full text-xs" placeholder="Basic Setup">
+             <input type="text" [(ngModel)]="config.priceTier1" name="priceTier1" class="w-full text-xs" placeholder="Basic Setup">
            </div>
            <div class="space-y-2">
              <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Standard Tier</label>
-             <input type="text" [(ngModel)]="config.priceTier2" name="priceTier2" class="glass-input w-full text-xs" placeholder="Full Build">
+             <input type="text" [(ngModel)]="config.priceTier2" name="priceTier2" class="w-full text-xs" placeholder="Full Build">
            </div>
            <div class="space-y-2">
              <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Premium Tier</label>
-             <input type="text" [(ngModel)]="config.priceTier3" name="priceTier3" class="glass-input w-full text-xs" placeholder="Enterprise">
+             <input type="text" [(ngModel)]="config.priceTier3" name="priceTier3" class="w-full text-xs" placeholder="Enterprise">
            </div>
         </div>
       </div>
 
       <div class="space-y-3">
         <label class="text-[10px] font-black uppercase tracking-widest text-indigo-400">Digital Signature (HTML)</label>
-        <textarea [(ngModel)]="config.signature" name="signature" rows="5" class="glass-input w-full font-mono text-[11px] leading-tight" placeholder="<table...>...</table>"></textarea>
+        <textarea [(ngModel)]="config.signature" name="signature" rows="5" class="w-full font-mono text-[11px] leading-tight" placeholder="<table...>...</table>"></textarea>
       </div>
 
       <button type="submit" class="w-full btn-primary !py-6 !text-lg uppercase tracking-[0.2em]">Save Persona</button>

@@ -122,12 +122,12 @@
           <div class="relative">
             <lucide-icon name="mail" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20"></lucide-icon>
             <input type="email" [(ngModel)]="credentials.email" placeholder="Email Address" 
-                   class="glass-input w-full !pl-12 !py-4">
+                   class="w-full !pl-12 !py-4">
           </div>
           <div class="relative">
             <lucide-icon name="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20"></lucide-icon>
             <input type="password" [(ngModel)]="credentials.password" placeholder="Password" 
-                   class="glass-input w-full !pl-12 !py-4">
+                   class="w-full !pl-12 !py-4">
           </div>
           
           <button (click)="onAuthSubmit()" 
