@@ -296,6 +296,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     const canvas = document.createElement('canvas');
     canvas.className = 'absolute inset-0 w-full h-full opacity-60';
+    canvas.style.zIndex = '-1';
     el.appendChild(canvas);
     
     const ctx = canvas.getContext('2d')!;

@@ -39,4 +39,8 @@
   .reveal-text.active {
     @apply opacity-100 translate-y-0;
   }
+
+  .background-isolation {
+    isolation: isolate;
+  }
 }

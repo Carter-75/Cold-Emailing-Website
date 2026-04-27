@@ -1,16 +1,16 @@
 <div class="relative min-h-screen w-full overflow-hidden bg-transparent text-white selection:bg-accent-blue/30">
   <!-- Dynamic Background Motion -->
-  <div #scene class="absolute inset-0 z-[-10] pointer-events-none overflow-hidden"></div>
+  <div #scene class="absolute inset-0 z-[-25] pointer-events-none overflow-hidden"></div>
 
   <!-- Added Mesh Gradient Layer for Premium Depth -->
-  <div class="absolute inset-0 z-[-15] overflow-hidden opacity-30 pointer-events-none">
+  <div class="absolute inset-0 z-[-30] overflow-hidden opacity-30 pointer-events-none">
     <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-accent-blue/30 rounded-full blur-[120px] animate-mesh-slow"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent-purple/30 rounded-full blur-[120px] animate-mesh-slow" style="animation-delay: -5s;"></div>
     <div class="absolute top-[20%] right-[10%] w-[40%] h-[40%] bg-accent-vibrant/20 rounded-full blur-[100px] animate-mesh-slow" style="animation-delay: -10s;"></div>
   </div>
 
   <!-- Authenticated View -->
-  <div *ngIf="auth.isAuthenticated()" class="relative z-10 flex min-h-screen">
+  <div *ngIf="auth.isAuthenticated()" class="relative z-10 flex min-h-screen" style="isolation: isolate;">
     
     <!-- Glass Sidebar -->
     <aside class="w-72 border-r border-white/5 bg-black/20 backdrop-blur-3xl flex flex-col fixed inset-y-0 z-50">
