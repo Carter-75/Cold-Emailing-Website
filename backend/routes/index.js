@@ -60,36 +60,83 @@ router.post('/outreach/test-send', verifyToken, async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
     
     const recipient = user.config?.testRecipientEmail || user.config?.senderEmail;
+    if (!recipient) return res.status(400).json({ message: 'No test recipient email configured.' });
+
+    const Lead = require('../models/Lead');
+    const OutreachEngine = require('../services/engine.service');
+    const SequenceService = require('../services/sequence.service');
+
+    // 1. Check Daily Limit (Mimic real engine)
+    const dailyLimit = user.config?.dailyLeadLimit || 3;
+    const totalSentToday = await OutreachEngine.getSentTodayCount(user._id);
     
-    // Safety check: Don't send if unsubscribed
+    if (totalSentToday >= dailyLimit) {
+      return res.status(403).json({ 
+        message: `Daily Limit Reached (${totalSentToday}/${dailyLimit}). Test send blocked to mimic real automation limits.` 
+      });
+    }
+
+    // 2. Check Unsubscribe List
     const isUnsubbed = await Unsubscribe.findOne({ 
       userId: user._id, 
       recipientEmail: recipient 
     });
     
     if (isUnsubbed) {
-      console.error(`[Manual Test] Blocked: ${recipient} is in the unsubscribe list.`);
       return res.status(403).json({ 
-        message: 'Manual test blocked: This email is currently in your unsubscribe list. Clear it in the Infrastructure tab to test again.' 
+        message: 'Manual test blocked: This email is currently in your unsubscribe list.' 
       });
     }
 
-    const EmailService = require('../services/email.service');
+    // 3. Find or Create Test Lead
+    let testLead = await Lead.findOne({ userId: user._id, isTestData: true });
     
-    const companyName = user.config?.companyName || user.companyName || 'Your Company';
-    const rawConfig = user.config?.toObject ? user.config.toObject() : (user.config || {});
-    const testLead = { businessName: 'TEST BUSINESS - ' + companyName };
-    const content = await EmailService.generateContent(testLead, user.config);
-    
-    await EmailService.sendEmail({
-      ...rawConfig,
-      userId: user._id,
-      displayName: user.displayName,
-      testMode: true
-    }, recipient, `[MANUAL TEST]\n\n` + content, testLead.businessName);
-    
-    res.json({ message: 'Test email sent successfully to ' + recipient });
+    if (!testLead) {
+      // Create a fresh test lead
+      testLead = await Lead.create({
+        userId: user._id,
+        businessName: 'TEST - ' + (user.config?.companyName || 'Lead'),
+        recipientEmail: recipient,
+        city: 'Test City',
+        status: 'emailed', // Start at emailed for Step 1
+        sequenceStep: 1,   // Will be incremented by processLead
+        isTestData: true
+      });
+    } else {
+      // Sync recipient email in case user changed it in config
+      if (testLead.recipientEmail !== recipient) {
+        testLead.recipientEmail = recipient;
+        await testLead.save();
+      }
+    }
+
+    // 4. Mimic Suppression Logic
+    if (testLead.status === 'replied') {
+      return res.status(403).json({ 
+        message: 'Logic Conflict: Lead has already replied. Real outreach would be suppressed. Test send blocked.' 
+      });
+    }
+
+    if (testLead.status === 'finished') {
+      return res.status(403).json({ 
+        message: 'Sequence Complete: This lead has already received all 3 emails. Real outreach is finished.' 
+      });
+    }
+
+    // 5. Execute using REAL Sequence Logic
+    // We pass the populated user object for shadow mode compatibility
+    testLead.userId = user; 
+    const result = await SequenceService.processLead(testLead, true); // forceSend = true
+
+    if (result === 'finished') {
+      return res.json({ message: 'Test email sent! Sequence is now complete for this lead.' });
+    } else if (result === 'processed') {
+      return res.json({ message: 'Test email sent successfully! Mimicking Step ' + testLead.sequenceStep });
+    } else {
+      return res.status(500).json({ message: 'Engine failed to process test lead.' });
+    }
   } catch (err) {
+    console.error('[TestSend] Error:', err);
     res.status(500).json({ message: err.message });
   }
 });

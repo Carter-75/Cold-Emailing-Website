@@ -30,10 +30,18 @@ class SequenceService {
     return summary;
   }
 
-  async processLead(lead) {
+  async processLead(lead, forceSend = false) {
     const user = lead.userId;
-    if (!user || !user.config?.outreachEnabled || lead.status === 'finished') {
+    if (!user) return 'skipped';
+    
+    // In production, we skip if outreach is disabled or lead is finished
+    // But in forceSend (Test Mode), we bypass the 'outreachEnabled' check
+    if (!forceSend && (!user.config?.outreachEnabled || lead.status === 'finished')) {
       return 'skipped';
+    }
+
+    if (lead.status === 'finished') {
+       return 'finished';
     }
 
     try {

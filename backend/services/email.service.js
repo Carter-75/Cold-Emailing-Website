@@ -106,7 +106,6 @@ class EmailService {
 
     if (isTest) {
       finalRecipient = userConfig.testRecipientEmail || userConfig.senderEmail;
-      finalSubject = `[TEST MODE] ${baseSubject}`;
       console.log(`[EmailService] TEST MODE ACTIVE: Redirecting email from ${recipientEmail} to ${finalRecipient}`);
     }
 
