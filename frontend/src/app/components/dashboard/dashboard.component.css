@@ -5,17 +5,16 @@
 .glass-premium {
   @apply bg-white/[0.01] backdrop-blur-xl border border-white/5 rounded-[2.5rem] shadow-2xl;
   box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.15;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-premium:hover {
   @apply border-white/10 bg-white/[0.03];
   transform: translateY(-2px);
+  opacity: 1;
 }
 
-.glass-input {
-  @apply bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-accent-blue/50 focus:ring-1 focus:ring-accent-blue/50 transition-all;
-}
 
 .btn-primary {
   @apply bg-gradient-to-r from-accent-blue to-accent-purple hover:from-accent-blue/90 hover:to-accent-purple/90 text-white font-black uppercase tracking-[0.15em] py-4 px-8 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-accent-blue/25;
