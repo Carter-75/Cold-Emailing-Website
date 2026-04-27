@@ -89,10 +89,11 @@ export class OverviewComponent {
         })
         .add({
           targets: '.glass-premium',
-          opacity: [0, 1],
           translateY: [40, 0],
           scale: [0.98, 1],
+          opacity: [0, 1], // Keep opacity but make it fast or consistent
           delay: anime.stagger(100),
+          duration: 600
         }, '-=800')
         .add({
           targets: '.activity-item',
