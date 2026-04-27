@@ -135,6 +135,8 @@ class EmailService {
       console.error('Nodemailer Error:', err.message);
       throw err; // Trigger "Kill Switch"
     }
+  }
+
   async refineReply(lead, config, draft) {
     const openai = new OpenAI({ apiKey: config.openaiKey });
     
