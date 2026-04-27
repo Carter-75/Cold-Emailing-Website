@@ -30,7 +30,12 @@ import {
   Search,
   Send,
   CheckCircle,
-  MessageSquare
+  MessageSquare,
+  ShieldCheck,
+  Sparkles,
+  MailSearch,
+  UserX,
+  Loader2
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -65,7 +70,12 @@ export const appConfig: ApplicationConfig = {
         Search,
         Send,
         CheckCircle,
-        MessageSquare
+        MessageSquare,
+        ShieldCheck,
+        Sparkles,
+        MailSearch,
+        UserX,
+        Loader2
       })
     }
   ]
