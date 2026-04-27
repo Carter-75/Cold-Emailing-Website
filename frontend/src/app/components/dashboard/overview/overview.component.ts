@@ -83,7 +83,7 @@ export class OverviewComponent {
       timeline
         .add({
           targets: el,
-          opacity: [0, 0.15],
+          opacity: [0, 1],
           translateY: [20, 0],
           duration: 1000
         })
@@ -91,7 +91,7 @@ export class OverviewComponent {
           targets: '.glass-premium',
           translateY: [40, 0],
           scale: [0.98, 1],
-          opacity: [0, 0.15],
+          opacity: [0, 1],
           delay: anime.stagger(100),
           duration: 600
         }, '-=800')

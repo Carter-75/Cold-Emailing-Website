@@ -50,7 +50,7 @@ export class InfrastructureComponent {
     const el = this.container()?.nativeElement;
     if (el) {
       gsap.to(el, {
-        opacity: 0.15,
+        opacity: 1,
         y: 0,
         duration: 0.8,
         ease: 'power4.out'

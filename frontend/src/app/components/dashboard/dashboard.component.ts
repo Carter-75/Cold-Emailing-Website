@@ -184,7 +184,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           
           setTimeout(() => {
             gsap.to(container, {
-              opacity: 0.15,
+              opacity: 1,
               y: 0,
               duration: 0.4,
               ease: 'power2.out'
@@ -394,7 +394,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         y: 50, 
         opacity: 0, 
         stagger: 0.1,
-        clearProps: 'transform' // Don't clear opacity so it stays at 0.15 (base style)
+        clearProps: 'opacity,transform' 
       }, '-=1');
     }
   }
