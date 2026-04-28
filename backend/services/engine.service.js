@@ -188,6 +188,7 @@ class OutreachEngine {
     }
 
     // ── 3. Required config check ───────────────────────────────────────────
+    // Required: OpenAI, SerpAPI, Verifalia, SMTP — Apollo is the only optional key
     if (!config.openaiKey) {
       await triggerKillSwitch(user, 'OPENAI_KEY_INVALID', 'OpenAI key is not configured.');
       return { status: 'killed', reason: 'OPENAI_KEY_INVALID' };
@@ -196,17 +197,19 @@ class OutreachEngine {
       await triggerKillSwitch(user, 'SERPAPI_KEY_INVALID', 'SerpAPI key is not configured.');
       return { status: 'killed', reason: 'SERPAPI_KEY_INVALID' };
     }
+    if (!config.verifaliaUsername || !config.verifaliaPassword) {
+      await triggerKillSwitch(user, 'VERIFALIA_KEY_INVALID', 'Verifalia credentials (username + password) are not configured.');
+      return { status: 'killed', reason: 'VERIFALIA_KEY_INVALID' };
+    }
     if (!config.senderEmail || !config.appPassword || !config.smtpHost) {
       await triggerKillSwitch(user, 'SMTP_FAILURE', 'SMTP credentials are incomplete.');
       return { status: 'killed', reason: 'SMTP_FAILURE' };
     }
 
-    // Verifalia is optional — if credentials missing, verification is skipped (degraded mode)
-    const verifaliaAuth = config.verifaliaUsername && config.verifaliaPassword
-      ? { username: config.verifaliaUsername, password: config.verifaliaPassword }
-      : null;
+    // Verifalia is required — credentials validated above
+    const verifaliaAuth = { username: config.verifaliaUsername, password: config.verifaliaPassword };
 
-    // Apollo/enrichment is optional — leads without emails are simply skipped
+    // Apollo/enrichment is the ONLY optional key — leads without emails are simply skipped
     const hasApollo = !!config.apolloKey;
 
     // ── 4. Daily limit check ───────────────────────────────────────────────
@@ -295,20 +298,18 @@ class OutreachEngine {
       const leadStatus = await Lead.findOne({ userId: user._id, $or: [{ recipientEmail: email }, { businessName: lead.name }], status: 'replied' });
       if (leadStatus) continue;
 
-      // Verification (optional — skip individual lead on per-email error, kill on quota/auth)
-      if (verifaliaAuth) {
-        try {
-          const isValid = await VerificationService.verifyEmail(email, verifaliaAuth);
-          if (!isValid) continue;
-        } catch (err) {
-          const classified = classifyError(err, 'verifalia');
-          if (classified.isFatal) {
-            await triggerKillSwitch(user, classified.type, classified.detail);
-            return { status: 'killed', reason: classified.type };
-          }
-          console.warn(`[Engine] Verifalia non-fatal error for ${email} (skipping lead): ${err.message}`);
-          continue;
+      // Verification — required (Verifalia credentials validated at startup)
+      try {
+        const isValid = await VerificationService.verifyEmail(email, verifaliaAuth);
+        if (!isValid) continue;
+      } catch (err) {
+        const classified = classifyError(err, 'verifalia');
+        if (classified.isFatal) {
+          await triggerKillSwitch(user, classified.type, classified.detail);
+          return { status: 'killed', reason: classified.type };
         }
+        console.warn(`[Engine] Verifalia non-fatal error for ${email} (skipping lead): ${err.message}`);
+        continue;
       }
 
       // Generate content (OpenAI — fatal on failure)
