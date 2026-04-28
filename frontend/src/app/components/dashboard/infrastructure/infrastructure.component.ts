@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { OutreachService } from '../../../services/outreach.service';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideAngularModule } from 'lucide-angular'
 import { gsap } from 'gsap';
 
 @Component({
@@ -18,11 +18,12 @@ export class InfrastructureComponent {
   outreach = inject(OutreachService);
   container = viewChild<ElementRef<HTMLDivElement>>('container');
 
-  config = {
+  config: any = {
     openaiKey: '',
     serpapiKey: '',
     apolloKey: '',
-    verifaliaKey: '',
+    verifaliaUsername: '',
+    verifaliaPassword: '',
     senderEmail: '',
     appPassword: '',
     smtpHost: '',
@@ -30,7 +31,10 @@ export class InfrastructureComponent {
     imapHost: '',
     imapPort: 993,
     testRecipientEmail: '',
-    dailyLeadLimit: 3
+    dailyLeadLimit: 3,
+    timezone: 'America/Chicago',
+    outreachPaused: false,
+    outreachPausedReason: ''
   };
 
   isUnsubscribed = signal(false);
@@ -64,6 +68,21 @@ export class InfrastructureComponent {
       if (res && res.token) localStorage.setItem('auth_token', res.token);
       alert('Infrastructure Synchronized!');
       this.auth.checkAuth();
+    });
+  }
+
+  /** Re-enables the engine after the user has fixed the underlying API issue */
+  clearPause() {
+    this.config.outreachPaused = false;
+    this.config.outreachPausedReason = '';
+    this.outreach.saveConfig({
+      outreachPaused: false,
+      outreachPausedReason: '',
+      outreachEnabled: true
+    }).subscribe((res: any) => {
+      if (res && res.token) localStorage.setItem('auth_token', res.token);
+      this.auth.checkAuth();
+      alert('Engine re-enabled. It will resume on the next business-hours cron tick.');
     });
   }
 

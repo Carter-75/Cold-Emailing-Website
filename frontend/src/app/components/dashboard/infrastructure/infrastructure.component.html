@@ -64,8 +64,42 @@
             <div class="space-y-2">
               <label class="text-[10px] font-black uppercase text-indigo-400">Daily Sending Limit</label>
               <input type="number" [(ngModel)]="config.dailyLeadLimit" name="dailyLeadLimit" class="w-full" placeholder="e.g. 50">
-              <p class="text-[8px] text-white/40 italic">Safety: Total emails sent per 24h period.</p>
+              <p class="text-[8px] text-white/40 italic">Emails are evenly paced across your 8am–6pm business window.</p>
             </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-black uppercase text-white/70">Your Timezone</label>
+              <select [(ngModel)]="config.timezone" name="timezone" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-accent-blue/50 outline-none">
+                <optgroup label="US">
+                  <option value="America/New_York">Eastern (ET) — New York</option>
+                  <option value="America/Chicago">Central (CT) — Chicago</option>
+                  <option value="America/Denver">Mountain (MT) — Denver</option>
+                  <option value="America/Phoenix">Mountain (no DST) — Phoenix</option>
+                  <option value="America/Los_Angeles">Pacific (PT) — Los Angeles</option>
+                  <option value="America/Anchorage">Alaska — Anchorage</option>
+                  <option value="Pacific/Honolulu">Hawaii — Honolulu</option>
+                </optgroup>
+                <optgroup label="International">
+                  <option value="Europe/London">London (GMT/BST)</option>
+                  <option value="Europe/Paris">Paris (CET/CEST)</option>
+                  <option value="Asia/Tokyo">Tokyo (JST)</option>
+                  <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
+                </optgroup>
+              </select>
+              <p class="text-[8px] text-white/40 italic">Engine only fires Mon–Fri, 8am–6pm in this timezone.</p>
+            </div>
+
+            <!-- Kill Switch Status Banner -->
+            <div *ngIf="config.outreachPaused" class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-3">
+              <div class="flex items-center gap-2">
+                <lucide-icon name="alert-triangle" class="w-4 h-4 text-rose-400"></lucide-icon>
+                <p class="text-[10px] font-black uppercase tracking-widest text-rose-400">Engine Paused — API Error</p>
+              </div>
+              <p class="text-[9px] text-white/60 font-mono">{{ config.outreachPausedReason }}</p>
+              <button type="button" (click)="clearPause()" class="w-full py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-[9px] font-black uppercase tracking-widest text-rose-300 transition-all border border-rose-500/20">
+                ✓ Issue Fixed — Re-enable Engine
+              </button>
+            </div>
+
           </div>
 
           <div class="bg-white/5 p-6 rounded-[2rem] space-y-6 border border-white/5">

@@ -234,6 +234,71 @@ class EmailService {
       return body; // Fallback to raw if AI fails
     }
   }
+  /**
+   * sendAdminAlert
+   * Fires when the kill switch trips — sends a plain-text email to the user's
+   * testRecipientEmail (or senderEmail as fallback) explaining what failed and
+   * what action is needed to re-enable outreach.
+   */
+  async sendAdminAlert(config, errorType, detail) {
+    if (!config.senderEmail || !config.appPassword || !config.smtpHost) {
+      console.error('[AdminAlert] Cannot send alert — SMTP not configured.');
+      return;
+    }
+
+    const ACTION_MAP = {
+      OPENAI_QUOTA:        'Add credits to your OpenAI account at https://platform.openai.com/account/billing',
+      OPENAI_KEY_INVALID:  'Check your OpenAI API key in Dashboard → Settings → Integrations',
+      SERPAPI_QUOTA:       'Add credits to your SerpAPI account at https://serpapi.com/manage-api-key',
+      SERPAPI_KEY_INVALID: 'Check your SerpAPI key in Dashboard → Settings → Integrations',
+      VERIFALIA_QUOTA:     'Add credits to your Verifalia account at https://verifalia.com/client-area',
+      VERIFALIA_KEY_INVALID:'Check your Verifalia credentials in Dashboard → Settings → Integrations',
+      SMTP_FAILURE:        'Check your SMTP credentials (Email + App Password) in Dashboard → Settings → Integrations',
+      UNKNOWN:             'Check Dashboard → Settings → Integrations for misconfigured keys',
+    };
+
+    const now = new Date().toLocaleString('en-US', {
+      timeZone: config.timezone || 'America/Chicago',
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+
+    const action = ACTION_MAP[errorType] || ACTION_MAP.UNKNOWN;
+    const recipient = config.testRecipientEmail || config.senderEmail;
+
+    const body = `Your Phoenix outreach engine has been automatically paused due to a fatal API error.
+
+Error Type : ${errorType}
+Detail     : ${detail}
+Time       : ${now}
+
+Action Required:
+${action}
+
+After fixing the issue, go to Dashboard → Settings → Engine and re-enable outreach.
+The engine will not fire again until you do.
+
+— Phoenix Engine`;
+
+    const transporter = require('nodemailer').createTransport({
+      host: config.smtpHost,
+      port: config.smtpPort || 465,
+      secure: config.smtpSecure ?? true,
+      auth: { user: config.senderEmail, pass: config.appPassword }
+    });
+
+    try {
+      await transporter.sendMail({
+        from: `"Phoenix Engine" <${config.senderEmail}>`,
+        to: recipient,
+        subject: `🚨 Outreach Paused — ${errorType}`,
+        text: body
+      });
+      console.log(`[AdminAlert] Sent to ${recipient} — ${errorType}`);
+    } catch (err) {
+      console.error('[AdminAlert] Failed to send alert email:', err.message);
+    }
+  }
 }
 
 module.exports = new EmailService();

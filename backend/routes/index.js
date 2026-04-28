@@ -410,7 +410,8 @@ router.post('/config', verifyToken, async (req, res) => {
       'senderEmail', 'appPassword', 'senderName', 'senderTitle', 'companyName', 'websiteUrl',
       'physicalAddress', 'priceTier1', 'priceTier2', 'priceTier3', 'valueProp', 'targetOutcome',
       'personaContext', 'dailyLeadLimit', 'smtpHost', 'smtpPort', 'smtpSecure',
-      'testRecipientEmail', 'signature'
+      'testRecipientEmail', 'signature',
+      'timezone', 'outreachPaused', 'outreachPausedReason'
     ];
 
     let safeBody = {};
