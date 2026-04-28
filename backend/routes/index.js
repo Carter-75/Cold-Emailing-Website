@@ -16,7 +16,8 @@ router.post('/outreach/start', verifyToken, async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Subscription check
+    // Subscription check (Temporarily Disabled per USER_REQUEST)
+    /*
     const status = user.subscription?.status;
     const isSubscribed = status === 'active' || status === 'trialing';
 
@@ -26,6 +27,7 @@ router.post('/outreach/start', verifyToken, async (req, res) => {
         needsUpgrade: true
       });
     }
+    */
 
     user.config.outreachEnabled = true;
     await user.save();

@@ -56,6 +56,11 @@
               <label class="text-[10px] font-black uppercase text-white/70">App Secret</label>
               <input type="password" [(ngModel)]="config.appPassword" name="appPassword" class="w-full">
             </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-black uppercase text-indigo-400">Daily Sending Limit</label>
+              <input type="number" [(ngModel)]="config.dailyLeadLimit" name="dailyLeadLimit" class="w-full" placeholder="e.g. 50">
+              <p class="text-[8px] text-white/40 italic">Safety: Total emails sent per 24h period.</p>
+            </div>
           </div>
 
           <div class="bg-white/5 p-6 rounded-[2rem] space-y-6 border border-white/5">

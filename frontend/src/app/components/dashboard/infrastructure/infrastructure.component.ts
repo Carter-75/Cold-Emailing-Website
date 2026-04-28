@@ -29,7 +29,8 @@ export class InfrastructureComponent {
     smtpPort: 465,
     imapHost: '',
     imapPort: 993,
-    testRecipientEmail: ''
+    testRecipientEmail: '',
+    dailyLeadLimit: 3
   };
 
   isUnsubscribed = signal(false);
