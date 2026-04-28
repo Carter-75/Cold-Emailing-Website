@@ -38,8 +38,14 @@ class OutreachEngine {
        throw new Error('OpenAI Key is required for core generation.');
     }
 
-    if (!config.serpapiKey || !config.apolloKey || !config.verifaliaKey || !config.senderEmail || !config.appPassword) {
-      throw new Error('Incomplete configuration for production outreach.');
+    // Verifalia auth: credentials stored per-user in DB, entered via Settings → Integrations
+    const verifaliaAuth = {
+      username: config.verifaliaUsername,
+      password: config.verifaliaPassword
+    };
+
+    if (!config.serpapiKey || !config.apolloKey || !verifaliaAuth.username || !config.senderEmail || !config.appPassword) {
+      throw new Error('Incomplete configuration for production outreach. Ensure Verifalia credentials are set in Settings.');
     }
 
     const dailyLimit = config.dailyLeadLimit || 3;
@@ -103,7 +109,7 @@ class OutreachEngine {
       
       if (leadStatus) continue;
 
-      const isValid = await VerificationService.verifyEmail(email, config.verifaliaKey);
+      const isValid = await VerificationService.verifyEmail(email, verifaliaAuth);
       if (!isValid) continue;
 
       const content = await EmailService.generateContent(lead, config);

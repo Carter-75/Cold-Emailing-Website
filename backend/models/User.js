@@ -11,7 +11,8 @@ const UserSchema = new mongoose.Schema({
     openaiKey: String,
     serpapiKey: String,
     apolloKey: String,
-    verifaliaKey: String,
+    verifaliaUsername: String,  // Verifalia account email (HTTP Basic Auth)
+    verifaliaPassword: String,  // Verifalia account password (HTTP Basic Auth)
     
     // SMTP & IMAP
     senderEmail: String,
@@ -63,7 +64,7 @@ const SENSITIVE_FIELDS = [
   'openaiKey',
   'serpapiKey',
   'apolloKey',
-  'verifaliaKey',
+  'verifaliaPassword',  // Only encrypt the password; username is an email (not secret)
   'appPassword'
 ];
 

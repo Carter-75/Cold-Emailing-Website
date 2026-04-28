@@ -234,18 +234,59 @@ router.get('/leads', verifyToken, async (req, res) => {
   try {
     const Lead = require('../models/Lead');
     const Unsubscribe = require('../models/Unsubscribe');
-    const leads = await Lead.find({ userId: req.user._id })
-      .sort({ updatedAt: -1 }); 
-    
+
+    // ── Query 1: Engine leads (this user's automated outreach) ──────────────
+    const engineLeads = await Lead.find({ userId: req.user._id })
+      .sort({ updatedAt: -1 });
+
     const unsubList = await Unsubscribe.find({ userId: req.user._id });
     const unsubEmails = new Set(unsubList.map(u => u.recipientEmail.toLowerCase()));
 
-    const leadsWithUnsub = leads.map(l => ({
+    const engineLeadsFormatted = engineLeads.map(l => ({
       ...l.toObject ? l.toObject() : l,
-      isUnsubscribed: unsubEmails.has(l.recipientEmail.toLowerCase())
+      isUnsubscribed: unsubEmails.has(l.recipientEmail.toLowerCase()),
+      source: 'engine'
     }));
 
-    res.json(leadsWithUnsub);
+    // ── Query 2: Portfolio leads (new-portfolio outreach, no userId) ─────────
+    // These share the same MongoDB but are stamped source: 'portfolio'.
+    // 'pending' in portfolio = not yet emailed; map it to 'emailed' since the
+    // portfolio cron fires one email per lead before flipping status.
+    // We exclude leads already in the engine (matched by recipientEmail) to avoid dupes.
+    const engineEmails = new Set(engineLeads.map(l => l.recipientEmail.toLowerCase()));
+
+    const portfolioLeads = await Lead.find({
+      source: 'portfolio',
+      status: { $in: ['emailed', 'replied', 'unsubscribed'] } // skip 'pending' — not sent yet
+    }).sort({ updatedAt: -1 });
+
+    const portfolioLeadsFormatted = portfolioLeads
+      .filter(l => !engineEmails.has(l.email?.toLowerCase())) // no duplicates
+      .map(l => {
+        const raw = l.toObject ? l.toObject() : l;
+        return {
+          _id: raw._id,
+          businessName: raw.businessName || raw.name || 'Portfolio Lead',
+          recipientEmail: raw.email,
+          city: null,
+          status: raw.status === 'unsubscribed' ? 'finished' : raw.status,
+          sequenceStep: null,
+          lastEmailedAt: raw.lastEmailedAt,
+          nextEmailAt: null,
+          thread: raw.thread || [],
+          messageIds: raw.messageIds || [],
+          isTestData: false,
+          isUnsubscribed: raw.status === 'unsubscribed',
+          source: 'portfolio',
+          updatedAt: raw.updatedAt || raw.lastEmailedAt || raw.createdAt
+        };
+      });
+
+    // ── Merge & sort by most recent activity ────────────────────────────────
+    const combined = [...engineLeadsFormatted, ...portfolioLeadsFormatted]
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+    res.json(combined);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -258,15 +299,18 @@ router.post('/leads/:id/reply', verifyToken, async (req, res) => {
 
     const Lead = require('../models/Lead');
     const EmailService = require('../services/email.service');
-    const lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
-    
+
+    // Find lead — try engine lead first (userId match), then portfolio lead (no userId)
+    let lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!lead) lead = await Lead.findOne({ _id: req.params.id, source: 'portfolio' });
     if (!lead) return res.status(404).json({ message: 'Lead not found.' });
 
     const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found.' });
 
     const Unsubscribe = require('../models/Unsubscribe');
-    const isUnsubscribed = await Unsubscribe.findOne({ userId: user._id, recipientEmail: lead.recipientEmail.toLowerCase() });
+    const recipientEmail = lead.recipientEmail || lead.email;
+    const isUnsubscribed = await Unsubscribe.findOne({ userId: user._id, recipientEmail: recipientEmail.toLowerCase() });
     if (isUnsubscribed) {
       return res.status(403).json({ message: 'Cannot send manual reply: Lead is on the suppression (unsubscribe) list.' });
     }
@@ -278,25 +322,23 @@ router.post('/leads/:id/reply', verifyToken, async (req, res) => {
       ...sendConfig,
       userId: user._id,
       displayName: user.displayName || user.config.senderName
-    }, lead.recipientEmail, body, lead.businessName);
+    }, recipientEmail, body, lead.businessName);
 
     // Update Lead Thread
+    if (!lead.thread) lead.thread = [];
     lead.thread.push({
       from: user.config.senderEmail,
-      to: lead.recipientEmail,
+      to: recipientEmail,
       subject: emailResult.subject,
-      body: body, // Use original body to avoid <br> tags if not needed, but sendEmail adds them for HTML
+      body: body,
       timestamp: new Date()
     });
 
+    if (!lead.messageIds) lead.messageIds = [];
     lead.messageIds.push(emailResult.messageId);
-    
-    // If we reply, we might want to change status back to 'emailed' to continue sequence
-    // OR keep it at 'replied' if we are handling it manually.
-    // Let's keep it at 'replied' but updated.
-    // Only set to emailed if it's currently discovery (to start sequence)
-    // If it's already replied or finished, keep that status.
-    if (lead.status === 'discovery') {
+
+    // Status handling — engine leads use 'discovery', portfolio leads use 'emailed' as their initial state
+    if (lead.status === 'discovery' || lead.status === 'pending') {
       lead.status = 'emailed';
     }
 
@@ -314,8 +356,9 @@ router.post('/leads/:id/refine-reply', verifyToken, async (req, res) => {
 
     const Lead = require('../models/Lead');
     const EmailService = require('../services/email.service');
-    const lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
-    
+
+    let lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!lead) lead = await Lead.findOne({ _id: req.params.id, source: 'portfolio' });
     if (!lead) return res.status(404).json({ message: 'Lead not found.' });
 
     const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
@@ -332,8 +375,9 @@ router.post('/leads/:id/clean-thread', verifyToken, async (req, res) => {
   try {
     const Lead = require('../models/Lead');
     const EmailService = require('../services/email.service');
-    const lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
-    
+
+    let lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!lead) lead = await Lead.findOne({ _id: req.params.id, source: 'portfolio' });
     if (!lead) return res.status(404).json({ message: 'Lead not found.' });
 
     const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
@@ -362,10 +406,11 @@ router.post('/leads/:id/clean-thread', verifyToken, async (req, res) => {
 router.post('/config', verifyToken, async (req, res) => {
   try {
     const allowedKeys = [
-      'openaiKey', 'serpapiKey', 'apolloKey', 'verifaliaKey', 'senderEmail', 'appPassword', 
-      'senderName', 'senderTitle', 'companyName', 'websiteUrl', 'physicalAddress', 'priceTier1', 
-      'priceTier2', 'priceTier3', 'valueProp', 'targetOutcome', 'personaContext', 'dailyLeadLimit', 
-      'smtpHost', 'smtpPort', 'smtpSecure', 'testRecipientEmail', 'signature'
+      'openaiKey', 'serpapiKey', 'apolloKey', 'verifaliaUsername', 'verifaliaPassword',
+      'senderEmail', 'appPassword', 'senderName', 'senderTitle', 'companyName', 'websiteUrl',
+      'physicalAddress', 'priceTier1', 'priceTier2', 'priceTier3', 'valueProp', 'targetOutcome',
+      'personaContext', 'dailyLeadLimit', 'smtpHost', 'smtpPort', 'smtpSecure',
+      'testRecipientEmail', 'signature'
     ];
 
     let safeBody = {};

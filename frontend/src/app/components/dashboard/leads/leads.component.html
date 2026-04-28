@@ -50,7 +50,12 @@
                     {{ lead.businessName?.charAt(0) || '?' }}
                   </div>
                   <div>
-                    <p class="text-sm font-bold tracking-tight">{{ lead.businessName || 'Unknown Entity' }}</p>
+                    <div class="flex items-center gap-2 mb-0.5">
+                      <p class="text-sm font-bold tracking-tight">{{ lead.businessName || 'Unknown Entity' }}</p>
+                      <span [ngClass]="lead.source === 'portfolio' ? 'bg-violet-500/15 text-violet-400 border-violet-500/25' : 'bg-sky-500/10 text-sky-400/70 border-sky-500/15'" class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border">
+                        {{ lead.source === 'portfolio' ? 'Portfolio' : 'Engine' }}
+                      </span>
+                    </div>
                     <p class="text-[10px] text-white/60">{{ lead.recipientEmail }}</p>
                   </div>
                 </div>
@@ -74,9 +79,13 @@
                            <p class="text-[9px] text-white/60 uppercase font-black">City</p>
                            <p class="text-xs font-medium truncate">{{ lead.city || 'N/A' }}</p>
                         </div>
-                        <div class="p-4 rounded-2xl bg-black/20 border border-white/5">
+                        <div *ngIf="lead.source !== 'portfolio'" class="p-4 rounded-2xl bg-black/20 border border-white/5">
                            <p class="text-[9px] text-white/60 uppercase font-black">Sequence Step</p>
                            <p class="text-xs font-medium">{{ lead.sequenceStep }}/3</p>
+                        </div>
+                        <div *ngIf="lead.source === 'portfolio'" class="p-4 rounded-2xl bg-black/20 border border-white/5">
+                           <p class="text-[9px] text-white/60 uppercase font-black">Last Emailed</p>
+                           <p class="text-xs font-medium">{{ lead.lastEmailedAt ? (lead.lastEmailedAt | date:'MMM d') : 'Unknown' }}</p>
                         </div>
                      </div>
                      

@@ -23,7 +23,7 @@ async function finalAudit() {
     }
 
     const REQUIRED_FIELDS = [
-      'openaiKey', 'serpapiKey', 'apolloKey', 'verifaliaKey',
+      'openaiKey', 'serpapiKey', 'apolloKey', 'verifaliaUsername', 'verifaliaPassword',
       'senderEmail', 'appPassword', 'smtpHost', 'smtpPort', 'imapHost', 'imapPort',
       'senderName', 'senderTitle', 'companyName', 'websiteUrl', 'physicalAddress',
       'personaContext', 'signature', 'valueProp', 'targetOutcome',

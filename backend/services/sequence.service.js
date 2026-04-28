@@ -54,7 +54,11 @@ class SequenceService {
           return 'finished';
         }
         
-        const isValid = await VerificationService.verifyEmail(email, user.config.verifaliaKey);
+        const verifaliaAuth = {
+          username: user.config.verifaliaUsername,
+          password: user.config.verifaliaPassword
+        };
+        const isValid = await VerificationService.verifyEmail(email, verifaliaAuth);
         if (!isValid) {
           lead.status = 'finished';
           await lead.save();

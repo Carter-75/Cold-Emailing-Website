@@ -1,14 +1,35 @@
 import os
-import subprocess
-import re
+import requests
 from pathlib import Path
+from dotenv import load_dotenv
 
-def parse_env(file_path):
-    """Parses a .env file into a dictionary."""
-    env = {}
-    if not file_path.exists():
-        return env
-    with open(file_path, "r", encoding='utf-8') as f:
+def sync_vercel_env():
+    """
+    Reads the root .env.local and syncs each variable to the Vercel Production vault 
+    using the official REST API. (Upgraded to high-performance REST version)
+    """
+    env_path = Path('.env.local')
+    
+    if not env_path.exists():
+        print("❌ No .env.local file found in the root. Skipping sync.")
+        return
+
+    # Load credentials from .env.local
+    load_dotenv(dotenv_path=env_path)
+
+    # Vercel Configuration (Required for API access)
+    # These must be in your .env.local
+    VERCEL_TOKEN = os.getenv('VERCEL_TOKEN')
+    VERCEL_PROJECT_ID = os.getenv('VERCEL_PROJECT_ID')
+
+    if not VERCEL_TOKEN or not VERCEL_PROJECT_ID:
+        print("\033[91mFATAL ERROR: VERCEL_TOKEN or VERCEL_PROJECT_ID not found in .env.local\033[0m")
+        return
+
+    print(f"\033[94mVercel Watcher: Syncing Cold-Emailing-Website to Production Vault...\033[0m")
+    
+    env_vars = {}
+    with open(env_path, "r", encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
@@ -16,83 +37,60 @@ def parse_env(file_path):
             key, val = line.split("=", 1)
             key = key.strip()
             val = val.strip()
-            # Strip quotes
             if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
                 val = val[1:-1]
-            env[key] = val
-    return env
+            env_vars[key] = val
 
-def sync_vercel_env():
-    """Smart Sync: Updates only changed environment variables in Vercel Production vault."""
-    local_path = Path('.env.local')
-    remote_tmp = Path('.env.vercel.tmp')
+    headers = {
+        'Authorization': f'Bearer {VERCEL_TOKEN}',
+        'Content-Type': 'application/json'
+    }
     
-    if not local_path.exists():
-        print("?? No .env.local file found. Skipping sync.")
+    # 1. Fetch existing env
+    try:
+        res = requests.get(f'https://api.vercel.com/v9/projects/{VERCEL_PROJECT_ID}/env', headers=headers)
+        res.raise_for_status()
+        existing_env = res.json().get('envs', [])
+    except Exception as e:
+        print(f"\033[91mERROR: Failed to fetch existing variables: {e}\033[0m")
         return
 
-    print("Vercel Watcher: Performing Smart Sync...")
-    
-    try:
-        # 1. Pull current production state to compare
+    keys_to_sync = [k for k in env_vars.keys() if k not in ['VERCEL_TOKEN', 'VERCEL_PROJECT_ID']]
+
+    for key in keys_to_sync:
+        val = env_vars[key]
+        target_key = key # No prefix for this project
+        
+        existing_var = next((e for e in existing_env if e['key'] == target_key and 'production' in e['target']), None)
+
         try:
-            subprocess.run(
-                ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", "npx vercel env pull .env.vercel.tmp --environment production --yes"],
-                capture_output=True, check=True
-            )
-        except subprocess.CalledProcessError as e:
-            print(f"?? Warning: Failed to pull remote env for comparison. Falling back to full sync.\n{e.stderr.decode()}")
+            if existing_var:
+                # Only update if the value changed
+                if existing_var.get('value') == val:
+                    continue
 
-        local_vars = parse_env(local_path)
-        remote_vars = parse_env(remote_tmp)
-        
-        # Force Production Context
-        local_vars['PRODUCTION'] = 'true'
-        if 'PROD_BACKEND_URL' in local_vars:
-            local_vars['BACKEND_URL'] = local_vars['PROD_BACKEND_URL']
-        if 'PROD_FRONTEND_URL' in local_vars:
-            local_vars['FRONTEND_URL'] = local_vars['PROD_FRONTEND_URL']
-
-        to_sync = []
-        for key, val in local_vars.items():
-            if key.startswith('VERCEL_'): continue # Skip Vercel system vars
-            
-            if key not in remote_vars or remote_vars[key] != val:
-                to_sync.append((key, val))
-        
-        if not to_sync:
-            print("? Vercel Vault already matches your .env.local.")
-            return
-
-        print(f"? Found {len(to_sync)} variables to update. Syncing now...")
-        
-        for i, (key, val) in enumerate(to_sync, 1):
-            print(f"   [{i}/{len(to_sync)}] Syncing {key}...", end="", flush=True)
-            
-            # 1. Remove existing (ignore error if not exists)
-            subprocess.run(
-                ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", f"vercel env rm {key} production --yes"],
-                capture_output=True
-            )
-            
-            # 2. Add new value
-            # We use stdin to pass the value safely without shell escaping issues
-            res = subprocess.run(
-                ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", f"vercel env add {key} production --yes"],
-                input=val, text=True, capture_output=True
-            )
-            
-            if res.returncode == 0:
-                print(" [OK]")
+                print(f"   UPDATING: {target_key}...")
+                requests.patch(
+                    f"https://api.vercel.com/v9/projects/{VERCEL_PROJECT_ID}/env/{existing_var['id']}",
+                    headers=headers,
+                    json={'value': val, 'target': ['production']}
+                ).raise_for_status()
             else:
-                print(f" [FAIL] (Error: {res.stderr.strip()})")
+                print(f"   CREATING: {target_key}...")
+                requests.post(
+                    f"https://api.vercel.com/v10/projects/{VERCEL_PROJECT_ID}/env",
+                    headers=headers,
+                    json={
+                        'key': target_key,
+                        'value': val,
+                        'type': 'encrypted',
+                        'target': ['production']
+                    }
+                ).raise_for_status()
+        except Exception as e:
+            print(f"\033[91m   [!] Failed to sync {target_key}: {e}\033[0m")
 
-        print("\nVercel Sync Complete!")
-
-    finally:
-        if remote_tmp.exists():
-            remote_tmp.unlink()
-
+    print("\033[92mOK: Cold-Emailing-Website Vercel Vault synchronized.\033[0m")
 
 if __name__ == "__main__":
     sync_vercel_env()

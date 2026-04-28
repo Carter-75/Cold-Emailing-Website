@@ -26,9 +26,14 @@
             <p class="text-[9px] text-white/60 italic">Used for deep contact discovery and enrichment.</p>
           </div>
           <div class="space-y-3">
-            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Verifalia Validator</label>
-            <input type="password" [(ngModel)]="config.verifaliaKey" name="verifaliaKey" class="w-full">
-            <p class="text-[9px] text-white/60 italic">Used for real-time bounce prevention.</p>
+            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Verifalia Username</label>
+            <input type="text" [(ngModel)]="config.verifaliaUsername" name="verifaliaUsername" class="w-full" placeholder="your@verifalia-email.com">
+            <p class="text-[9px] text-white/60 italic">HTTP Basic Auth — your Verifalia account email. Pre-set via env if left blank.</p>
+          </div>
+          <div class="space-y-3">
+            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Verifalia Password</label>
+            <input type="password" [(ngModel)]="config.verifaliaPassword" name="verifaliaPassword" class="w-full" placeholder="••••••••">
+            <p class="text-[9px] text-white/60 italic">Used with username for real-time bounce prevention via Verifalia API v2.7.</p>
           </div>
         </div>
 
