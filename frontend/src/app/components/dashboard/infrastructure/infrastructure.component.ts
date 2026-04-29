@@ -3,13 +3,17 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { OutreachService } from '../../../services/outreach.service';
-import { LucideAngularModule } from 'lucide-angular'
+import { LucideAngularModule, Shield, AlertTriangle, Play, RefreshCw, AlertCircle } from 'lucide-angular';
 import { gsap } from 'gsap';
 
 @Component({
   selector: 'app-infrastructure',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    LucideAngularModule
+  ],
   templateUrl: './infrastructure.component.html',
   styleUrl: './infrastructure.component.css'
 })

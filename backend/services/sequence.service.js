@@ -31,12 +31,19 @@ class SequenceService {
   }
 
   async processLead(lead, forceSend = false) {
-    const user = lead.userId;
+    let user = lead.userId;
+    // If userId is just an ID (not populated), fetch the full user object
+    if (user && (typeof user === 'string' || user instanceof require('mongoose').Types.ObjectId)) {
+      const User = require('../models/User');
+      user = await User.findById(user);
+    }
+    
     if (!user) return 'skipped';
     
     // In production, we skip if outreach is disabled or lead is finished
     // But in forceSend (Test Mode), we bypass the 'outreachEnabled' check
-    if (!forceSend && (!user.config?.outreachEnabled || lead.status === 'finished')) {
+    const config = user.config || {};
+    if (!forceSend && (!config.outreachEnabled || lead.status === 'finished')) {
       return 'skipped';
     }
 

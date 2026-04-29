@@ -21,13 +21,25 @@ const BDAY_MINUTES    = (BDAY_END_HOUR - BDAY_START_HOUR) * 60; // 600 min
  */
 function getBusinessTimeInfo(timezone = 'America/Chicago') {
   const now = new Date();
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    hour: 'numeric',
-    minute: 'numeric',
-    hour12: false,
-    weekday: 'short'
-  }).formatToParts(now);
+  let parts;
+  try {
+    parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false,
+      weekday: 'short'
+    }).formatToParts(now);
+  } catch (err) {
+    console.warn(`[Engine] Invalid timezone "${timezone}", falling back to UTC.`);
+    parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'UTC',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false,
+      weekday: 'short'
+    }).formatToParts(now);
+  }
 
   const localHour   = parseInt(parts.find(p => p.type === 'hour').value, 10);
   const localMinute = parseInt(parts.find(p => p.type === 'minute').value, 10);
