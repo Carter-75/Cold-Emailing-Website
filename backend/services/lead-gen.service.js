@@ -34,8 +34,7 @@ class LeadGenService {
 
       const results = response.data.local_results || [];
       
-      // Filter for businesses without a website
-      const leads = results.filter(place => !place.website || place.website === '');
+      const leads = results; // Allow all local results, ValidatorService will filter for ICP
       
       return leads.map(lead => ({
         name: lead.title,

@@ -20,24 +20,36 @@ class DiscoveryWorker {
       // 2. Find leads from Maps
       const rawLeads = await LeadGenService.findLeads(city, user.config.serpapiKey);
       let leadsFoundThisSweep = 0;
-      const LIMIT = user.config.dailyLeadLimit || 3;
+      
+      // Decouple discovery from sending limit to ensure a healthy pipeline
+      const SEARCH_LIMIT = Math.max(10, (user.config.dailyLeadLimit || 3) * 5);
 
       for (const raw of rawLeads) {
-        if (leadsFoundThisSweep >= LIMIT) break;
+        if (leadsFoundThisSweep >= SEARCH_LIMIT) break;
 
         // Check if we already have this lead
-        const existing = await Lead.findOne({ userId, recipientEmail: raw.phone }); // temporary identifier
+        // raw.phone is used as a temporary identifier for maps leads
+        const existing = await Lead.findOne({ 
+          userId, 
+          $or: [
+            { businessName: raw.name, city },
+            { recipientEmail: raw.phone }
+          ]
+        });
         if (existing) continue;
 
-        // 3. Validate ICP (Redirects/Social Media)
+        // 3. Validate ICP (Redirects/Social Media/Missing Website)
         const validation = await ValidatorService.validateLead({ website: raw.website });
         
         if (validation.isValid) {
           // 4. Create Lead in 'discovery' status
+          // Use phone if available, otherwise use a placeholder to satisfy the 'required' field
+          const tempEmail = raw.phone || `no-phone-${Date.now()}@internal.loc`;
+
           await Lead.create({
             userId,
             businessName: raw.name,
-            recipientEmail: raw.phone, // We'll enrich this later in the SequenceWorker before Step 1
+            recipientEmail: tempEmail, 
             city,
             category: raw.category,
             status: 'discovery'

@@ -13,7 +13,8 @@ const US_CITIES = [
 
 class CityRotator {
   constructor() {
-    this.currentIndex = 0;
+    // Start at a random city to ensure diversity in serverless environments
+    this.currentIndex = Math.floor(Math.random() * US_CITIES.length);
   }
 
   getNextCity() {

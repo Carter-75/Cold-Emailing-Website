@@ -63,7 +63,8 @@ function getBusinessTimeInfo(timezone = 'America/Chicago') {
 function expectedEmailsByNow(localHour, localMinute, dailyLimit) {
   const minutesElapsed = (localHour - BDAY_START_HOUR) * 60 + localMinute;
   const slotMinutes    = Math.floor(BDAY_MINUTES / dailyLimit);
-  return Math.min(Math.floor(minutesElapsed / slotMinutes), dailyLimit);
+  // Allow the n-th email at the START of the n-th slot (e.g. 1st email at 8:00am)
+  return Math.min(Math.floor((minutesElapsed + slotMinutes) / slotMinutes), dailyLimit);
 }
 
 // ── Error Classification ───────────────────────────────────────────────────
@@ -303,7 +304,10 @@ class OutreachEngine {
           console.warn(`[Engine] Apollo enrichment failed for "${lead.name}" (skipping): ${err.message}`);
           continue;
         }
+      } else {
+        console.warn(`[Engine] Skipping "${lead.name}" — Apollo API key not configured. Discovery-to-Send requires Apollo.`);
       }
+      
       if (!email) continue;
 
       // Already replied — never re-contact
