@@ -59,18 +59,25 @@ const validateEnv = () => {
         const parsed = envSchema.parse(process.env);
         return parsed;
     } catch (err) {
+        const isProd = process.env.PRODUCTION === 'true';
         console.error('\n⚠️ CONFIGURATION WARNING:');
         err.errors.forEach(e => {
             console.error(`   - ${e.path.join('.')}: ${e.message}`);
         });
-        console.warn('\n   Continuing in DEGRATED MODE. Some features will fail until .env.local/Vercel variables are updated.\n');
+
+        if (!process.env.ENCRYPTION_KEY && !isProd) {
+            console.warn('   - ENCRYPTION_KEY: Missing! Using insecure fallback for development. DO NOT USE IN PRODUCTION.');
+        }
+
+        console.warn('\n   Continuing in DEGRADED MODE. Some features will fail until .env.local/Vercel variables are updated.\n');
         
         // Return partially valid env or defaults to allow booting for diagnostics
         return {
             ...process.env,
             PRODUCTION: process.env.PRODUCTION || 'false',
             PORT: process.env.PORT || '3000',
-            PROJECT_NAME: process.env.PROJECT_NAME || 'Cold Outreach (Degraded)'
+            PROJECT_NAME: process.env.PROJECT_NAME || 'Cold Outreach (Degraded)',
+            ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || 'dev-insecure-fallback-key-32-chars-!!'
         };
     }
 };

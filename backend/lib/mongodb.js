@@ -46,8 +46,16 @@ async function connectToDatabase() {
 
   try {
     console.log('[MongoDB] Calling mongoose.connect...');
+    
+    // Create a timeout promise to prevent indefinite hangs
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('MongoDB connection timed out after 10s')), 10000)
+    );
+
     cachedConnection = mongoose.connect(mongoURI, options);
-    await cachedConnection;
+    
+    // Race the connection against the timeout
+    await Promise.race([cachedConnection, timeoutPromise]);
     
     console.log('[MongoDB] Successfully connected.');
     const client = mongoose.connection.getClient();
