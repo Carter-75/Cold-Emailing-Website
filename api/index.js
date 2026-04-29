@@ -1,8 +1,8 @@
-const app = require('../backend/app');
+const app = require('./app');
 
-// Ultimate Diagnostic Route
-app.get('/api/ping', (req, res) => {
-    res.json({ status: 'pong', source: 'root-api-handler', timestamp: new Date().toISOString() });
+// Explicit diagnostic route for Vercel Services Setup
+app.get('/api/vercel-service-check', (req, res) => {
+    res.json({ status: 'service-configuration-active', timestamp: new Date().toISOString() });
 });
 
 module.exports = app;
