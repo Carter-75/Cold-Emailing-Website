@@ -1,21 +1,24 @@
 {
   "version": 2,
-  "installCommand": "npm install && npm install --prefix backend && npm install --prefix frontend",
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/dist/frontend",
-  "functions": {
-    "api/index.js": {
-      "includeFiles": "backend/**"
+  "experimentalServices": {
+    "frontend": {
+      "entrypoint": "frontend",
+      "routePrefix": "/",
+      "framework": "angular"
+    },
+    "backend": {
+      "entrypoint": "backend",
+      "routePrefix": "/_/backend"
     }
   },
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "/api/index.js"
+      "destination": "/backend/index.js"
     },
     {
       "source": "/auth/:path*",
-      "destination": "/api/index.js"
+      "destination": "/backend/index.js"
     },
     {
       "source": "/((?!api/|auth/).*)",
