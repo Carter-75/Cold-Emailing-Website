@@ -10,6 +10,6 @@ backend/scratch/
 .env.vercel.tmp
 *.tmp
 frontend/.gitignore
-frontend/vercel.json
-frontend/api/
+# frontend/vercel.json (unignored to allow Vercel config)
+# frontend/api/ (unignored to allow Vercel functions)
 .vercel

@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "installCommand": "npm install && npm install --prefix ../backend",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/frontend",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "../backend/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/((?!api/|auth/).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "ALLOWALL"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://*.vercel.app https://carter-portfolio.fyi http://localhost:3000 http://localhost:4200"
+        }
+      ]
+    }
+  ]
+}
