@@ -1,12 +1,14 @@
 import os
-import requests
+import subprocess
 from pathlib import Path
-from dotenv import load_dotenv
 
 def sync_vercel_env():
     """
     Reads the root .env.local and syncs each variable to the Vercel Production vault 
-    using the official REST API. (Upgraded to high-performance REST version)
+    using the Vercel CLI (npx vercel). 
+    
+    This uses your local Vercel login, so NO VERCEL_TOKEN or VERCEL_PROJECT_ID 
+    is needed in your .env.local.
     """
     env_path = Path('.env.local')
     
@@ -14,82 +16,59 @@ def sync_vercel_env():
         print("❌ No .env.local file found in the root. Skipping sync.")
         return
 
-    # Load credentials from .env.local
-    load_dotenv(dotenv_path=env_path)
-
-    # Vercel Configuration (Required for API access)
-    # These must be in your .env.local
-    VERCEL_TOKEN = os.getenv('VERCEL_TOKEN')
-    VERCEL_PROJECT_ID = os.getenv('VERCEL_PROJECT_ID')
-
-    if not VERCEL_TOKEN or not VERCEL_PROJECT_ID:
-        return
-
     print(f"\033[94mVercel Watcher: Syncing Cold-Emailing-Website to Production Vault...\033[0m")
     
-    env_vars = {}
-    with open(env_path, "r", encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, val = line.split("=", 1)
-            key = key.strip()
-            val = val.strip()
-            if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
-                val = val[1:-1]
-            env_vars[key] = val
-
-    headers = {
-        'Authorization': f'Bearer {VERCEL_TOKEN}',
-        'Content-Type': 'application/json'
-    }
-    
-    # 1. Fetch existing env
     try:
-        res = requests.get(f'https://api.vercel.com/v9/projects/{VERCEL_PROJECT_ID}/env', headers=headers)
-        res.raise_for_status()
-        existing_env = res.json().get('envs', [])
-    except Exception as e:
-        print(f"\033[91mERROR: Failed to fetch existing variables: {e}\033[0m")
-        return
-
-    keys_to_sync = [k for k in env_vars.keys() if k not in ['VERCEL_TOKEN', 'VERCEL_PROJECT_ID']]
-
-    for key in keys_to_sync:
-        val = env_vars[key]
-        target_key = key # No prefix for this project
-        
-        existing_var = next((e for e in existing_env if e['key'] == target_key and 'production' in e['target']), None)
-
-        try:
-            if existing_var:
-                # Only update if the value changed
-                if existing_var.get('value') == val:
+        # We assume the project is linked (via 'vercel link')
+        # The 'env add' command will handle link errors if they occur
+        with open(env_path, "r", encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
                     continue
+                
+                key, val = line.split("=", 1)
+                key = key.strip()
+                val = val.strip()
+                
+                # Strip surrounding quotes if they exist
+                if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+                    val = val[1:-1]
+                
+                if key and val:
+                    # Avoid syncing the Vercel tokens themselves if they happen to be there
+                    if key in ['VERCEL_TOKEN', 'VERCEL_PROJECT_ID']:
+                        continue
 
-                print(f"   UPDATING: {target_key}...")
-                requests.patch(
-                    f"https://api.vercel.com/v9/projects/{VERCEL_PROJECT_ID}/env/{existing_var['id']}",
-                    headers=headers,
-                    json={'value': val, 'target': ['production']}
-                ).raise_for_status()
-            else:
-                print(f"   CREATING: {target_key}...")
-                requests.post(
-                    f"https://api.vercel.com/v10/projects/{VERCEL_PROJECT_ID}/env",
-                    headers=headers,
-                    json={
-                        'key': target_key,
-                        'value': val,
-                        'type': 'encrypted',
-                        'target': ['production']
-                    }
-                ).raise_for_status()
-        except Exception as e:
-            print(f"\033[91m   [!] Failed to sync {target_key}: {e}\033[0m")
+                    # Sync logic using PowerShell for robust escaping on Windows
+                    # We pass the value via an environment variable to ensure zero shell interpolation
+                    target_env = os.environ.copy()
+                    target_env["KV_VAL"] = val
 
-    print("\033[92mOK: Cold-Emailing-Website Vercel Vault synchronized.\033[0m")
+                    # 1. Try to remove existing var (ignore failure if it doesn't exist)
+                    subprocess.run(
+                        ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", f"npx vercel env rm {key} production --yes"],
+                        env=target_env,
+                        capture_output=True
+                    )
+                    
+                    # 2. Add/Update the variable using the env var for the value
+                    result = subprocess.run(
+                        ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", f"npx vercel env add {key} production --value $env:KV_VAL --yes"],
+                        env=target_env,
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if result.returncode != 0:
+                        print(f"   [!] Failed to sync {key}: {result.stderr.strip()}")
+                    else:
+                        print(f"   Synced: {key}")
+
+        print("\033[92mOK: Vercel Vault is now up to date.\033[0m")
+
+    except Exception as e:
+        print(f"\033[91mError during Vercel sync: {e}\033[0m")
 
 if __name__ == "__main__":
     sync_vercel_env()
