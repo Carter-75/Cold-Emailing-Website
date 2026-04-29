@@ -5,11 +5,11 @@
   "outputDirectory": "frontend/dist/frontend",
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/api/:path*",
       "destination": "/api/index.js"
     },
     {
-      "source": "/auth/(.*)",
+      "source": "/auth/:path*",
       "destination": "/api/index.js"
     },
     {
