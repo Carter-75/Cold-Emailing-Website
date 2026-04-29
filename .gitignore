@@ -4,6 +4,8 @@ dist/
 .angular/
 .vscode/
 .vercel
+scratch/
+backend/scratch/
 .env*.local
 .env.vercel.tmp
 *.tmp
