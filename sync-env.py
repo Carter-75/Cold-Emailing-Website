@@ -23,7 +23,6 @@ def sync_vercel_env():
     VERCEL_PROJECT_ID = os.getenv('VERCEL_PROJECT_ID')
 
     if not VERCEL_TOKEN or not VERCEL_PROJECT_ID:
-        print("\033[91mFATAL ERROR: VERCEL_TOKEN or VERCEL_PROJECT_ID not found in .env.local\033[0m")
         return
 
     print(f"\033[94mVercel Watcher: Syncing Cold-Emailing-Website to Production Vault...\033[0m")
