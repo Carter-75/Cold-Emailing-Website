@@ -25,20 +25,19 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 router.get('/google/callback', (req, res, next) => {
   console.log('📡 Google Callback Received. Query:', req.query);
-  passport.authenticate('google', (err, user, info) => {
-    if (err || !user) {
-      console.error('❌ Google Auth Error:', err || info);
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
-      console.log(`↪️ Redirecting to error dashboard: ${frontendUrl}/dashboard?error=google`);
-      return res.redirect(`${frontendUrl}/dashboard?error=google`);
-    }
-    
-    const token = generateToken(user);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
-    console.log(`✅ Google Login Successful: ${user.email}`);
-    console.log(`↪️ Redirecting to dashboard: ${frontendUrl}/dashboard?token=...`);
-    res.redirect(`${frontendUrl}/dashboard?token=${token}`);
-  })(req, res, next);
+    passport.authenticate('google', (err, user, info) => {
+      const isProd = process.env.PRODUCTION === 'true';
+      const frontendUrl = isProd ? (process.env.PROD_FRONTEND_URL || process.env.FRONTEND_URL) : (process.env.FRONTEND_URL || 'http://localhost:4200');
+
+      if (err || !user) {
+        console.error('❌ Google Auth Error:', err || info);
+        return res.redirect(`${frontendUrl}/dashboard?error=google`);
+      }
+      
+      const token = generateToken(user);
+      console.log(`✅ Google Login Successful: ${user.email}`);
+      res.redirect(`${frontendUrl}/dashboard?token=${token}`);
+    })(req, res, next);
 });
 
 // --- Local Auth Routes ---

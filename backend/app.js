@@ -24,16 +24,16 @@ app.use(cors({
   origin: (origin, callback) => {
     // 1. No origin (like mobile apps or curl) or same-domain
     if (!origin) return callback(null, true);
-    
+
     const allowed = [
-      process.env.FRONTEND_URL, 
-      process.env.PROD_FRONTEND_URL, 
+      process.env.FRONTEND_URL,
+      process.env.PROD_FRONTEND_URL,
       'https://carter-portfolio.fyi'
     ].filter(Boolean);
-    
+
     // 2. Check if it matches allowed list or is strict localhost
     const isLocalhost = origin === 'http://localhost:3000' || origin === 'http://localhost:4200' || origin === 'http://127.0.0.1:3000' || origin === 'http://127.0.0.1:4200';
-    
+
     const isAllowed = allowed.includes(origin) || isLocalhost || (process.env.VERCEL_URL && origin === `https://${process.env.VERCEL_URL}`);
 
     if (isAllowed) {
@@ -133,7 +133,7 @@ app.get('/api/debug-bundle', async (req, res) => {
 
 // --- Feature Routers ---
 // Note: aiRouter is currently optional/flavor-specific
-let aiRouter = null; 
+let aiRouter = null;
 
 const indexRouter = require('./routes/index');
 const cronRouter = require('./routes/cron');
@@ -142,7 +142,7 @@ const PROJECT_NAME = process.env.PROJECT_NAME || 'Portfolio Project';
 
 // --- MongoDB Initialization ---
 connectToDatabase()
-  .then(() => {})
+  .then(() => { })
   .catch(err => {
     console.error('Initial MongoDB Connection failed:', err.message);
     mongoose.set('bufferCommands', false);
@@ -168,11 +168,11 @@ app.use((req, res, next) => {
   const host = req.get('host');
   const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
   const currentOrigin = `${protocol}://${host}`;
-  
+
   const ancestors = ["'self'", "https://*.vercel.app", "https://carter-portfolio.fyi", currentOrigin];
-  
+
   res.setHeader('Content-Security-Policy', `frame-ancestors ${ancestors.join(' ')}`);
-  res.setHeader('X-Frame-Options', 'ALLOWALL'); 
+  res.setHeader('X-Frame-Options', 'ALLOWALL');
   next();
 });
 

@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const { verifyToken } = require('../middleware/auth');
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
+router.get('/', function (req, res, next) {
   res.json({ status: 'online', message: 'Cold Emailing API root' });
 });
 
@@ -60,7 +60,7 @@ router.post('/outreach/test-send', verifyToken, async (req, res) => {
   try {
     const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
     const recipient = user.config?.testRecipientEmail || user.config?.senderEmail;
     if (!recipient) return res.status(400).json({ message: 'No test recipient email configured.' });
 
@@ -71,28 +71,28 @@ router.post('/outreach/test-send', verifyToken, async (req, res) => {
     // 1. Check Daily Limit (Mimic real engine)
     const dailyLimit = user.config?.dailyLeadLimit || 3;
     const totalSentToday = await OutreachEngine.getSentTodayCount(user._id);
-    
+
     if (totalSentToday >= dailyLimit) {
-      return res.status(403).json({ 
-        message: `Daily Limit Reached (${totalSentToday}/${dailyLimit}). Test send blocked to mimic real automation limits.` 
+      return res.status(403).json({
+        message: `Daily Limit Reached (${totalSentToday}/${dailyLimit}). Test send blocked to mimic real automation limits.`
       });
     }
 
     // 2. Check Unsubscribe List
-    const isUnsubbed = await Unsubscribe.findOne({ 
-      userId: user._id, 
-      recipientEmail: recipient 
+    const isUnsubbed = await Unsubscribe.findOne({
+      userId: user._id,
+      recipientEmail: recipient
     });
-    
+
     if (isUnsubbed) {
-      return res.status(403).json({ 
-        message: 'Manual test blocked: This email is currently in your unsubscribe list.' 
+      return res.status(403).json({
+        message: 'Manual test blocked: This email is currently in your unsubscribe list.'
       });
     }
 
     // 3. Find or Create Test Lead
     let testLead = await Lead.findOne({ userId: user._id, isTestData: true });
-    
+
     if (!testLead) {
       // Create a fresh test lead
       testLead = await Lead.create({
@@ -122,21 +122,21 @@ router.post('/outreach/test-send', verifyToken, async (req, res) => {
     }
 
     if (testLead.status === 'replied') {
-      return res.status(403).json({ 
-        message: 'Logic Conflict: This test lead has already "replied". Real outreach would be suppressed. Reset the lead or clear its status to test again.' 
+      return res.status(403).json({
+        message: 'Logic Conflict: This test lead has already "replied". Real outreach would be suppressed. Reset the lead or clear its status to test again.'
       });
     }
 
     if (testLead.status === 'finished') {
       const reason = isUnsubbed ? 'Lead has unsubscribed.' : 'Sequence complete (3/3 emails sent).';
-      return res.status(403).json({ 
-        message: `Sequence Suppressed: ${reason} Real outreach is finished for this contact.` 
+      return res.status(403).json({
+        message: `Sequence Suppressed: ${reason} Real outreach is finished for this contact.`
       });
     }
 
     // 5. Execute using REAL Sequence Logic
     // We pass the populated user object for shadow mode compatibility
-    testLead.userId = user; 
+    testLead.userId = user;
     const result = await SequenceService.processLead(testLead, true); // forceSend = true
 
     if (result === 'finished') {
@@ -157,7 +157,7 @@ router.get('/outreach/unsub-list', verifyToken, async (req, res) => {
   try {
     const Unsubscribe = require('../models/Unsubscribe');
     const Lead = require('../models/Lead');
-    
+
     const suppressionList = await Unsubscribe.find({ userId: req.user._id });
     const finishedLeads = await Lead.find({ userId: req.user._id, status: 'finished' });
 
@@ -175,7 +175,7 @@ router.get('/outreach/unsub-list', verifyToken, async (req, res) => {
 
     // Sort by most recent
     combined.sort((a, b) => new Date(b.unsubscribedAt).getTime() - new Date(a.unsubscribedAt).getTime());
-    
+
     res.json(combined);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -197,15 +197,15 @@ router.post('/outreach/unsub-clear', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const recipient = user.config?.testRecipientEmail || user.config?.senderEmail;
-    
+
     // Clear suppression record
     const Unsubscribe = require('../models/Unsubscribe');
     await Unsubscribe.deleteOne({ userId: user._id, recipientEmail: recipient });
-    
+
     // Clear Lead record so it can be emailed again as if it's new
     const Lead = require('../models/Lead');
     await Lead.deleteMany({ userId: user._id, recipientEmail: recipient });
-    
+
     res.json({ message: 'All test data cleared for ' + recipient + '. You can now re-test from scratch.' });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -216,13 +216,13 @@ router.post('/outreach/sync-inbox', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
     const IMAPService = require('../services/imap.service');
     const result = await IMAPService.checkInbox(user);
-    
-    res.json({ 
+
+    res.json({
       message: `Inbox synced. Detected ${result.repliesDetected} new replies.`,
-      result 
+      result
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -433,7 +433,7 @@ router.post('/config', verifyToken, async (req, res) => {
     const oldKeys = {
       openaiKey: user.config?.openaiKey || ''
     };
-    
+
     // Explicitly update config fields
     Object.keys(safeBody).forEach(key => {
       user.config[key] = safeBody[key];
@@ -465,7 +465,7 @@ router.get('/unsubscribe', async (req, res) => {
   if (sig.length !== expectedSig.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) {
     return res.status(403).send('Invalid signature. Unsubscribe link forged or expired.');
   }
-  
+
   try {
     const Lead = require('../models/Lead');
 
