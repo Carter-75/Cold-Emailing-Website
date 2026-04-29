@@ -4,7 +4,10 @@ function verifyToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const headerKeys = Object.keys(req.headers).join(', ');
     console.warn(`[Auth] 401 Unauthorized: ${!authHeader ? 'Missing Header' : 'Missing Bearer Prefix'}. Path: ${req.path}`);
+    console.warn(`[Auth] Received Header Keys: [${headerKeys}]`);
+    
     return res.status(401).json({ 
       message: 'No authentication token provided.',
       diagnostic: !authHeader ? 'header_missing' : 'prefix_missing' 
