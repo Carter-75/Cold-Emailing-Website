@@ -25,58 +25,46 @@ async function connectToDatabase() {
     return await cachedConnection;
   }
 
-  const mongoURI = process.env.MONGODB_URI;
+  let mongoURI = process.env.MONGODB_URI;
   if (!mongoURI) {
     console.error('[MongoDB] CRITICAL: MONGODB_URI is missing');
     throw new Error('MONGODB_URI is not defined');
   }
+
+  // Clean quotes if they leaked from .env
+  mongoURI = mongoURI.replace(/^["'](.+)["']$/, '$1');
 
   console.log('[MongoDB] Initiating new connection...');
 
   // Configure Mongoose for serverless stability
   const options = {
     bufferCommands: false,
-    serverSelectionTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 8000, // Faster failure
     socketTimeoutMS: 45000,
     connectTimeoutMS: 10000,
   };
 
-  if (mongoose.connection.readyState === 2) {
-    console.log('[MongoDB] Connection currently connecting. Waiting...');
-  }
-
-  // Create a timeout promise to prevent indefinite hangs in serverless
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('MongoDB connection timed out after 8s')), 8000)
-  );
-
-  cachedConnection = mongoose.connect(mongoURI, options);
-
   try {
-    console.log('[MongoDB] Awaiting mongoose.connect...');
-    // Race the connection against the timeout
-    await Promise.race([cachedConnection, timeoutPromise]);
+    console.log('[MongoDB] Calling mongoose.connect...');
+    cachedConnection = mongoose.connect(mongoURI, options);
+    await cachedConnection;
     
-    console.log('[MongoDB] Successfully connected. Retrieving client for pooling...');
+    console.log('[MongoDB] Successfully connected.');
     const client = mongoose.connection.getClient();
     
     if (client) {
-      console.log('[MongoDB] Client found. Attaching Vercel database pool...');
       try {
         attachDatabasePool(client);
-        console.log('[MongoDB] Vercel Pool Attached successfully.');
+        console.log('[MongoDB] Vercel Pool Attached.');
       } catch (poolErr) {
-        console.warn('[MongoDB] attachDatabasePool failed (ignoring):', poolErr.message);
+        console.warn('[MongoDB] attachDatabasePool failed:', poolErr.message);
       }
-    } else {
-      console.warn('[MongoDB] No client found; skipping pool attachment.');
     }
 
-    console.log('[MongoDB] OK: Connection fully established.');
     return mongoose.connection;
   } catch (err) {
     cachedConnection = null;
-    console.error('[MongoDB] CRITICAL: MongoDB connection failed:', err.message);
+    console.error('[MongoDB] Connection failed:', err.message);
     throw err;
   }
 }
