@@ -144,6 +144,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     effect(() => {
       if (this.auth.isAuthenticated()) {
+        // Fetch initial data once authenticated
+        this.checkUnsubStatus();
+        this.fetchLeads();
+        
         // Wait for DOM to catch up with signal
         setTimeout(() => {
           this.initBackgroundMotion();
@@ -158,8 +162,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (user && user.config) {
       this.config = { ...this.config, ...user.config };
     }
-    this.checkUnsubStatus();
-    this.fetchLeads();
 
     // Auto-start tour if not seen
     const tourSeen = localStorage.getItem('tour_seen');
@@ -174,6 +176,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   fetchLeads() {
+    if (!this.auth.isAuthenticated()) return;
     this.outreach.getLeads().subscribe(leads => {
       this.leads.set(leads.map(l => ({ ...l, isExpanded: false })));
       
@@ -280,6 +283,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   checkUnsubStatus() {
+    if (!this.auth.isAuthenticated()) return;
     this.outreach.getUnsubStatus().subscribe(res => {
       this.isUnsubscribed.set(res.isUnsubscribed);
     });

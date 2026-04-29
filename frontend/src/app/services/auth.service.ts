@@ -29,7 +29,9 @@ export class AuthService {
   private handleUrlToken() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
+    
     if (token) {
+      console.log(`[AuthService] Found token in URL. Storing and checking auth...`);
       localStorage.setItem('auth_token', token);
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
