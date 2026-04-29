@@ -1,0 +1,23 @@
+name: Phoenix Outreach Engine (30m Pacing)
+
+on:
+  schedule:
+    # Runs every 30 minutes from 13:00 to 23:30 UTC (8:00am - 6:30pm CDT), Mon-Fri
+    - cron: '*/30 13-23 * * 1-5'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  outreach:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Outreach Chunk
+        run: |
+          curl -X GET "${{ secrets.PROD_URL }}/api/cron/outreach" \
+               -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+               -v
+
+      - name: Trigger Maintenance Sweep
+        run: |
+          curl -X GET "${{ secrets.PROD_URL }}/api/cron/maintenance" \
+               -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+               -v

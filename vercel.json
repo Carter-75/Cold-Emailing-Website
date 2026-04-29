@@ -14,11 +14,11 @@
   "crons": [
     {
       "path": "/api/cron/outreach",
-      "schedule": "*/30 13-23 * * 1-5"
+      "schedule": "0 13 * * 1-5"
     },
     {
       "path": "/api/cron/maintenance",
-      "schedule": "*/15 13-23 * * 1-5"
+      "schedule": "15 13 * * 1-5"
     }
   ],
   "headers": [
