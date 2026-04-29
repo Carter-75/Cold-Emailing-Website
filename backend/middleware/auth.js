@@ -4,7 +4,11 @@ function verifyToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No authentication token provided.' });
+    console.warn(`[Auth] 401 Unauthorized: ${!authHeader ? 'Missing Header' : 'Missing Bearer Prefix'}. Path: ${req.path}`);
+    return res.status(401).json({ 
+      message: 'No authentication token provided.',
+      diagnostic: !authHeader ? 'header_missing' : 'prefix_missing' 
+    });
   }
 
   const token = authHeader.split(' ')[1];
@@ -14,6 +18,7 @@ function verifyToken(req, res, next) {
     req.user = decoded; // The payload (e.g. { _id, email, isShadow... }) will be attached here
     next();
   } catch (err) {
+    console.error(`[Auth] 403 Forbidden: Invalid Token. Error: ${err.message}`);
     return res.status(403).json({ message: 'Invalid or expired token.' });
   }
 }

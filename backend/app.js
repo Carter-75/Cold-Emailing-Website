@@ -181,12 +181,9 @@ app.get('/', (req, res) => {
   res.send(`API for ${PROJECT_NAME} is running`);
 });
 
-// Mount at both /api and root to handle Vercel Service prefix stripping
+// --- Feature Routers ---
 app.use('/api/cron', cronRouter);
 app.use('/cron', cronRouter);
-
-app.use('/api', indexRouter);
-app.use('/', indexRouter);
 
 app.use('/api/auth', authRouter);
 app.use('/auth', authRouter);
@@ -195,6 +192,10 @@ if (aiRouter) {
   app.use('/api/ai', aiRouter);
   app.use('/ai', aiRouter);
 }
+
+// Index router should be last as it handles broad feature paths
+app.use('/api', indexRouter);
+app.use('/', indexRouter);
 
 // Error handler
 app.use((err, req, res, next) => {
