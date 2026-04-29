@@ -6,6 +6,10 @@ const { attachDatabasePool } = require('@vercel/functions');
  * Implements connection pool management to prevent leaks in serverless environments.
  */
 
+// Global Mongoose Configuration
+mongoose.set('bufferCommands', false);
+mongoose.set('autoIndex', true);
+
 let cachedConnection = null;
 
 async function connectToDatabase() {
@@ -37,11 +41,21 @@ async function connectToDatabase() {
     connectTimeoutMS: 10000,
   };
 
+  if (mongoose.connection.readyState === 2) {
+    console.log('[MongoDB] Connection currently connecting. Waiting...');
+  }
+
+  // Create a timeout promise to prevent indefinite hangs in serverless
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('MongoDB connection timed out after 8s')), 8000)
+  );
+
   cachedConnection = mongoose.connect(mongoURI, options);
 
   try {
     console.log('[MongoDB] Awaiting mongoose.connect...');
-    await cachedConnection;
+    // Race the connection against the timeout
+    await Promise.race([cachedConnection, timeoutPromise]);
     
     console.log('[MongoDB] Successfully connected. Retrieving client for pooling...');
     const client = mongoose.connection.getClient();

@@ -80,6 +80,21 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// --- Diagnostic Routes (More resilient for Vercel Rewrites) ---
+app.all(['/api/health', '/api/ping', '/health', '/ping'], (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json({
+    status: 'online',
+    path: req.path,
+    url: req.url,
+    method: req.method,
+    version: '1.0.3-stable',
+    env: process.env.PRODUCTION === 'true' ? 'production' : 'development',
+    mongo: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // --- MongoDB Connectivity Middleware ---
 app.use(async (req, res, next) => {
   try {
@@ -90,21 +105,6 @@ app.use(async (req, res, next) => {
     console.error('Database connection failed in middleware:', err.message);
     next();
   }
-});
-
-// --- Diagnostic Routes (More resilient for Vercel Rewrites) ---
-app.all(['/api/health', '/api/ping', '/health', '/ping'], (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.status(200).json({
-    status: 'online',
-    path: req.path,
-    url: req.url,
-    method: req.method,
-    version: '1.0.2-stable',
-    env: process.env.PRODUCTION === 'true' ? 'production' : 'development',
-    mongo: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    timestamp: new Date().toISOString()
-  });
 });
 
 app.get('/api/debug-bundle', async (req, res) => {
@@ -142,10 +142,11 @@ const PROJECT_NAME = process.env.PROJECT_NAME || 'Portfolio Project';
 
 // --- MongoDB Initialization ---
 connectToDatabase()
-  .then(() => { })
+  .then(() => { 
+    console.log('[App] Initial database connection established.');
+  })
   .catch(err => {
-    console.error('Initial MongoDB Connection failed:', err.message);
-    mongoose.set('bufferCommands', false);
+    console.error('[App] CRITICAL: Initial MongoDB Connection failed:', err.message);
   });
 
 if (isProd && !process.env.JWT_SECRET) {

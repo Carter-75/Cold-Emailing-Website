@@ -12,5 +12,4 @@ backend/scratch/
 frontend/.gitignore
 frontend/vercel.json
 frontend/api/
-
 .vercel
