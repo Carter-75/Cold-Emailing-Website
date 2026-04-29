@@ -9,15 +9,20 @@ on:
 jobs:
   outreach:
     runs-on: ubuntu-latest
+    env:
+      PROD_URL: ${{ secrets.PROD_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
     steps:
       - name: Trigger Outreach Chunk
         run: |
-          curl -X GET "${{ secrets.PROD_URL }}/api/cron/outreach" \
-               -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          if [ -z "$PROD_URL" ]; then echo "Error: PROD_URL secret is missing"; exit 1; fi
+          curl -X GET "$PROD_URL/api/cron/outreach" \
+               -H "Authorization: Bearer $CRON_SECRET" \
                -v
 
       - name: Trigger Maintenance Sweep
         run: |
-          curl -X GET "${{ secrets.PROD_URL }}/api/cron/maintenance" \
-               -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          if [ -z "$PROD_URL" ]; then echo "Error: PROD_URL secret is missing"; exit 1; fi
+          curl -X GET "$PROD_URL/api/cron/maintenance" \
+               -H "Authorization: Bearer $CRON_SECRET" \
                -v
