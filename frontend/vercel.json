@@ -1,21 +1,21 @@
 {
   "version": 2,
-  "installCommand": "npm install && npm install --prefix backend && npm install --prefix frontend",
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/dist/frontend",
+  "installCommand": "npm install && npm install --prefix ../backend",
+  "buildCommand": "mkdir -p backend-logic && cp -r ../backend/. ./backend-logic/ && npm run build",
+  "outputDirectory": "dist/frontend",
   "functions": {
-    "backend/index.js": {
-      "includeFiles": "backend/**"
+    "api/index.js": {
+      "includeFiles": "backend-logic/**"
     }
   },
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "/backend/index.js"
+      "destination": "/api/index.js"
     },
     {
       "source": "/auth/:path*",
-      "destination": "/backend/index.js"
+      "destination": "/api/index.js"
     },
     {
       "source": "/((?!api/|auth/).*)",
