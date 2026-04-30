@@ -23,10 +23,19 @@ class LeadGenService {
     }
     
     try {
+      const niches = [
+        'Roofing Contractor', 'Plumbing Service', 'HVAC Contractor', 'Dental Office', 
+        'Law Firm', 'Real Estate Agency', 'Electrical Contractor', 'Landscape Design',
+        'Auto Repair Shop', 'Medical Clinic', 'Home Remodeling', 'Pest Control'
+      ];
+      const niche = niches[Math.floor(Math.random() * niches.length)];
+      
+      console.log(`[LeadGen] Searching for ${niche} in ${city}...`);
+      
       const response = await axios.get('https://serpapi.com/search.json', {
         params: {
           engine: 'google_maps',
-          q: `local businesses in ${city}`,
+          q: `${niche} in ${city}`,
           type: 'search',
           api_key: apiKey
         }
@@ -34,12 +43,18 @@ class LeadGenService {
 
       const results = response.data.local_results || [];
       
-      const leads = results; // Allow all local results, ValidatorService will filter for ICP
+      // Filter out non-business results (e.g., generic category markers)
+      const filteredResults = results.filter(lead => {
+        const type = (lead.type || '').toLowerCase();
+        const blacklist = ['city', 'park', 'transit station', 'neighborhood'];
+        return !blacklist.some(item => type.includes(item));
+      });
       
-      return leads.map(lead => ({
+      return filteredResults.map(lead => ({
         name: lead.title,
         address: lead.address,
         phone: lead.phone,
+        website: lead.website, // Capturing website for ICP validation
         city: city,
         category: lead.type
       }));

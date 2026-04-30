@@ -212,6 +212,14 @@ class OutreachEngine {
     if (!lead) return 'done';
 
     try {
+      // Basic email format check before calling Verifalia
+      if (!lead.recipientEmail.includes('@') || lead.recipientEmail.includes('@internal.loc')) {
+        console.warn(`[Engine] Skipping verification for invalid email format: ${lead.recipientEmail}`);
+        lead.status = 'finished';
+        await lead.save();
+        return 'moved_to_finished';
+      }
+
       const isValid = await VerificationService.verifyEmail(lead.recipientEmail, {
         username: user.config.verifaliaUsername,
         password: user.config.verifaliaPassword
@@ -255,6 +263,15 @@ class OutreachEngine {
       }
     }
 
+    // DISCARD LOGIC: If we still don't have a valid email (placeholder or phone), throw it out
+    const isPlaceholder = lead.recipientEmail.includes('@internal.loc') || !lead.recipientEmail.includes('@');
+    if (isPlaceholder) {
+      console.log(`[Engine] No email found for ${lead.businessName} during enrichment. Discarding.`);
+      lead.status = 'finished';
+      await lead.save();
+      return 'moved'; 
+    }
+
     lead.status = 'verifying';
     await lead.save();
     return 'moved';
@@ -284,6 +301,7 @@ class OutreachEngine {
           recipientEmail: tempEmail,
           city: currentCity,
           category: raw.category,
+          website: raw.website, // Persist website for better enrichment
           status: 'discovery'
         });
         

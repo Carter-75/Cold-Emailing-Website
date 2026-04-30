@@ -52,6 +52,7 @@ class DiscoveryWorker {
             recipientEmail: tempEmail, 
             city,
             category: raw.category,
+            website: raw.website,
             status: 'discovery'
           });
           
