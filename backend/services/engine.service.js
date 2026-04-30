@@ -126,7 +126,8 @@ class OutreachEngine {
 
       // 1. Verification Queue (verifying -> ready)
       const resR = await this.stepRefillReady(user);
-      if (resR === 'moved') { movedAny = true; readyCount++; continue; }
+      if (resR === 'moved_to_ready') { movedAny = true; readyCount++; continue; }
+      if (resR === 'moved_to_finished') { movedAny = true; continue; }
       if (resR === 'blocked') break;
 
       // 2. Enrichment Queue (discovery -> verifying)
@@ -220,11 +221,11 @@ class OutreachEngine {
         lead.status = 'ready';
         await lead.save();
         await updateDiagnosticFlag(user, 'verifalia', false);
-        return 'moved';
+        return 'moved_to_ready';
       } else {
         lead.status = 'finished'; // Throw out bad lead
         await lead.save();
-        return 'moved'; // Continue the loop
+        return 'moved_to_finished'; // Continue the loop
       }
     } catch (err) {
       const type = classifyError(err, 'verifalia');
