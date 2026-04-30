@@ -10,7 +10,7 @@ const LeadSchema = new mongoose.Schema({
   // Interaction State
   status: { 
     type: String, 
-    enum: ['discovery', 'emailed', 'replied', 'finished'], 
+    enum: ['discovery', 'verifying', 'ready', 'emailed', 'replied', 'finished'], 
     default: 'discovery' 
   },
   sequenceStep: { type: Number, default: 0 },

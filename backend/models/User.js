@@ -45,7 +45,14 @@ const UserSchema = new mongoose.Schema({
     outreachPaused: { type: Boolean, default: false },         // Kill switch — set true on fatal API error
     outreachPausedReason: { type: String, default: '' },       // Human-readable reason stored for dashboard display
     timezone: { type: String, default: 'America/Chicago' },   // Used to gate engine to user's 8am-6pm local time
-    testRecipientEmail: String
+    testRecipientEmail: String,
+    lastAlertSentAt: { type: Date }, // Tracked for daily diagnostic emails
+    diagnosticFlags: {
+      openai: { active: { type: Boolean, default: false }, lastAlertedAt: Date },
+      serpapi: { active: { type: Boolean, default: false }, lastAlertedAt: Date },
+      verifalia: { active: { type: Boolean, default: false }, lastAlertedAt: Date },
+      smtp: { active: { type: Boolean, default: false }, lastAlertedAt: Date }
+    }
   },
   stats: {
     emailsSent: { type: Number, default: 0 },
