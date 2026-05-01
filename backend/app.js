@@ -10,7 +10,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
 const session = require('express-session');
-const { MongoStore } = require('connect-mongo');
+const MongoStore = require('connect-mongo');
 const passport = require('./config/passport');
 const { connectToDatabase } = require('./lib/mongodb');
 
@@ -65,7 +65,7 @@ app.use(session({
   secret: process.env.JWT_SECRET, // Using JWT_SECRET as session secret for convenience
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
+  store: (MongoStore.create ? MongoStore : MongoStore.default).create({
     mongoUrl: process.env.MONGODB_URI,
     collectionName: 'sessions',
     ttl: 14 * 24 * 60 * 60 // 14 days
