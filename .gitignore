@@ -13,3 +13,5 @@ frontend/.gitignore
 # frontend/vercel.json (unignored to allow Vercel config)
 # frontend/api/ (unignored to allow Vercel functions)
 .vercel
+
+.vercel
