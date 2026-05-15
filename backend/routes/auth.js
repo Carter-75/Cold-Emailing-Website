@@ -26,8 +26,9 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 router.get('/google/callback', (req, res, next) => {
   console.log('📡 Google Callback Received. Query:', req.query);
     passport.authenticate('google', (err, user, info) => {
-      const isProd = process.env.PRODUCTION === 'true';
-      const frontendUrl = isProd ? (process.env.PROD_FRONTEND_URL || process.env.FRONTEND_URL) : (process.env.FRONTEND_URL || 'http://localhost:4200');
+      const host = req.get('host') || '';
+      const isLocalHost = host.includes('localhost') || host.includes('127.0.0.1');
+      const frontendUrl = isLocalHost ? 'http://localhost:4200' : (process.env.PROD_FRONTEND_URL || 'https://cold-emailing-website.vercel.app');
 
       if (err || !user) {
         console.error('❌ Google Auth Error:', err || info);

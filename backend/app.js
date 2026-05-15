@@ -66,7 +66,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: (MongoStore.create ? MongoStore : MongoStore.default).create({
-    mongoUrl: process.env.MONGODB_URI,
+    clientPromise: connectToDatabase().then(m => m.getClient()),
     collectionName: 'sessions',
     ttl: 14 * 24 * 60 * 60 // 14 days
   }),
