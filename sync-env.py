@@ -49,7 +49,8 @@ def sync_vercel_env():
                     subprocess.run(
                         ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", f"npx vercel env rm {key} production --yes"],
                         env=target_env,
-                        capture_output=True
+                        capture_output=True,
+                        stdin=subprocess.DEVNULL
                     )
                     
                     # 2. Add/Update the variable using the env var for the value
@@ -57,7 +58,8 @@ def sync_vercel_env():
                         ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", f"npx vercel env add {key} production --value $env:KV_VAL --yes"],
                         env=target_env,
                         capture_output=True,
-                        text=True
+                        text=True,
+                        stdin=subprocess.DEVNULL
                     )
                     
                     if result.returncode != 0:
