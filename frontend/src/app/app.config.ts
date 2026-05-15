@@ -36,7 +36,8 @@ import {
   MailSearch,
   UserX,
   Loader2,
-  Wand2
+  Wand2,
+  Menu
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -77,7 +78,8 @@ export const appConfig: ApplicationConfig = {
         MailSearch,
         UserX,
         Loader2,
-        Wand2
+        Wand2,
+        Menu
       })
     }
   ]
