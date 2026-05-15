@@ -119,8 +119,10 @@ class OutreachEngine {
     // Phase B: The Recursive Machine (Loop until Ready == 100 or block)
     let readyCount = await Lead.countDocuments({ userId: user._id, status: 'ready' });
     let loopSafety = 0;
+    const startTime = Date.now();
 
-    while (readyCount < 100 && loopSafety < 50) {
+    // Limit to 50 iterations OR 25 seconds to prevent Vercel timeouts
+    while (readyCount < 100 && loopSafety < 50 && (Date.now() - startTime < 25000)) {
       loopSafety++;
       let movedAny = false;
 

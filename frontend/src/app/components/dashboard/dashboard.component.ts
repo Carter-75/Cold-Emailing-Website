@@ -41,6 +41,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   marketNiches = ['Building Websites', 'Selling Apps', 'Selling AI', 'Making Products', 'SaaS Growth', 'Agency Scale'];
   currentNicheIndex = signal(0);
   
+  sidebarOpen = signal<boolean>(false);
+
+  toggleSidebar() {
+    this.sidebarOpen.update(v => !v);
+  }
+
   startTour() {
     this.activeTab.set('overview');
     this.tourStep.set(1);
@@ -190,6 +196,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   setTab(tab: 'overview' | 'leads' | 'infra' | 'identity' | 'billing') {
+    this.sidebarOpen.set(false); // Auto-close sidebar on mobile
     const container = document.getElementById('tab-content-container');
     if (container) {
       gsap.to(container, {

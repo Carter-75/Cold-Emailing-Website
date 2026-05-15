@@ -189,7 +189,15 @@ class SchedulerService {
       'config.outreachEnabled': true
     }).select('_id email');
     const results = [];
+    const startTime = Date.now();
+    
     for (const user of users) {
+      // Vercel Pro has a 300s (5m) limit. Stop at 270s (4.5m) to safely return a response.
+      if (Date.now() - startTime > 270000) {
+        console.warn(`[Cron] Overall timeout reached (4.5m). Skipping remaining users for this chunk.`);
+        break;
+      }
+      
       results.push({
         email: user.email,
         result: await OutreachEngine.processChunk(user._id)
