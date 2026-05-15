@@ -19,6 +19,8 @@ export class LeadsComponent {
   destroyRef = inject(DestroyRef);
   leads = signal<any[]>([]);
   unsubList = signal<any[]>([]);
+  mailboxes = signal<string[]>([]);
+  activeMailbox = signal<string>('');
   activeTab = signal<'pipeline' | 'replied' | 'unsubscribed'>('pipeline');
   replyContent = signal<string>('');
   isReplying = signal<boolean>(false);
@@ -60,6 +62,12 @@ export class LeadsComponent {
     this.outreach.getLeads().subscribe(leads => {
       this.leads.set(leads.map(l => ({ ...l, isExpanded: false })));
       
+      const uniqueEmails = [...new Set(leads.map((l: any) => l.sourceEmail).filter(e => !!e))] as string[];
+      this.mailboxes.set(uniqueEmails);
+      if (uniqueEmails.length > 0 && !this.activeMailbox()) {
+         this.activeMailbox.set(uniqueEmails[0]);
+      }
+      
       const pending = leads.some((l: any) => {
         if (!l.thread || l.thread.length === 0) return false;
         const lastMsg = l.thread[l.thread.length - 1];
@@ -81,10 +89,15 @@ export class LeadsComponent {
     this.animateIn();
   }
 
+  switchMailbox(mailbox: string) {
+    this.activeMailbox.set(mailbox);
+    this.animateIn();
+  }
+
   get filteredLeads() {
-    const all = this.leads();
+    const all = this.leads().filter(l => l.sourceEmail === this.activeMailbox());
     if (this.activeTab() === 'pipeline') {
-      return all.filter(l => !l.isUnsubscribed && (l.status === 'emailed' || l.status === 'discovery'));
+      return all.filter(l => !l.isUnsubscribed && (l.status === 'emailed' || l.status === 'discovery' || l.status === 'pending'));
     } else if (this.activeTab() === 'replied') {
       return all.filter(l => !l.isUnsubscribed && l.status === 'replied');
     }

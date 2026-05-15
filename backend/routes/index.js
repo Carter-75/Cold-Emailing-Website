@@ -241,12 +241,20 @@ router.get('/leads', verifyToken, async (req, res) => {
 
     const unsubList = await Unsubscribe.find({ userId: req.user._id });
     const unsubEmails = new Set(unsubList.map(u => u.recipientEmail.toLowerCase()));
+    
+    const User = require('../models/User');
+    const user = await User.findById(req.user._id);
+    const defaultEngineEmail = user?.config?.senderEmail || 'unknown@engine.com';
 
-    const engineLeadsFormatted = engineLeads.map(l => ({
-      ...l.toObject ? l.toObject() : l,
-      isUnsubscribed: unsubEmails.has(l.recipientEmail.toLowerCase()),
-      source: 'engine'
-    }));
+    const engineLeadsFormatted = engineLeads.map(l => {
+      const raw = l.toObject ? l.toObject() : l;
+      return {
+        ...raw,
+        isUnsubscribed: unsubEmails.has(l.recipientEmail.toLowerCase()),
+        source: 'engine',
+        sourceEmail: raw.sourceEmail || defaultEngineEmail
+      };
+    });
 
     // ── Query 2: Portfolio leads (new-portfolio outreach, no userId) ─────────
     // These share the same MongoDB but are stamped source: 'portfolio'.
@@ -278,6 +286,7 @@ router.get('/leads', verifyToken, async (req, res) => {
           isTestData: false,
           isUnsubscribed: raw.status === 'unsubscribed',
           source: 'portfolio',
+          sourceEmail: raw.sourceEmail || 'hello@phoenixwebsites.ai',
           updatedAt: raw.updatedAt || raw.lastEmailedAt || raw.createdAt
         };
       });

@@ -30,6 +30,7 @@ const LeadSchema = new mongoose.Schema({
   // Source tag — 'engine' for automated outreach, 'portfolio' for portfolio site outreach.
   // Used by the /leads route to merge cross-app leads from the shared MongoDB.
   source: { type: String, default: 'engine' },
+  sourceEmail: { type: String },
   
   // Message Thread
   thread: [{

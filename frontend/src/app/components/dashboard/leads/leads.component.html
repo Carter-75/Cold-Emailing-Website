@@ -1,6 +1,17 @@
 <div #container class="opacity-0 translate-y-4">
+  <!-- Mailbox Selection -->
+  <div *ngIf="mailboxes().length > 0" class="flex flex-wrap gap-2 mb-4 p-2 bg-white/5 border border-white/10 rounded-3xl">
+    <button *ngFor="let mbox of mailboxes()" 
+            (click)="switchMailbox(mbox)" 
+            [ngClass]="activeMailbox() === mbox ? 'bg-accent-blue/20 border-accent-blue/50 text-white shadow-lg' : 'bg-transparent text-white/50 border-transparent hover:bg-white/5 hover:text-white/80'" 
+            class="flex items-center gap-2 px-4 py-2 rounded-2xl text-[11px] font-bold tracking-wide transition-all border">
+      <lucide-icon name="mail" class="w-4 h-4"></lucide-icon>
+      {{ mbox }}
+    </button>
+  </div>
+
   <!-- Tab Navigation -->
-  <div class="flex gap-2 mb-6">
+  <div class="flex gap-2 mb-6 pl-2">
     <button (click)="switchTab('pipeline')" [ngClass]="activeTab() === 'pipeline' ? 'bg-accent-blue text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'" class="px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-black/20 border border-white/5">
       Pipeline
     </button>
