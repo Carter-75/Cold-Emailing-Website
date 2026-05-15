@@ -60,26 +60,6 @@ app.use(helmet({
   frameguard: false
 }));
 
-// --- Session & Passport ---
-app.use(session({
-  secret: process.env.JWT_SECRET, // Using JWT_SECRET as session secret for convenience
-  resave: false,
-  saveUninitialized: false,
-  store: (MongoStore.create ? MongoStore : MongoStore.default).create({
-    clientPromise: connectToDatabase().then(m => m.getClient()),
-    collectionName: 'sessions',
-    ttl: 14 * 24 * 60 * 60 // 14 days
-  }),
-  cookie: {
-    secure: isProd,
-    httpOnly: true,
-    maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days
-  }
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
-
 // --- Diagnostic Routes (More resilient for Vercel Rewrites) ---
 app.all(['/api/health', '/api/ping', '/health', '/ping'], (req, res) => {
   res.setHeader('Content-Type', 'application/json');
@@ -94,6 +74,30 @@ app.all(['/api/health', '/api/ping', '/health', '/ping'], (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+const sessionMiddleware = session({
+  secret: process.env.JWT_SECRET, // Using JWT_SECRET as session secret for convenience
+  resave: false,
+  saveUninitialized: false,
+  store: (MongoStore.create ? MongoStore : MongoStore.default).create({
+    clientPromise: connectToDatabase().then(m => m.getClient()),
+    collectionName: 'sessions',
+    ttl: 14 * 24 * 60 * 60 // 14 days
+  }),
+  cookie: {
+    secure: isProd,
+    httpOnly: true,
+    maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days
+  }
+});
+
+app.use(passport.initialize());
+
+// ONLY apply session and passport to Google Auth routes to protect the rest of the API
+app.use('/api/auth/google', sessionMiddleware, passport.session());
+app.use('/auth/google', sessionMiddleware, passport.session());
+
+// (Diagnostic routes moved above session middleware)
 
 // --- MongoDB Connectivity Middleware ---
 app.use(async (req, res, next) => {
