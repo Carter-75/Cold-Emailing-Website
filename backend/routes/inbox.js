@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const InboxMessage = require('../models/InboxMessage');
+const InboxDraft = require('../models/InboxDraft');
+const Lead = require('../models/Lead');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
 const IMAPService = require('../services/imap.service');
@@ -35,10 +37,70 @@ router.get('/connected-emails', async (req, res) => {
       emails.push(...user.config.connectedInboxes.map(i => i.email).filter(e => e));
     }
     const uniqueEmails = [...new Set(emails)];
-    res.json(uniqueEmails);
+    res.json({
+      primary: user.config.senderEmail || null,
+      emails: uniqueEmails
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch connected emails' });
+  }
+});
+
+// Get Unsubscribed Leads (formatted as basic info for inbox view)
+router.get('/unsubbed', async (req, res) => {
+  try {
+    const unsubbedLeads = await Lead.find({ userId: req.user._id, isUnsubscribed: true }).sort({ updatedAt: -1 });
+    res.json(unsubbedLeads);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch unsubscribed leads' });
+  }
+});
+
+// Drafts Endpoints
+router.get('/drafts', async (req, res) => {
+  try {
+    const drafts = await InboxDraft.find({ userId: req.user._id }).sort({ updatedAt: -1 });
+    res.json(drafts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch drafts' });
+  }
+});
+
+router.post('/drafts', async (req, res) => {
+  try {
+    const { draftId, inboxEmail, to, subject, textBody, replyToMessageId } = req.body;
+    let draft;
+    if (draftId) {
+      draft = await InboxDraft.findOne({ _id: draftId, userId: req.user._id });
+    }
+    if (!draft) {
+      draft = new InboxDraft({ userId: req.user._id });
+    }
+    draft.inboxEmail = inboxEmail;
+    draft.to = to;
+    draft.subject = subject;
+    draft.textBody = textBody;
+    draft.htmlBody = textBody ? textBody.replace(/\n/g, '<br>') : '';
+    draft.replyToMessageId = replyToMessageId || null;
+
+    await draft.save();
+    res.json(draft);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to save draft' });
+  }
+});
+
+router.delete('/drafts/:id', async (req, res) => {
+  try {
+    await InboxDraft.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to delete draft' });
   }
 });
 

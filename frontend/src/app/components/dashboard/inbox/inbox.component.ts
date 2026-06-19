@@ -15,17 +15,21 @@ export class InboxComponent implements OnInit {
   private http = inject(HttpClient);
   
   messages = signal<any[]>([]);
+  drafts = signal<any[]>([]);
+  unsubbed = signal<any[]>([]);
   selectedMessage = signal<any>(null);
   replyText = signal<string>('');
   loading = signal(false);
   
   selectedIds = signal<Set<string>>(new Set());
   pendingReplyId = signal<string | null>(null);
+  currentDraftId = signal<string | null>(null);
   countdown = signal<number>(0);
   private countdownInterval: any;
 
-  viewMode = signal<'inbox'|'trash'>('inbox');
+  viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'>('inbox');
   selectedAccount = signal<string>('all');
+  primaryEmail = signal<string>('');
   showLeadRepliesOnly = signal<boolean>(false);
   isComposing = signal(false);
   composeFrom = signal('');
@@ -49,6 +53,8 @@ export class InboxComponent implements OnInit {
 
   ngOnInit() {
     this.fetchMessages();
+    this.fetchDrafts();
+    this.fetchUnsubbed();
   }
 
   fetchMessages() {
@@ -61,13 +67,26 @@ export class InboxComponent implements OnInit {
       error: () => this.loading.set(false)
     });
 
-    this.http.get<string[]>('/api/inbox/connected-emails').subscribe({
-      next: (emails) => {
-        this.availableEmails.set(emails);
-        if (emails.length > 0 && !this.composeFrom()) {
-          this.composeFrom.set(emails[0]);
+    this.http.get<{primary: string, emails: string[]}>('/api/inbox/connected-emails').subscribe({
+      next: (res) => {
+        this.availableEmails.set(res.emails);
+        this.primaryEmail.set(res.primary || '');
+        if (res.emails.length > 0 && !this.composeFrom()) {
+          this.composeFrom.set(res.emails[0]);
         }
       }
+    });
+  }
+
+  fetchDrafts() {
+    this.http.get<any[]>('/api/inbox/drafts').subscribe({
+      next: (data) => this.drafts.set(data)
+    });
+  }
+
+  fetchUnsubbed() {
+    this.http.get<any[]>('/api/inbox/unsubbed').subscribe({
+      next: (data) => this.unsubbed.set(data)
     });
   }
 
@@ -86,6 +105,19 @@ export class InboxComponent implements OnInit {
   }
 
   get filteredMessages() {
+    if (this.viewMode() === 'drafts') {
+      return this.drafts().filter(m => {
+        if (this.selectedAccount() !== 'all' && m.inboxEmail !== this.selectedAccount()) return false;
+        return true;
+      });
+    }
+
+    if (this.viewMode() === 'unsubbed') {
+      // Unsubbed leads don't have inboxEmail natively in the Lead object easily filterable here, 
+      // but we just return them all.
+      return this.unsubbed();
+    }
+
     return this.messages().filter(m => {
       if (this.viewMode() === 'trash' ? !m.isTrashed : m.isTrashed) return false;
       if (this.selectedAccount() !== 'all' && m.inboxEmail !== this.selectedAccount()) return false;
@@ -103,11 +135,12 @@ export class InboxComponent implements OnInit {
     }).length;
   }
 
-  switchView(mode: 'inbox'|'trash') {
+  switchView(mode: 'inbox'|'trash'|'drafts'|'unsubbed') {
     this.viewMode.set(mode);
     this.selectedIds.set(new Set());
     this.selectedMessage.set(null);
     this.isComposing.set(false);
+    this.currentDraftId.set(null);
   }
 
   openCompose() {
@@ -120,7 +153,17 @@ export class InboxComponent implements OnInit {
 
   selectMessage(msg: any) {
     this.selectedMessage.set(msg);
-    if (!msg.isRead) {
+    if (this.viewMode() === 'drafts') {
+      this.isComposing.set(true);
+      this.currentDraftId.set(msg._id);
+      this.composeFrom.set(msg.inboxEmail);
+      this.composeTo.set(msg.to);
+      this.composeSubject.set(msg.subject);
+      this.replyText.set(msg.textBody);
+      return;
+    }
+    this.currentDraftId.set(null);
+    if (!msg.isRead && (this.viewMode() === 'inbox' || this.viewMode() === 'trash')) {
       // Mark as read locally
       const updated = this.messages().map(m => m._id === msg._id ? { ...m, isRead: true } : m);
       this.messages.set(updated);
@@ -167,6 +210,11 @@ export class InboxComponent implements OnInit {
   }
 
   handleDelayedSendSuccess(res: any) {
+    // If it was a draft, delete it after sending
+    if (this.currentDraftId()) {
+      this.deleteDraft(this.currentDraftId()!);
+    }
+    
     this.replyText.set('');
     this.loading.set(false);
     if (res.sendId) {
@@ -178,11 +226,13 @@ export class InboxComponent implements OnInit {
           clearInterval(this.countdownInterval);
           this.pendingReplyId.set(null);
           this.isComposing.set(false);
+          this.currentDraftId.set(null);
           this.fetchMessages();
         }
       }, 1000);
     } else {
       this.isComposing.set(false);
+      this.currentDraftId.set(null);
       this.fetchMessages();
     }
   }
@@ -259,6 +309,24 @@ export class InboxComponent implements OnInit {
     const ids = Array.from(this.selectedIds());
     if (ids.length === 0) return;
     
+    if (this.viewMode() === 'drafts') {
+      if (!confirm(`Delete ${ids.length} drafts?`)) return;
+      this.loading.set(true);
+      Promise.all(ids.map(id => this.http.delete(`/api/inbox/drafts/${id}`).toPromise()))
+        .then(() => {
+          this.selectedIds.set(new Set());
+          this.selectedMessage.set(null);
+          this.isComposing.set(false);
+          this.currentDraftId.set(null);
+          this.fetchDrafts();
+          this.loading.set(false);
+        })
+        .catch(() => this.loading.set(false));
+      return;
+    }
+    
+    if (this.viewMode() === 'unsubbed') return;
+
     const endpoint = this.viewMode() === 'trash' ? '/api/inbox/permanent-delete' : '/api/inbox/delete';
     const action = this.viewMode() === 'trash' ? 'permanently delete' : 'move to trash';
     if (!confirm(`Are you sure you want to ${action} ${ids.length} emails?`)) return;
@@ -280,6 +348,8 @@ export class InboxComponent implements OnInit {
   }
 
   emptyInbox() {
+    if (this.viewMode() === 'drafts' || this.viewMode() === 'unsubbed') return;
+    
     const action = this.viewMode() === 'trash' ? 'permanently delete ALL trashed' : 'move ALL messages to trash';
     if (!confirm(`WARNING: Are you sure you want to ${action} messages?`)) return;
     const allIds = this.filteredMessages.map(m => m._id);
@@ -326,6 +396,44 @@ export class InboxComponent implements OnInit {
       error: () => {
         alert('Failed to generate AI Draft. Check if your OpenAI key is configured in settings.');
         this.isGeneratingAI.set(false);
+      }
+    });
+  }
+
+  saveDraft() {
+    this.loading.set(true);
+    const payload = {
+      draftId: this.currentDraftId(),
+      inboxEmail: this.isComposing() ? this.composeFrom() : this.selectedMessage()?.inboxEmail,
+      to: this.isComposing() ? this.composeTo() : this.selectedMessage()?.from,
+      subject: this.isComposing() ? this.composeSubject() : (this.selectedMessage()?.subject?.startsWith('Re:') ? this.selectedMessage().subject : `Re: ${this.selectedMessage()?.subject}`),
+      textBody: this.replyText(),
+      replyToMessageId: this.isComposing() ? null : this.selectedMessage()?._id
+    };
+
+    this.http.post('/api/inbox/drafts', payload).subscribe({
+      next: (res: any) => {
+        this.currentDraftId.set(res._id);
+        this.fetchDrafts();
+        this.loading.set(false);
+        // show success indicator here if desired
+      },
+      error: () => {
+        alert('Failed to save draft');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  deleteDraft(id: string) {
+    this.http.delete(`/api/inbox/drafts/${id}`).subscribe({
+      next: () => {
+        if (this.currentDraftId() === id) {
+          this.currentDraftId.set(null);
+          this.isComposing.set(false);
+          this.selectedMessage.set(null);
+        }
+        this.fetchDrafts();
       }
     });
   }
