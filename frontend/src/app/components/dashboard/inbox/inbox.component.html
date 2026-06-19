@@ -50,67 +50,120 @@
           <p class="text-sm text-white/80 font-medium truncate mb-2">{{ msg.subject }}</p>
           <div class="mt-3 flex justify-between items-center text-[10px] text-white/30 font-black uppercase tracking-widest">
             <span>{{ msg.date | date:'MMM d, h:mm a' }}</span>
-          <div class="text-right space-y-1">
-            <p class="font-bold">{{ msg.date | date:'medium' }}</p>
-            <p class="text-[10px] uppercase font-black tracking-widest text-orange-500">Inbox: {{ msg.inboxEmail }}</p>
+            <span class="px-2 py-0.5 rounded bg-white/5 text-orange-500/80">{{ msg.inboxEmail }}</span>
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Body -->
-      <div class="flex-1 overflow-y-auto no-scrollbar pb-6 text-sm text-white/80 leading-relaxed whitespace-pre-wrap">
-        {{ msg.textBody || 'No content available.' }}
+  <!-- Right Side: Message View & Reply OR Compose -->
+  <div class="flex-1 flex flex-col h-full bg-black/20 rounded-2xl border border-white/5 p-6 relative">
+    
+    <!-- Empty State -->
+    <div *ngIf="!selectedMessage() && !isComposing()" class="flex-1 flex flex-col items-center justify-center text-center opacity-50">
+      <lucide-icon name="mail" class="w-16 h-16 text-white/20 mb-4"></lucide-icon>
+      <p class="text-xl font-black uppercase tracking-widest text-white/40">Select a Transmission</p>
+      <p class="text-xs text-white/30 mt-2 max-w-xs mx-auto">Click an email from the list to view its contents and securely reply to the target.</p>
+    </div>
+
+    <!-- Compose Mode -->
+    <div *ngIf="isComposing()" class="flex-1 flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
+        <h3 class="text-2xl font-black uppercase tracking-tighter text-white">New Transmission</h3>
+        <button (click)="isComposing.set(false)" class="text-white/40 hover:text-white p-2">
+          <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+        </button>
       </div>
-
-      <!-- Reply/Compose Box -->
-      <div class="border-t border-white/5 pt-6 mt-auto shrink-0 flex flex-col gap-4 relative">
-        
-        <!-- Cancel Reply Banner -->
-        <div *ngIf="pendingReplyId() && countdown() > 0" class="p-4 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-between absolute -top-20 left-0 right-0 shadow-2xl shadow-orange-500/20 backdrop-blur-xl z-50">
-          <div class="flex items-center gap-3">
-            <lucide-icon name="loader" class="w-4 h-4 text-orange-500 animate-spin"></lucide-icon>
-            <div>
-              <p class="text-[10px] font-black uppercase tracking-widest text-orange-400">Delayed Send In Progress</p>
-              <p class="text-xs text-white/60">Dispatching in {{ countdown() }} seconds...</p>
-            </div>
-          </div>
-          <button (click)="cancelReply()" class="px-4 py-2 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors border border-rose-500/20 cursor-pointer shadow-lg shadow-rose-500/20">
-            Cancel Send
-          </button>
-        </div>
-
-        <div *ngIf="!pendingReplyId()" class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden shadow-inner shadow-black/50 flex flex-col">
-          
-          <!-- Unified Toolbar Header -->
-          <div class="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/10">
-            <div class="text-[10px] font-black uppercase tracking-widest text-white/30 flex items-center gap-2">
-              <lucide-icon name="edit-3" class="w-3 h-3"></lucide-icon>
-              {{ isComposing() ? 'Drafting New Message' : 'Drafting Reply' }}
-            </div>
-            
-            <button (click)="generateAIDraft()" [disabled]="isGeneratingAI()" class="flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 hover:from-orange-500/40 hover:to-yellow-500/40 text-orange-400 px-3 py-1.5 rounded-lg border border-orange-500/30 transition-all cursor-pointer shadow-[0_0_15px_rgba(255,165,0,0.15)] hover:shadow-[0_0_20px_rgba(255,165,0,0.3)] disabled:opacity-50">
-              <lucide-icon [name]="isGeneratingAI() ? 'loader' : 'sparkles'" [class.animate-spin]="isGeneratingAI()" class="w-3 h-3"></lucide-icon>
-              <span class="text-[10px] font-black uppercase tracking-widest">{{ isGeneratingAI() ? 'Generating...' : 'AI Draft' }}</span>
-            </button>
-          </div>
-
-          <!-- Quill Editor -->
-          <quill-editor [(ngModel)]="replyText" 
-                        [modules]="quillModules"
-                        [placeholder]="isComposing() ? 'Write your message...' : 'Draft your response...'"
-                        class="text-white min-h-[150px] custom-quill-editor">
-          </quill-editor>
+      
+      <div class="flex flex-col gap-4 mb-6">
+        <div class="flex items-center gap-4 bg-white/5 rounded-xl p-3 border border-white/10">
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/40 w-16">From</span>
+          <select [(ngModel)]="composeFrom" class="bg-transparent border-none outline-none text-sm text-white font-medium flex-1 cursor-pointer">
+            <option *ngFor="let email of availableEmails()" [value]="email" class="bg-zinc-900">{{ email }}</option>
+          </select>
         </div>
         
-        <div class="flex justify-end" *ngIf="!pendingReplyId()">
-          <button (click)="sendReply()" [disabled]="loading() || !replyText().trim()" class="premium-btn !py-3 !px-8 text-[10px] shadow-lg shadow-orange-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 relative overflow-hidden group">
-            <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-yellow-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <lucide-icon *ngIf="loading()" name="loader" class="w-4 h-4 animate-spin relative z-10"></lucide-icon>
-            <lucide-icon *ngIf="!loading()" name="send" class="w-4 h-4 relative z-10 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></lucide-icon>
-            <span class="relative z-10">Send Transmission</span>
-          </button>
+        <div class="flex items-center gap-4 bg-white/5 rounded-xl p-3 border border-white/10 focus-within:border-orange-500/50 focus-within:bg-white/10 transition-colors">
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/40 w-16">To</span>
+          <input type="email" [(ngModel)]="composeTo" class="bg-transparent border-none outline-none text-sm text-white w-full font-medium" placeholder="target@domain.com">
+        </div>
+        
+        <div class="flex items-center gap-4 bg-white/5 rounded-xl p-3 border border-white/10 focus-within:border-orange-500/50 focus-within:bg-white/10 transition-colors">
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/40 w-16">Subject</span>
+          <input type="text" [(ngModel)]="composeSubject" class="bg-transparent border-none outline-none text-sm text-white w-full font-medium" placeholder="Transmission Subject">
         </div>
       </div>
+    </div>
+
+    <!-- Viewing Message -->
+    <ng-container *ngIf="selectedMessage() && !isComposing()">
+      <ng-container *ngIf="selectedMessage() as msg">
+        <div class="border-b border-white/5 pb-6 mb-6 shrink-0">
+          <h3 class="text-2xl font-black mb-4 tracking-tight">{{ msg.subject }}</h3>
+          <div class="flex items-center justify-between text-xs text-white/60 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
+            <div class="space-y-1">
+              <p><span class="font-bold text-white uppercase tracking-widest text-[10px] mr-2">From</span> {{ msg.from }}</p>
+              <p><span class="font-bold text-white uppercase tracking-widest text-[10px] mr-2">To</span> {{ msg.to }}</p>
+            </div>
+            <div class="text-right space-y-1">
+              <p class="font-bold">{{ msg.date | date:'medium' }}</p>
+              <p class="text-[10px] uppercase font-black tracking-widest text-orange-500">Inbox: {{ msg.inboxEmail }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto no-scrollbar pb-6 text-sm text-white/80 leading-relaxed whitespace-pre-wrap">
+          {{ msg.textBody || 'No content available.' }}
+        </div>
+      </ng-container>
     </ng-container>
+
+    <!-- Reply/Compose Box (shared) -->
+    <div *ngIf="selectedMessage() || isComposing()" class="border-t border-white/5 pt-6 mt-auto shrink-0 flex flex-col gap-4 relative">
+      
+      <!-- Cancel Reply Banner -->
+      <div *ngIf="pendingReplyId() && countdown() > 0" class="p-4 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-between absolute -top-20 left-0 right-0 shadow-2xl shadow-orange-500/20 backdrop-blur-xl z-50">
+        <div class="flex items-center gap-3">
+          <lucide-icon name="loader" class="w-4 h-4 text-orange-500 animate-spin"></lucide-icon>
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-orange-400">Delayed Send In Progress</p>
+            <p class="text-xs text-white/60">Dispatching in {{ countdown() }} seconds...</p>
+          </div>
+        </div>
+        <button (click)="cancelReply()" class="px-4 py-2 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors border border-rose-500/20 cursor-pointer shadow-lg shadow-rose-500/20">
+          Cancel Send
+        </button>
+      </div>
+
+      <div *ngIf="!pendingReplyId()" class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden shadow-inner shadow-black/50 flex flex-col">
+        <div class="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/10">
+          <div class="text-[10px] font-black uppercase tracking-widest text-white/30 flex items-center gap-2">
+            <lucide-icon name="edit-3" class="w-3 h-3"></lucide-icon>
+            {{ isComposing() ? 'Drafting New Message' : 'Drafting Reply' }}
+          </div>
+          
+          <button (click)="generateAIDraft()" [disabled]="isGeneratingAI()" class="flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 hover:from-orange-500/40 hover:to-yellow-500/40 text-orange-400 px-3 py-1.5 rounded-lg border border-orange-500/30 transition-all cursor-pointer shadow-[0_0_15px_rgba(255,165,0,0.15)] hover:shadow-[0_0_20px_rgba(255,165,0,0.3)] disabled:opacity-50">
+            <lucide-icon [name]="isGeneratingAI() ? 'loader' : 'sparkles'" [class.animate-spin]="isGeneratingAI()" class="w-3 h-3"></lucide-icon>
+            <span class="text-[10px] font-black uppercase tracking-widest">{{ isGeneratingAI() ? 'Generating...' : 'AI Draft' }}</span>
+          </button>
+        </div>
+
+        <quill-editor [(ngModel)]="replyText" 
+                      [modules]="quillModules"
+                      [placeholder]="isComposing() ? 'Write your message...' : 'Draft your response...'"
+                      class="text-white min-h-[150px] custom-quill-editor">
+        </quill-editor>
+      </div>
+      
+      <div class="flex justify-end" *ngIf="!pendingReplyId()">
+        <button (click)="sendReply()" [disabled]="loading() || !replyText().trim()" class="premium-btn !py-3 !px-8 text-[10px] shadow-lg shadow-orange-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 relative overflow-hidden group">
+          <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-yellow-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <lucide-icon *ngIf="loading()" name="loader" class="w-4 h-4 animate-spin relative z-10"></lucide-icon>
+          <lucide-icon *ngIf="!loading()" name="send" class="w-4 h-4 relative z-10 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></lucide-icon>
+          <span class="relative z-10">Send Transmission</span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
