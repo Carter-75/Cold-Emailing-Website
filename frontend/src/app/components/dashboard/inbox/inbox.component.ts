@@ -112,6 +112,9 @@ export class InboxComponent implements OnInit {
       next: (res: any) => {
         console.log('Sync result:', res.summary);
         this.fetchMessages();
+        if (res.summary?.errors && res.summary.errors.length > 0) {
+          alert('IMAP Connection Error:\n\n' + res.summary.errors.join('\n\n') + '\n\nPlease check your App Passwords and IMAP Host/Port settings.');
+        }
       },
       error: () => {
         alert('Failed to sync emails. Check server logs.');
