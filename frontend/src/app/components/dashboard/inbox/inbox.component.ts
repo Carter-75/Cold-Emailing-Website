@@ -425,17 +425,17 @@ export class InboxComponent implements OnInit, OnDestroy {
     
     if (this.viewMode() === 'drafts') {
       if (!confirm(`Delete ${ids.length} drafts?`)) return;
-      this.loading.set(true);
+      
+      // Optimistic UI update
+      this.drafts.set(this.drafts().filter(d => !ids.includes(d._id)));
+      this.selectedIds.set(new Set());
+      this.selectedMessage.set(null);
+      this.isComposing.set(false);
+      this.currentDraftId.set(null);
+
+      // Background process
       Promise.all(ids.map(id => this.http.delete(`/api/inbox/drafts/${id}`).toPromise()))
-        .then(() => {
-          this.selectedIds.set(new Set());
-          this.selectedMessage.set(null);
-          this.isComposing.set(false);
-          this.currentDraftId.set(null);
-          this.fetchDrafts();
-          this.loading.set(false);
-        })
-        .catch(() => this.loading.set(false));
+        .catch(err => console.error('Failed to delete some drafts in background', err));
       return;
     }
     
@@ -445,19 +445,22 @@ export class InboxComponent implements OnInit, OnDestroy {
     const action = this.viewMode() === 'trash' ? 'permanently delete' : 'move to trash';
     if (!confirm(`Are you sure you want to ${action} ${ids.length} emails?`)) return;
 
-    this.loading.set(true);
+    // Optimistic UI update
+    const isTrash = this.viewMode() === 'trash';
+    if (isTrash) {
+      this.messages.set(this.messages().filter(m => !ids.includes(m._id)));
+    } else {
+      this.messages.set(this.messages().map(m => ids.includes(m._id) ? { ...m, isTrashed: true } : m));
+    }
+
+    this.selectedIds.set(new Set());
+    if (this.selectedMessage() && ids.includes(this.selectedMessage()._id)) {
+      this.selectedMessage.set(null);
+    }
+
+    // Background process
     this.http.post(endpoint, { messageIds: ids }).subscribe({
-      next: () => {
-        this.selectedIds.set(new Set());
-        if (this.selectedMessage() && ids.includes(this.selectedMessage()._id)) {
-          this.selectedMessage.set(null);
-        }
-        this.fetchMessages();
-      },
-      error: () => {
-        alert(`Failed to ${action} messages`);
-        this.loading.set(false);
-      }
+      error: () => console.error(`Failed background ${action}`)
     });
   }
 
@@ -471,17 +474,20 @@ export class InboxComponent implements OnInit, OnDestroy {
 
     const endpoint = this.viewMode() === 'trash' ? '/api/inbox/permanent-delete' : '/api/inbox/delete';
 
-    this.loading.set(true);
+    // Optimistic UI update
+    const isTrash = this.viewMode() === 'trash';
+    if (isTrash) {
+      this.messages.set(this.messages().filter(m => !allIds.includes(m._id)));
+    } else {
+      this.messages.set(this.messages().map(m => allIds.includes(m._id) ? { ...m, isTrashed: true } : m));
+    }
+
+    this.selectedIds.set(new Set());
+    this.selectedMessage.set(null);
+
+    // Background process
     this.http.post(endpoint, { messageIds: allIds }).subscribe({
-      next: () => {
-        this.selectedIds.set(new Set());
-        this.selectedMessage.set(null);
-        this.fetchMessages();
-      },
-      error: () => {
-        alert(`Failed to ${action} messages`);
-        this.loading.set(false);
-      }
+      error: () => console.error(`Failed background ${action}`)
     });
   }
 
@@ -540,15 +546,17 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   deleteDraft(id: string) {
+    // Optimistic UI update
+    this.drafts.set(this.drafts().filter(d => d._id !== id));
+    if (this.currentDraftId() === id) {
+      this.currentDraftId.set(null);
+      this.isComposing.set(false);
+      this.selectedMessage.set(null);
+    }
+    
+    // Background request
     this.http.delete(`/api/inbox/drafts/${id}`).subscribe({
-      next: () => {
-        if (this.currentDraftId() === id) {
-          this.currentDraftId.set(null);
-          this.isComposing.set(false);
-          this.selectedMessage.set(null);
-        }
-        this.fetchDrafts();
-      }
+      error: () => console.error('Failed to delete draft in background')
     });
   }
 }
