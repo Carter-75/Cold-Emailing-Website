@@ -25,6 +25,8 @@ export class InboxComponent implements OnInit {
   private countdownInterval: any;
 
   viewMode = signal<'inbox'|'trash'>('inbox');
+  selectedAccount = signal<string>('all');
+  showLeadRepliesOnly = signal<boolean>(false);
   isComposing = signal(false);
   composeFrom = signal('');
   composeTo = signal('');
@@ -84,7 +86,21 @@ export class InboxComponent implements OnInit {
   }
 
   get filteredMessages() {
-    return this.messages().filter(m => this.viewMode() === 'trash' ? m.isTrashed : !m.isTrashed);
+    return this.messages().filter(m => {
+      if (this.viewMode() === 'trash' ? !m.isTrashed : m.isTrashed) return false;
+      if (this.selectedAccount() !== 'all' && m.inboxEmail !== this.selectedAccount()) return false;
+      if (this.showLeadRepliesOnly() && !m.isReply) return false;
+      return true;
+    });
+  }
+
+  getUnreadCount(email: string | 'all'): number {
+    return this.messages().filter(m => {
+      if (m.isTrashed) return false;
+      if (email !== 'all' && m.inboxEmail !== email) return false;
+      if (this.showLeadRepliesOnly() && !m.isReply) return false;
+      return !m.isRead;
+    }).length;
   }
 
   switchView(mode: 'inbox'|'trash') {

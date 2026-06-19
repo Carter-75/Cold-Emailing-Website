@@ -12,6 +12,24 @@
       </button>
     </div>
 
+    <div class="flex flex-col gap-2 mb-6">
+      <div class="flex items-center gap-2">
+        <select [(ngModel)]="selectedAccount" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-widest text-white/70 outline-none flex-1 appearance-none cursor-pointer hover:bg-white/10 transition-colors">
+          <option value="all" class="bg-zinc-900">All Accounts ({{ getUnreadCount('all') }})</option>
+          <option *ngFor="let email of availableEmails()" [value]="email" class="bg-zinc-900">
+            {{ email }} ({{ getUnreadCount(email) }})
+          </option>
+        </select>
+        
+        <button (click)="showLeadRepliesOnly.set(!showLeadRepliesOnly())"
+                [ngClass]="showLeadRepliesOnly() ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-white/5 text-white/40 border-white/10 hover:text-white/80'"
+                class="px-3 py-2 rounded-xl border flex items-center gap-2 transition-all" title="Filter AI Outreach">
+          <lucide-icon name="bot" class="w-4 h-4"></lucide-icon>
+          <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">AI Only</span>
+        </button>
+      </div>
+    </div>
+
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-3xl font-black uppercase tracking-tighter">{{ viewMode() }}</h2>
       <div class="flex items-center gap-2">
@@ -43,14 +61,18 @@
            
         <div class="pt-1 flex flex-col gap-2">
           <input type="checkbox" [checked]="selectedIds().has(msg._id)" (mousedown)="onMouseDown(msg._id, $event)" class="w-4 h-4 accent-orange-500 rounded border-white/10 bg-white/5 cursor-pointer">
+          <div *ngIf="!msg.isRead" class="w-2 h-2 rounded-full bg-orange-500 mx-auto mt-1 shadow-[0_0_8px_rgba(249,115,22,0.8)]"></div>
         </div>
         
         <div class="flex-1 min-w-0">
-          <p class="text-xs font-bold text-white mb-1 truncate pr-6">{{ msg.from }}</p>
-          <p class="text-sm text-white/80 font-medium truncate mb-2">{{ msg.subject }}</p>
+          <p class="text-xs font-bold mb-1 truncate pr-6" [ngClass]="msg.isRead ? 'text-white/60' : 'text-white'">{{ msg.from }}</p>
+          <p class="text-sm font-medium truncate mb-2" [ngClass]="msg.isRead ? 'text-white/50' : 'text-white/90'">{{ msg.subject }}</p>
           <div class="mt-3 flex justify-between items-center text-[10px] text-white/30 font-black uppercase tracking-widest">
             <span>{{ msg.date | date:'MMM d, h:mm a' }}</span>
-            <span class="px-2 py-0.5 rounded bg-white/5 text-orange-500/80">{{ msg.inboxEmail }}</span>
+            <div class="flex items-center gap-1">
+              <lucide-icon *ngIf="msg.isReply" name="bot" class="w-3 h-3 text-orange-500/50" title="AI Outreach Lead"></lucide-icon>
+              <span class="px-2 py-0.5 rounded bg-white/5 text-orange-500/80">{{ msg.inboxEmail }}</span>
+            </div>
           </div>
         </div>
       </div>
