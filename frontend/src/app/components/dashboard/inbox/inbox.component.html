@@ -70,6 +70,7 @@
       
       <div *ngFor="let msg of filteredMessages" 
            (click)="selectMessage(msg)"
+           (mouseenter)="onMouseEnter(msg._id)"
            [ngClass]="{'bg-white/10 border-orange-500/30': selectedMessage()?._id === msg._id, 'bg-white/[0.02] border-white/5 hover:bg-white/5': selectedMessage()?._id !== msg._id}"
            class="p-4 rounded-xl border cursor-pointer transition-all duration-300 relative group flex items-start gap-3 select-none">
            
