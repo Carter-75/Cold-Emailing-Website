@@ -1,152 +1,146 @@
 <div #container class="max-w-5xl mx-auto opacity-0 translate-y-4">
-  <div class="glass-premium p-12 relative overflow-hidden">
+  <div class="glass-card relative overflow-hidden">
     <div class="absolute top-0 right-0 p-8 opacity-5">
-      <lucide-icon name="shield" class="w-48 h-48"></lucide-icon>
+      <lucide-icon name="shield" class="w-48 h-48 text-orange-500"></lucide-icon>
     </div>
 
     <div class="relative z-10">
-      <h2 class="text-4xl font-black uppercase tracking-tighter mb-4 italic">Integrations</h2>
-      <p class="text-white/80 mb-12 max-w-xl">Connect your tools to start sending personalized emails at scale.</p>
+      <h2 class="text-4xl font-black uppercase tracking-tighter mb-4">Integrations</h2>
+      <p class="text-white/80 mb-12 max-w-xl">Connect your tools to start sending personalized emails at scale and manage your universal inboxes.</p>
       
-      <form (ngSubmit)="saveConfig()" class="grid grid-cols-1 md:grid-cols-2 gap-12">
-        <div class="space-y-8">
-          <div class="space-y-3">
-            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400/80">OpenAI Master Key</label>
-            <input type="password" [(ngModel)]="config.openaiKey" name="openaiKey" class="w-full" placeholder="sk-...">
-            <p class="text-[9px] text-white/60 italic">Critical: Used for AI reasoning and sequence generation.</p>
-          </div>
-          <div class="space-y-3">
-            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">SerpApi Explorer</label>
-            <input type="password" [(ngModel)]="config.serpapiKey" name="serpapiKey" class="w-full">
-            <p class="text-[9px] text-white/60 italic">Used for live business search via Google Maps engine.</p>
-          </div>
-          <div class="space-y-3">
-            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Apollo Intel Key</label>
-            <input type="password" [(ngModel)]="config.apolloKey" name="apolloKey" class="w-full">
-            <p class="text-[9px] text-white/60 italic">Used for deep contact discovery and enrichment.</p>
-          </div>
-          <div class="space-y-3">
-            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Verifalia Username</label>
-            <input type="text" [(ngModel)]="config.verifaliaUsername" name="verifaliaUsername" class="w-full" placeholder="your@verifalia-email.com">
-            <p class="text-[9px] text-white/60 italic">HTTP Basic Auth — your Verifalia account email. Pre-set via env if left blank.</p>
-          </div>
-          <div class="space-y-3">
-            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Verifalia Password</label>
-            <input type="password" [(ngModel)]="config.verifaliaPassword" name="verifaliaPassword" class="w-full" placeholder="••••••••">
-            <p class="text-[9px] text-white/60 italic">Used with username for real-time bounce prevention via Verifalia API v2.7.</p>
-          </div>
-        </div>
-
-        <div class="space-y-8">
-          <div class="bg-white/[0.02] border border-white/5 p-8 rounded-[2rem] space-y-6">
-            <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-              <lucide-icon name="play" class="w-4 h-4"></lucide-icon>
-              SMTP Outbound
-            </h3>
-            <div class="grid grid-cols-3 gap-4">
-              <div class="col-span-2 space-y-2">
-                <label class="text-[10px] font-black uppercase text-white/70">Host</label>
-                <input type="text" [(ngModel)]="config.smtpHost" name="smtpHost" class="w-full">
-              </div>
-              <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase text-white/70">Port</label>
-                <input type="number" [(ngModel)]="config.smtpPort" name="smtpPort" class="w-full">
-              </div>
+      <form (ngSubmit)="saveConfig()" class="grid grid-cols-1 gap-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <!-- API Keys -->
+          <div class="space-y-8">
+            <h3 class="text-2xl font-black uppercase tracking-tighter text-orange-500 mb-6">Core Engines</h3>
+            <div class="space-y-3">
+              <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">OpenAI Master Key</label>
+              <input type="password" [(ngModel)]="config.openaiKey" name="openaiKey" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors" placeholder="sk-...">
             </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase text-white/70">Sender Address</label>
-              <input type="email" [(ngModel)]="config.senderEmail" name="senderEmail" class="w-full">
+            <div class="space-y-3">
+              <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">SerpApi Explorer</label>
+              <input type="password" [(ngModel)]="config.serpapiKey" name="serpapiKey" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
             </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase text-white/70">App Secret</label>
-              <input type="password" [(ngModel)]="config.appPassword" name="appPassword" class="w-full">
+            <div class="space-y-3">
+              <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Apollo Intel Key</label>
+              <input type="password" [(ngModel)]="config.apolloKey" name="apolloKey" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
             </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase text-indigo-400">Daily Sending Limit</label>
-              <input type="number" [(ngModel)]="config.dailyLeadLimit" name="dailyLeadLimit" class="w-full" placeholder="e.g. 50">
-              <p class="text-[8px] text-white/40 italic">Emails are evenly paced across your 8am–6pm business window.</p>
+            <div class="space-y-3">
+              <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Verifalia Username</label>
+              <input type="text" [(ngModel)]="config.verifaliaUsername" name="verifaliaUsername" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors" placeholder="your@verifalia-email.com">
             </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase text-white/70">Your Timezone</label>
-              <select [(ngModel)]="config.timezone" name="timezone" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-accent-blue/50 outline-none">
-                <optgroup label="US">
-                  <option value="America/New_York">Eastern (ET) — New York</option>
-                  <option value="America/Chicago">Central (CT) — Chicago</option>
-                  <option value="America/Denver">Mountain (MT) — Denver</option>
-                  <option value="America/Phoenix">Mountain (no DST) — Phoenix</option>
-                  <option value="America/Los_Angeles">Pacific (PT) — Los Angeles</option>
-                  <option value="America/Anchorage">Alaska — Anchorage</option>
-                  <option value="Pacific/Honolulu">Hawaii — Honolulu</option>
-                </optgroup>
-                <optgroup label="International">
-                  <option value="Europe/London">London (GMT/BST)</option>
-                  <option value="Europe/Paris">Paris (CET/CEST)</option>
-                  <option value="Asia/Tokyo">Tokyo (JST)</option>
-                  <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
-                </optgroup>
-              </select>
-              <p class="text-[8px] text-white/40 italic">Engine only fires Mon–Fri, 8am–6pm in this timezone.</p>
+            <div class="space-y-3">
+              <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Verifalia Password</label>
+              <input type="password" [(ngModel)]="config.verifaliaPassword" name="verifaliaPassword" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors" placeholder="••••••••">
             </div>
-
-            <!-- Kill Switch Status Banner -->
-            <div *ngIf="config.outreachPaused" class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-3">
-              <div class="flex items-center gap-2">
-                <lucide-icon name="alert-triangle" class="w-4 h-4 text-rose-400"></lucide-icon>
-                <p class="text-[10px] font-black uppercase tracking-widest text-rose-400">Engine Paused — API Error</p>
-              </div>
-              <p class="text-[9px] text-white/60 font-mono">{{ config.outreachPausedReason }}</p>
-              <button type="button" (click)="clearPause()" class="w-full py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-[9px] font-black uppercase tracking-widest text-rose-300 transition-all border border-rose-500/20">
-                ✓ Issue Fixed — Re-enable Engine
-              </button>
-            </div>
-
           </div>
 
-          <div class="bg-white/5 p-6 rounded-[2rem] space-y-6 border border-white/5">
-            <div class="flex items-center justify-between">
-              <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-                <lucide-icon name="refresh-cw" class="w-4 h-4"></lucide-icon>
-                IMAP Inbound (Replies)
-              </h3>
-              <div *ngIf="isUnsubscribed()" class="flex items-center gap-2 px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20">
-                <lucide-icon name="alert-circle" class="w-3 h-3 text-rose-500"></lucide-icon>
-                <span class="text-[9px] font-bold text-rose-500 uppercase tracking-widest">Unsubscribed</span>
+          <!-- Primary Outbox -->
+          <div class="space-y-8">
+            <h3 class="text-2xl font-black uppercase tracking-tighter text-orange-500 mb-6">Primary Outbox</h3>
+            <div class="bg-white/[0.02] border border-white/5 p-8 rounded-[2rem] space-y-6">
+              <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-2 space-y-2">
+                  <label class="text-[10px] font-black uppercase text-white/70">SMTP Host</label>
+                  <input type="text" [(ngModel)]="config.smtpHost" name="smtpHost" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black uppercase text-white/70">SMTP Port</label>
+                  <input type="number" [(ngModel)]="config.smtpPort" name="smtpPort" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
+                </div>
               </div>
-            </div>
-            
-            <div class="space-y-4">
               <div class="grid grid-cols-3 gap-4">
                 <div class="col-span-2 space-y-2">
                   <label class="text-[10px] font-black uppercase text-white/70">IMAP Host</label>
-                  <input type="text" [(ngModel)]="config.imapHost" name="imapHost" class="w-full">
+                  <input type="text" [(ngModel)]="config.imapHost" name="imapHost" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black uppercase text-white/70">IMAP Port</label>
-                  <input type="number" [(ngModel)]="config.imapPort" name="imapPort" class="w-full">
+                  <input type="number" [(ngModel)]="config.imapPort" name="imapPort" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
                 </div>
               </div>
-
               <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase text-white/70 tracking-widest">Test Recipient Email</label>
-                <input type="email" [(ngModel)]="config.testRecipientEmail" name="testRecipientEmail" (change)="checkUnsubStatus()" class="w-full" placeholder="dev@coldauto.pro">
-                <p class="text-[9px] text-white/60 italic">Manual tests and unsub status checks use this address.</p>
+                <label class="text-[10px] font-black uppercase text-white/70">Sender Email</label>
+                <input type="email" [(ngModel)]="config.senderEmail" name="senderEmail" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-white/70">App Password</label>
+                <input type="password" [(ngModel)]="config.appPassword" name="appPassword" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-orange-500">Daily Sending Limit</label>
+                <input type="number" [(ngModel)]="config.dailyLeadLimit" name="dailyLeadLimit" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors" placeholder="e.g. 50">
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-white/70">Your Timezone</label>
+                <select [(ngModel)]="config.timezone" name="timezone" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-orange-500 outline-none">
+                  <optgroup label="US">
+                    <option value="America/New_York">Eastern (ET) — New York</option>
+                    <option value="America/Chicago">Central (CT) — Chicago</option>
+                    <option value="America/Denver">Mountain (MT) — Denver</option>
+                    <option value="America/Los_Angeles">Pacific (PT) — Los Angeles</option>
+                  </optgroup>
+                </select>
               </div>
 
-              <div class="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 space-y-3">
-                <p class="text-[10px] text-amber-200/60 leading-relaxed italic">
-                  Reset your test environment by wiping all logs for the current test recipient.
-                </p>
-                <button (click)="clearUnsub()" type="button" class="w-full py-2 rounded-xl bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-all">
-                  Clear All Test Data
+              <!-- Kill Switch Status Banner -->
+              <div *ngIf="config.outreachPaused" class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-3">
+                <div class="flex items-center gap-2">
+                  <lucide-icon name="alert-triangle" class="w-4 h-4 text-rose-400"></lucide-icon>
+                  <p class="text-[10px] font-black uppercase tracking-widest text-rose-400">Engine Paused — API Error</p>
+                </div>
+                <p class="text-[9px] text-white/60 font-mono">{{ config.outreachPausedReason }}</p>
+                <button type="button" (click)="clearPause()" class="w-full py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-[9px] font-black uppercase tracking-widest text-rose-300 transition-all border border-rose-500/20">
+                  ✓ Issue Fixed — Re-enable Engine
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <button type="submit" class="col-span-full btn-primary !py-6 !text-lg uppercase tracking-[0.2em] mt-4 shadow-indigo-600/40">
-          Save Settings
-        </button>
+        <!-- Secondary Connected Inboxes -->
+        <div class="space-y-6 pt-12 border-t border-white/10">
+          <div class="flex items-center justify-between">
+            <h3 class="text-2xl font-black uppercase tracking-tighter text-orange-500">Connected Inboxes (Webmail)</h3>
+            <button type="button" (click)="addInbox()" class="premium-btn !py-3 !px-6 !text-[10px]">
+              + Add Inbox
+            </button>
+          </div>
+          <p class="text-sm text-white/50">These accounts will be monitored and displayed in your Webmail Inbox. They will NOT be used for autonomous outreach sending.</p>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div *ngFor="let inbox of config.connectedInboxes; let i = index" class="bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] space-y-4 relative">
+              <button type="button" (click)="removeInbox(i)" class="absolute top-6 right-6 text-white/30 hover:text-rose-500 transition-colors">
+                <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+              </button>
+              
+              <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-white/70">Email Address</label>
+                <input type="email" [(ngModel)]="inbox.email" name="inboxEmail{{i}}" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-white/70">App Password</label>
+                <input type="password" [(ngModel)]="inbox.appPassword" name="inboxPass{{i}}" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black uppercase text-white/70">SMTP Host</label>
+                  <input type="text" [(ngModel)]="inbox.smtpHost" name="inboxSmtp{{i}}" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black uppercase text-white/70">IMAP Host</label>
+                  <input type="text" [(ngModel)]="inbox.imapHost" name="inboxImap{{i}}" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-12 border-t border-white/10">
+          <button type="submit" class="w-full premium-btn text-center flex justify-center !py-6 !text-sm tracking-[0.2em] shadow-orange-600/40">
+            Save System Configurations
+          </button>
+        </div>
       </form>
     </div>
   </div>

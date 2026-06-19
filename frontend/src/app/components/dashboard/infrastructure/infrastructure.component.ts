@@ -38,7 +38,8 @@ export class InfrastructureComponent {
     dailyLeadLimit: 3,
     timezone: 'America/Chicago',
     outreachPaused: false,
-    outreachPausedReason: ''
+    outreachPausedReason: '',
+    connectedInboxes: []
   };
 
   isUnsubscribed = signal(false);
@@ -103,5 +104,21 @@ export class InfrastructureComponent {
       alert(res.message);
       this.checkUnsubStatus();
     });
+  }
+
+  addInbox() {
+    if (!this.config.connectedInboxes) this.config.connectedInboxes = [];
+    this.config.connectedInboxes.push({
+      email: '',
+      appPassword: '',
+      smtpHost: '',
+      smtpPort: 465,
+      imapHost: '',
+      imapPort: 993
+    });
+  }
+
+  removeInbox(index: number) {
+    this.config.connectedInboxes.splice(index, 1);
   }
 }

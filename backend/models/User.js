@@ -14,7 +14,7 @@ const UserSchema = new mongoose.Schema({
     verifaliaUsername: String,  // Verifalia account email (HTTP Basic Auth)
     verifaliaPassword: String,  // Verifalia account password (HTTP Basic Auth)
     
-    // SMTP & IMAP
+    // SMTP & IMAP (Primary outbox)
     senderEmail: String,
     appPassword: String,
     smtpHost: String,
@@ -22,6 +22,17 @@ const UserSchema = new mongoose.Schema({
     smtpSecure: { type: Boolean, default: true },
     imapHost: String,
     imapPort: Number,
+    
+    // Secondary Inboxes for Webmail Client
+    connectedInboxes: [{
+      email: String,
+      appPassword: String,
+      smtpHost: String,
+      smtpPort: Number,
+      smtpSecure: { type: Boolean, default: true },
+      imapHost: String,
+      imapPort: Number
+    }],
     
     // Personalization & Branding
     senderName: String,
@@ -93,6 +104,14 @@ UserSchema.pre('save', function(next) {
         }
       }
     });
+    
+    if (this.config.connectedInboxes && Array.isArray(this.config.connectedInboxes)) {
+      this.config.connectedInboxes.forEach(inbox => {
+        if (inbox.appPassword && !inbox.appPassword.includes(':')) {
+          inbox.appPassword = encrypt(inbox.appPassword);
+        }
+      });
+    }
   }
   next();
 });
@@ -107,6 +126,14 @@ UserSchema.post('init', function(doc) {
         doc.config[field] = decrypt(doc.config[field]);
       }
     });
+    
+    if (doc.config.connectedInboxes && Array.isArray(doc.config.connectedInboxes)) {
+      doc.config.connectedInboxes.forEach(inbox => {
+        if (inbox.appPassword && inbox.appPassword.includes(':')) {
+          inbox.appPassword = decrypt(inbox.appPassword);
+        }
+      });
+    }
   }
 });
 
@@ -120,6 +147,14 @@ UserSchema.post('save', function(doc) {
         doc.config[field] = decrypt(doc.config[field]);
       }
     });
+
+    if (doc.config.connectedInboxes && Array.isArray(doc.config.connectedInboxes)) {
+      doc.config.connectedInboxes.forEach(inbox => {
+        if (inbox.appPassword && inbox.appPassword.includes(':')) {
+          inbox.appPassword = decrypt(inbox.appPassword);
+        }
+      });
+    }
   }
 });
 

@@ -2,95 +2,114 @@
 @tailwind components;
 @tailwind utilities;
 
+@import 'quill/dist/quill.snow.css';
+
 @layer base {
+  :root {
+    --bg-deep: #020205;
+    --accent-fire: #ff4d00;
+    --accent-fire-glow: rgba(255, 77, 0, 0.2);
+    --accent-gold: #ffcc00;
+    --accent-gold-glow: rgba(255, 204, 0, 0.2);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.5);
+    --glass-surface: rgba(255, 255, 255, 0.02);
+    --glass-border: rgba(255, 255, 255, 0.05);
+    
+    --font-main: 'Inter', sans-serif;
+    --font-display: 'Syne', sans-serif;
+  }
+
+  html {
+    @apply bg-[#020205] w-full;
+  }
   body {
-    @apply bg-charcoal text-white antialiased;
-    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+    @apply bg-transparent text-white font-['Inter'] m-0 antialiased overflow-x-hidden w-full relative selection:bg-orange-600/30;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    @apply font-black uppercase tracking-tighter;
   }
 }
 
 @layer components {
-  .glass-premium {
-    @apply bg-white/[0.04] border border-white/20 rounded-[2.5rem] relative overflow-hidden;
-    box-shadow: 
-      0 4px 24px -1px rgba(0, 0, 0, 0.4),
-      0 0 1px 0 rgba(255, 255, 255, 0.05) inset;
-    will-change: transform;
+  .fluid-h1 { @apply text-[clamp(3rem,15vw,10rem)] leading-[0.8] tracking-[-0.05em]; }
+  .fluid-h2 { @apply text-[clamp(2.5rem,10vw,6rem)] leading-[0.9] tracking-[-0.04em]; }
+  .fluid-h3 { @apply text-[clamp(1.5rem,5vw,3rem)] leading-tight break-words; }
+  .fluid-p { @apply text-[clamp(1rem,1.2vw,1.25rem)] text-white/50 leading-relaxed; }
+  .fluid-tiny { @apply text-[10px] font-black uppercase tracking-[0.4em] text-white/40; }
+
+  .glass-card {
+    @apply backdrop-blur-3xl bg-white/[0.02] border border-white/[0.05] p-8 sm:p-12 lg:p-20 relative overflow-hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   }
 
-  .glass-premium:hover {
-    @apply bg-white/[0.08] border-white/30;
+  .glass-card::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent opacity-0 transition-opacity duration-700 pointer-events-none;
   }
 
-  .glass-premium::before {
-    content: "";
-    @apply absolute inset-0 pointer-events-none opacity-[0.02] z-[-1];
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  .glass-card:hover::after {
+    @apply opacity-100;
   }
 
-  .glass-interactive {
-    @apply transition-all duration-500 hover:bg-white/[0.04] hover:border-white/20 hover:shadow-2xl hover:shadow-accent-blue/5;
+  .premium-btn {
+    @apply relative overflow-hidden px-12 py-6 bg-white text-black font-black uppercase tracking-[0.3em] text-[10px] transition-all;
   }
 
-  .glass-edge-highlight {
-    @apply absolute inset-0 rounded-[2.5rem] pointer-events-none border-t border-l border-white/[0.15];
+  .premium-btn:hover {
+    @apply bg-orange-600 text-white;
   }
 
-  input[type="text"],
-  input[type="password"],
-  input[type="email"],
-  input[type="number"],
-  textarea {
-    @apply bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-white/50 focus:outline-none focus:border-accent-blue/50 focus:ring-1 focus:ring-accent-blue/50 transition-all duration-300;
-    box-shadow: 
-      inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  .nav-link {
+    @apply text-white/40 hover:text-white transition-all duration-500 text-[10px] font-black uppercase tracking-[0.5em] py-4 px-2 relative;
   }
 
-  input:focus, textarea:focus {
-    @apply bg-black/60 border-accent-blue;
-    box-shadow: 
-      inset 0 2px 4px 0 rgba(0, 0, 0, 0.4),
-      0 0 15px 0 rgba(30, 58, 138, 0.3);
+  .nav-link::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-[1px] bg-orange-600 transition-all duration-500;
   }
 
-  .glass-input {
-    @apply bg-transparent border-none p-0; /* Keep the class for backward compatibility but clear it */
+  .nav-link:hover::after {
+    @apply w-full;
   }
 
-  .text-gradient-stripe {
-    @apply bg-gradient-to-r from-accent-blue via-accent-vibrant to-accent-purple bg-clip-text text-transparent;
+  .section-padding {
+    @apply py-20 px-8 sm:py-32 sm:px-16 lg:py-56 lg:px-32;
   }
+}
 
-  .btn-primary {
-    @apply bg-gradient-to-r from-accent-blue to-accent-purple text-white font-black rounded-2xl px-8 py-4 transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(30,58,138,0.5)] active:scale-95;
-  }
 
-  .btn-secondary {
-    @apply border border-white/40 text-white hover:bg-white/[0.1] transition-all duration-300 rounded-2xl px-8 py-4;
-  }
+/* Animations */
+.reveal-text {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
 
-  .btn-premium {
-    @apply relative overflow-hidden px-8 py-4 rounded-full font-bold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98];
-  }
+.glow-orb {
+  @apply absolute rounded-full blur-[150px] opacity-20 pointer-events-none -z-10;
+  background: radial-gradient(circle, var(--accent-fire) 0%, transparent 70%);
+  animation: flicker 4s infinite alternate;
+}
 
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
+/* Styled Angled Fire */
+.fire-container {
+  @apply fixed inset-0 -z-40 pointer-events-none opacity-20 overflow-hidden;
+}
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
-  }
+.fire-bar {
+  @apply absolute w-[2px] h-[300%] bg-gradient-to-t from-transparent via-orange-600 to-transparent;
+  transform: rotate(35deg) translateY(-50%);
+  filter: blur(1px);
+  animation: fireRise 10s linear infinite;
+}
 
-  .reveal-text {
-    @apply opacity-0 translate-y-4 transition-all duration-1000 ease-out;
-  }
+@keyframes fireRise {
+  from { transform: rotate(35deg) translateY(0%); }
+  to { transform: rotate(35deg) translateY(-100%); }
+}
 
-  .reveal-text.active {
-    @apply opacity-100 translate-y-0;
-  }
-
-  .background-isolation {
-    isolation: isolate;
-  }
+@keyframes flicker {
+  0%, 100% { opacity: 0.15; filter: blur(150px); }
+  50% { opacity: 0.25; filter: blur(170px); }
 }

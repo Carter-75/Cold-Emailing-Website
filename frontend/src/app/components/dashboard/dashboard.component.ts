@@ -13,6 +13,7 @@ import { OverviewComponent } from './overview/overview.component';
 import { LeadsComponent } from './leads/leads.component';
 import { InfrastructureComponent } from './infrastructure/infrastructure.component';
 import { IdentityComponent } from './identity/identity.component';
+import { InboxComponent } from './inbox/inbox.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -24,7 +25,8 @@ import { IdentityComponent } from './identity/identity.component';
     OverviewComponent,
     LeadsComponent,
     InfrastructureComponent,
-    IdentityComponent
+    IdentityComponent,
+    InboxComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
@@ -34,7 +36,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   outreach = inject(OutreachService);
   billing = inject(BillingService);
   
-  activeTab = signal<'overview' | 'leads' | 'infra' | 'identity' | 'billing'>('overview');
+  activeTab = signal<'overview' | 'leads' | 'infra' | 'identity' | 'billing' | 'inbox'>('overview');
   leads = signal<any[]>([]);
   tourStep = signal<number | null>(null); // null means no tour active
 
@@ -195,7 +197,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  setTab(tab: 'overview' | 'leads' | 'infra' | 'identity' | 'billing') {
+  setTab(tab: 'overview' | 'leads' | 'infra' | 'identity' | 'billing' | 'inbox') {
     this.sidebarOpen.set(false); // Auto-close sidebar on mobile
     const container = document.getElementById('tab-content-container');
     if (container) {

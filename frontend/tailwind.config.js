@@ -5,41 +5,35 @@ module.exports = {
   ],
   theme: {
     extend: {
-      colors: {
-        charcoal: {
-          DEFAULT: '#050505',
-          light: '#0a0a0a',
-          lighter: '#111111',
-          border: '#ffffff10',
-        },
-        accent: {
-          blue: '#1e3a8a',   // Dark Blue
-          indigo: '#312e81', // Dark Indigo
-          purple: '#4c1d95', // Dark Purple
-          vibrant: '#8b5cf6', // Vibrant Purple for highlights
-        }
-      },
       keyframes: {
-        scan: {
-          'from': { transform: 'translateY(-100%)' },
-          'to': { transform: 'translateY(500%)' },
+        fadeIn: {
+          'from': { opacity: '0', transform: 'translateY(20px)' },
+          'to': { opacity: '1', transform: 'translateY(0)' },
         },
-        'mesh-move': {
-          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
-          '33%': { transform: 'translate(10%, 15%) scale(1.1)' },
-          '66%': { transform: 'translate(-15%, 5%) scale(0.9)' },
+        scaleIn: {
+          'from': { opacity: '0', transform: 'scale(0.92)' },
+          'to': { opacity: '1', transform: 'scale(1)' },
+        },
+        slideInLeft: {
+          'from': { opacity: '0', transform: 'translateX(-30px)' },
+          'to': { opacity: '1', transform: 'translateX(0)' },
+        },
+        slideInRight: {
+          'from': { opacity: '0', transform: 'translateX(30px)' },
+          'to': { opacity: '1', transform: 'translateX(0)' },
+        },
+        typing: {
+          'from': { width: '0' },
+          'to': { width: '100%' },
         }
       },
       animation: {
-        scan: 'scan 3s linear infinite',
-        'mesh-slow': 'mesh-move 20s ease-in-out infinite',
-      },
-      fontFamily: {
-        sans: ['Outfit', 'sans-serif'],
+        'fade-in': 'fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'scaleIn': 'scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'slideInLeft': 'slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'slideInRight': 'slideInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
       }
     },
   },
-  plugins: [
-    require("tailwindcss-animate"),
-  ],
+  plugins: [],
 }
