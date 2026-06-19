@@ -419,6 +419,7 @@ router.post('/config', verifyToken, async (req, res) => {
       'senderEmail', 'appPassword', 'senderName', 'senderTitle', 'companyName', 'websiteUrl',
       'physicalAddress', 'priceTier1', 'priceTier2', 'priceTier3', 'valueProp', 'targetOutcome',
       'personaContext', 'dailyLeadLimit', 'smtpHost', 'smtpPort', 'smtpSecure',
+      'imapHost', 'imapPort',
       'testRecipientEmail', 'signature',
       'timezone', 'outreachPaused', 'outreachPausedReason', 'outreachEnabled', 'connectedInboxes'
     ];
