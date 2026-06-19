@@ -44,7 +44,8 @@ import {
   Bot,
   X,
   Edit3,
-  Loader
+  Loader,
+  CheckSquare
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -93,7 +94,8 @@ export const appConfig: ApplicationConfig = {
         Bot,
         X,
         Edit3,
-        Loader
+        Loader,
+        CheckSquare
       })
     }
   ]
