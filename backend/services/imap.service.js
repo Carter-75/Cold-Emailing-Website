@@ -80,7 +80,40 @@ class IMAPService {
       }
     }
     
+    // Process any pending deletes/trashes in background
+    this.processPendingActions(user).catch(err => console.error('[IMAP] Background process pending failed:', err));
+    
     return summary;
+  }
+
+  async processPendingActions(user) {
+    // Process pending permanent deletes
+    const pendingDeletes = await InboxMessage.find({ userId: user._id, syncStatus: 'pending_delete' });
+    for (const msg of pendingDeletes) {
+      if (msg.messageId) {
+        const success = await this.deleteMessage(user, msg.inboxEmail, msg.messageId);
+        if (success) {
+          await InboxMessage.deleteOne({ _id: msg._id });
+        }
+      } else {
+        await InboxMessage.deleteOne({ _id: msg._id });
+      }
+    }
+
+    // Process pending move to trash
+    const pendingTrashes = await InboxMessage.find({ userId: user._id, syncStatus: 'pending_trash' });
+    for (const msg of pendingTrashes) {
+      if (msg.messageId) {
+        const success = await this.trashMessage(user, msg.inboxEmail, msg.messageId);
+        if (success) {
+          msg.syncStatus = 'synced';
+          await msg.save();
+        }
+      } else {
+        msg.syncStatus = 'synced';
+        await msg.save();
+      }
+    }
   }
 
   async checkInbox(user, inboxConfig) {

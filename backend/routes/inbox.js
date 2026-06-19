@@ -314,20 +314,21 @@ router.post('/delete', async (req, res) => {
       return res.status(400).json({ message: 'Invalid request' });
     }
 
-    const messages = await InboxMessage.find({ _id: { $in: messageIds }, userId: req.user._id });
+    // Instantly mark as trashed locally and set pending sync status
+    await InboxMessage.updateMany(
+      { _id: { $in: messageIds }, userId: req.user._id }, 
+      { $set: { isTrashed: true, syncStatus: 'pending_trash' } }
+    );
+
+    // Return immediately to frontend
+    res.json({ success: true, trashedCount: messageIds.length, message: 'Processing in background' });
+
+    // Process IMAP deletions asynchronously
     const user = await User.findById(req.user._id);
+    IMAPService.processPendingActions(user).catch(err => {
+      console.error('[IMAP] Background process pending failed:', err);
+    });
 
-    // Move to Trash in IMAP
-    for (const msg of messages) {
-      if (msg.messageId) {
-        await IMAPService.trashMessage(user, msg.inboxEmail, msg.messageId);
-      }
-    }
-
-    // Mark as trashed locally
-    await InboxMessage.updateMany({ _id: { $in: messageIds }, userId: req.user._id }, { $set: { isTrashed: true } });
-
-    res.json({ success: true, trashedCount: messages.length });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error moving to trash' });
@@ -342,20 +343,21 @@ router.post('/permanent-delete', async (req, res) => {
       return res.status(400).json({ message: 'Invalid request' });
     }
 
-    const messages = await InboxMessage.find({ _id: { $in: messageIds }, userId: req.user._id });
+    // Instantly mark as pending permanent delete
+    await InboxMessage.updateMany(
+      { _id: { $in: messageIds }, userId: req.user._id }, 
+      { $set: { syncStatus: 'pending_delete' } }
+    );
+
+    // Return immediately to frontend
+    res.json({ success: true, deletedCount: messageIds.length, message: 'Processing in background' });
+
+    // Process IMAP deletions asynchronously
     const user = await User.findById(req.user._id);
+    IMAPService.processPendingActions(user).catch(err => {
+      console.error('[IMAP] Background process pending failed:', err);
+    });
 
-    // Sync deletion to IMAP
-    for (const msg of messages) {
-      if (msg.messageId) {
-        await IMAPService.deleteMessage(user, msg.inboxEmail, msg.messageId);
-      }
-    }
-
-    // Delete locally
-    await InboxMessage.deleteMany({ _id: { $in: messageIds }, userId: req.user._id });
-
-    res.json({ success: true, deletedCount: messages.length });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error permanently deleting messages' });
