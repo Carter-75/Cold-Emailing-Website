@@ -69,20 +69,20 @@ aside button[class*="bg-white/10"]::before {
 
 /* Tour Styles */
 .tour-overlay {
-  @apply fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md transition-all duration-500;
+  @apply fixed inset-0 z-[100] bg-black/80 backdrop-blur-md transition-all duration-500;
 }
 
 .tour-card {
-  @apply fixed z-[101] w-[340px] bg-white text-charcoal p-8 rounded-[2rem] border border-white/20;
+  @apply fixed z-[101] w-[340px] bg-white text-black p-8 rounded-[2rem] border border-white/20;
   box-shadow: 0 0 50px rgba(0,0,0,0.5);
 }
 
 .tour-card h3 {
-  @apply text-charcoal font-black tracking-tight;
+  @apply text-black font-black tracking-tight;
 }
 
 .tour-card p {
-  @apply text-charcoal/60 font-medium;
+  @apply text-black/60 font-medium;
 }
 
 .tour-pulse {
