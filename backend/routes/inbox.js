@@ -73,6 +73,21 @@ router.get('/pending', async (req, res) => {
   }
 });
 
+// Get Contacted Leads
+router.get('/contacted', async (req, res) => {
+  try {
+    const contactedLeads = await Lead.find({ 
+      userId: req.user._id, 
+      status: { $in: ['emailed', 'replied', 'finished'] },
+      isUnsubscribed: { $ne: true }
+    }).sort({ updatedAt: -1 });
+    res.json(contactedLeads);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch contacted leads' });
+  }
+});
+
 // Drafts Endpoints
 router.get('/drafts', async (req, res) => {
   try {
