@@ -139,8 +139,7 @@ app.get('/api/debug-bundle', async (req, res) => {
 // Note: aiRouter is currently optional/flavor-specific
 let aiRouter = null;
 
-const stripeRoutes = require('./routes/stripe');
-const botRoutes = require('./routes/bot');
+// Removed missing stripe and bot routes
 const inboxRoutes = require('./routes/inbox');
 
 const indexRouter = require('./routes/index');
@@ -193,8 +192,7 @@ app.get('/', (req, res) => {
 app.use('/api/cron', cronRouter);
 app.use('/cron', cronRouter);
 
-app.use('/api/stripe', stripeRoutes);
-app.use('/api/bot', botRoutes);
+// Missing routes removed
 app.use('/api/inbox', inboxRoutes);
 
 app.use('/api/auth', authRouter);
