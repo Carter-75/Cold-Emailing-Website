@@ -103,12 +103,11 @@ class IMAPService {
       
       try {
         const mailbox = await client.status('INBOX', { messages: true });
-        // Instead of last 50, fetch all. But to prevent crashing, we only fetch headers first.
-        // Wait, fetching 1:* even with just headers might be too large. Let's fetch the last 1000 or 1:*.
-        // Since this is a new feature, we'll fetch up to 500 recent emails.
-        const startSeq = Math.max(1, (mailbox.messages || 0) - 499);
         
-        for await (let message of client.fetch(`${startSeq}:*`, { envelope: true, source: true, flags: true })) {
+        if (mailbox.messages > 0) {
+          const startSeq = Math.max(1, mailbox.messages - 499);
+          
+          for await (let message of client.fetch(`${startSeq}:*`, { envelope: true, source: true, flags: true })) {
           const msgId = message.envelope.messageId;
           const inReplyTo = message.envelope.inReplyTo;
           const fromAddress = message.envelope.from[0]?.address || 'Unknown';
@@ -181,6 +180,7 @@ class IMAPService {
             }
           }
         }
+        }
       } finally {
         lock.release();
       }
@@ -188,8 +188,8 @@ class IMAPService {
       await client.logout();
       return { repliesDetected, inboxMessagesSaved };
     } catch (err) {
-      console.error(`[IMAP] Error checking inbox ${inboxConfig.email}:`, err.message);
-      return { repliesDetected: 0, inboxMessagesSaved: 0, error: err.message };
+      console.error(`[IMAP] Error checking inbox ${inboxConfig.email}:`, err);
+      return { repliesDetected: 0, inboxMessagesSaved: 0, error: err.response || err.message };
     }
   }
 
