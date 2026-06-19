@@ -30,14 +30,16 @@ router.get('/', async (req, res) => {
 router.get('/connected-emails', async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    if (!user) return res.json({ primary: null, emails: [] });
+    
     const emails = [];
-    if (user.config.senderEmail) emails.push(user.config.senderEmail);
-    if (user.config.connectedInboxes && Array.isArray(user.config.connectedInboxes)) {
+    if (user.config?.senderEmail) emails.push(user.config.senderEmail);
+    if (user.config?.connectedInboxes && Array.isArray(user.config.connectedInboxes)) {
       emails.push(...user.config.connectedInboxes.map(i => i.email).filter(e => e));
     }
     const uniqueEmails = [...new Set(emails)];
     res.json({
-      primary: user.config.senderEmail || null,
+      primary: user.config?.senderEmail || null,
       emails: uniqueEmails
     });
   } catch (err) {
@@ -49,7 +51,15 @@ router.get('/connected-emails', async (req, res) => {
 // Get Unsubscribed Leads (formatted as basic info for inbox view)
 router.get('/unsubbed', async (req, res) => {
   try {
-    const unsubbedLeads = await Lead.find({ userId: req.user._id, isUnsubscribed: true }).sort({ updatedAt: -1 });
+    const Unsubscribe = require('../models/Unsubscribe');
+    const unsubList = await Unsubscribe.find({ userId: req.user._id });
+    const unsubEmails = unsubList.map(u => u.recipientEmail);
+    
+    // We get the leads that match the unsubscribed emails, plus any explicitly 'finished' ones that might have unsubscribed.
+    const unsubbedLeads = await Lead.find({ 
+      userId: req.user._id, 
+      recipientEmail: { $in: unsubEmails }
+    }).sort({ updatedAt: -1 });
     res.json(unsubbedLeads);
   } catch (err) {
     console.error(err);
@@ -60,10 +70,14 @@ router.get('/unsubbed', async (req, res) => {
 // Get Pending Leads (not yet emailed)
 router.get('/pending', async (req, res) => {
   try {
+    const Unsubscribe = require('../models/Unsubscribe');
+    const unsubList = await Unsubscribe.find({ userId: req.user._id });
+    const unsubEmails = unsubList.map(u => u.recipientEmail);
+
     const pendingLeads = await Lead.find({ 
       userId: req.user._id, 
       status: { $in: ['discovery', 'verifying', 'ready'] },
-      isUnsubscribed: { $ne: true }
+      recipientEmail: { $nin: unsubEmails }
     }).sort({ updatedAt: -1 });
     res.json(pendingLeads);
   } catch (err) {
@@ -75,10 +89,14 @@ router.get('/pending', async (req, res) => {
 // Get Contacted Leads
 router.get('/contacted', async (req, res) => {
   try {
+    const Unsubscribe = require('../models/Unsubscribe');
+    const unsubList = await Unsubscribe.find({ userId: req.user._id });
+    const unsubEmails = unsubList.map(u => u.recipientEmail);
+
     const contactedLeads = await Lead.find({ 
       userId: req.user._id, 
       status: { $in: ['emailed', 'replied', 'finished'] },
-      isUnsubscribed: { $ne: true }
+      recipientEmail: { $nin: unsubEmails }
     }).sort({ updatedAt: -1 });
     res.json(contactedLeads);
   } catch (err) {
