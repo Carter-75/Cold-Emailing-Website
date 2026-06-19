@@ -303,8 +303,12 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.stopAutoScroll();
   }
 
+  private animationFrameId: number | null = null;
+  private lastCheckTime = 0;
+
   // Slide to select logic
   onMouseDown(msgId: string, event: Event) {
+    event.preventDefault(); // Prevents native text selection / drag
     event.stopPropagation();
     this.isDragging = true;
     this.toggleSelection(msgId, event);
@@ -313,43 +317,59 @@ export class InboxComponent implements OnInit, OnDestroy {
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event: MouseEvent) {
+    if (!this.isDragging) return;
     this.mouseX = event.clientX;
     this.mouseY = event.clientY;
     
-    if (this.isDragging) {
-      // Find element under cursor to trigger selection if scroll isn't happening but mouse is moving over items
-      const el = document.elementFromPoint(this.mouseX, this.mouseY);
-      if (el) {
-        const row = el.closest('[data-msg-id]');
-        if (row) {
-          const id = row.getAttribute('data-msg-id');
-          if (id) this.onMouseEnter(id);
-        }
-      }
+    // Find element under cursor to trigger selection if scroll isn't happening but mouse is moving over items
+    const now = Date.now();
+    if (now - this.lastCheckTime > 50) {
+      this.checkHoverSelection();
+      this.lastCheckTime = now;
     }
   }
 
   startAutoScroll() {
-    this.scrollInterval = setInterval(() => {
-      if (!this.isDragging || !this.scrollContainer) return;
+    if (this.animationFrameId !== null) return;
+    
+    const loop = () => {
+      if (!this.isDragging || !this.scrollContainer) {
+        this.animationFrameId = null;
+        return;
+      }
+      
       const container = this.scrollContainer.nativeElement;
       const rect = container.getBoundingClientRect();
       const threshold = 60; // start scrolling when within 60px of the edge
+      const scrollSpeed = 12; // pixels per frame
 
+      let scrolled = false;
       if (this.mouseY > rect.bottom - threshold) {
-        container.scrollTop += 15;
-        this.checkHoverSelection();
+        container.scrollTop += scrollSpeed;
+        scrolled = true;
       } else if (this.mouseY < rect.top + threshold) {
-        container.scrollTop -= 15;
-        this.checkHoverSelection();
+        container.scrollTop -= scrollSpeed;
+        scrolled = true;
       }
-    }, 16);
+
+      if (scrolled) {
+        const now = Date.now();
+        if (now - this.lastCheckTime > 50) {
+          this.checkHoverSelection();
+          this.lastCheckTime = now;
+        }
+      }
+
+      this.animationFrameId = requestAnimationFrame(loop);
+    };
+
+    this.animationFrameId = requestAnimationFrame(loop);
   }
 
   stopAutoScroll() {
-    if (this.scrollInterval) {
-      clearInterval(this.scrollInterval);
-      this.scrollInterval = null;
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
     }
   }
 
