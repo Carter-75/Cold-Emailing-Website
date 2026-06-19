@@ -155,6 +155,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     }
 
     return this.messages().filter(m => {
+      if (m.syncStatus === 'pending_delete') return false; // Hide from everywhere if permanently deleted
       if (this.viewMode() === 'trash' ? !m.isTrashed : m.isTrashed) return false;
       if (this.selectedAccount() !== 'all' && m.inboxEmail !== this.selectedAccount()) return false;
       if (this.showLeadRepliesOnly() && !m.isReply) return false;
@@ -162,9 +163,18 @@ export class InboxComponent implements OnInit, OnDestroy {
     });
   }
 
+  getTotalCount(email: string | 'all'): number {
+    return this.messages().filter(m => {
+      if (m.isTrashed || m.syncStatus === 'pending_delete') return false;
+      if (email !== 'all' && m.inboxEmail !== email) return false;
+      if (this.showLeadRepliesOnly() && !m.isReply) return false;
+      return true;
+    }).length;
+  }
+
   getUnreadCount(email: string | 'all'): number {
     return this.messages().filter(m => {
-      if (m.isTrashed) return false;
+      if (m.isTrashed || m.syncStatus === 'pending_delete') return false;
       if (email !== 'all' && m.inboxEmail !== email) return false;
       if (this.showLeadRepliesOnly() && !m.isReply) return false;
       return !m.isRead;
