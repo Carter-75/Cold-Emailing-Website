@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, ViewChild, ElementRef, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -11,9 +11,11 @@ import { QuillModule } from 'ngx-quill';
   imports: [CommonModule, FormsModule, LucideAngularModule, QuillModule],
   templateUrl: './inbox.component.html'
 })
-export class InboxComponent implements OnInit {
+export class InboxComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   
+  @ViewChild('scrollContainer') scrollContainer!: ElementRef;
+
   messages = signal<any[]>([]);
   drafts = signal<any[]>([]);
   unsubbed = signal<any[]>([]);
@@ -28,6 +30,10 @@ export class InboxComponent implements OnInit {
   currentDraftId = signal<string | null>(null);
   countdown = signal<number>(0);
   private countdownInterval: any;
+
+  private scrollInterval: any;
+  private mouseY: number = 0;
+  private mouseX: number = 0;
 
   viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'|'pending'|'contacted'>('inbox');
   selectedAccount = signal<string>('all');
@@ -293,11 +299,71 @@ export class InboxComponent implements OnInit {
     });
   }
 
+  ngOnDestroy() {
+    this.stopAutoScroll();
+  }
+
   // Slide to select logic
   onMouseDown(msgId: string, event: Event) {
     event.stopPropagation();
     this.isDragging = true;
     this.toggleSelection(msgId, event);
+    this.startAutoScroll();
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onMouseMove(event: MouseEvent) {
+    this.mouseX = event.clientX;
+    this.mouseY = event.clientY;
+    
+    if (this.isDragging) {
+      // Find element under cursor to trigger selection if scroll isn't happening but mouse is moving over items
+      const el = document.elementFromPoint(this.mouseX, this.mouseY);
+      if (el) {
+        const row = el.closest('[data-msg-id]');
+        if (row) {
+          const id = row.getAttribute('data-msg-id');
+          if (id) this.onMouseEnter(id);
+        }
+      }
+    }
+  }
+
+  startAutoScroll() {
+    this.scrollInterval = setInterval(() => {
+      if (!this.isDragging || !this.scrollContainer) return;
+      const container = this.scrollContainer.nativeElement;
+      const rect = container.getBoundingClientRect();
+      const threshold = 60; // start scrolling when within 60px of the edge
+
+      if (this.mouseY > rect.bottom - threshold) {
+        container.scrollTop += 15;
+        this.checkHoverSelection();
+      } else if (this.mouseY < rect.top + threshold) {
+        container.scrollTop -= 15;
+        this.checkHoverSelection();
+      }
+    }, 16);
+  }
+
+  stopAutoScroll() {
+    if (this.scrollInterval) {
+      clearInterval(this.scrollInterval);
+      this.scrollInterval = null;
+    }
+  }
+
+  checkHoverSelection() {
+    // During auto-scroll, the mouse might be stationary but elements move under it.
+    // elementFromPoint checks what's currently under the stationary cursor.
+    const el = document.elementFromPoint(this.mouseX, this.mouseY);
+    if (el) {
+      const row = el.closest('[data-msg-id]');
+      if (row) {
+        const id = row.getAttribute('data-msg-id');
+        if (id) this.onMouseEnter(id);
+      }
+    }
   }
 
   onMouseEnter(msgId: string) {
@@ -310,6 +376,7 @@ export class InboxComponent implements OnInit {
 
   onMouseUp() {
     this.isDragging = false;
+    this.stopAutoScroll();
   }
 
   toggleSelection(msgId: string, event: Event) {
