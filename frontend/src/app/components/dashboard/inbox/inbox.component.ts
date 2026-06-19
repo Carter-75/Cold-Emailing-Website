@@ -65,6 +65,9 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.fetchUnsubbed();
     this.fetchPending();
     this.fetchContacted();
+    
+    // Auto-sync IMAP with remote server on load
+    this.syncIMAP();
   }
 
   fetchMessages() {
