@@ -10,11 +10,10 @@ const IMAPService = require('../services/imap.service');
 // Global store for delayed sends
 if (!global.pendingSends) global.pendingSends = {};
 
+const { verifyToken } = require('../middleware/auth');
+
 // Middleware to ensure authentication
-router.use((req, res, next) => {
-  if (!req.isAuthenticated()) return res.status(401).json({ message: 'Unauthorized' });
-  next();
-});
+router.use(verifyToken);
 
 // Get all inbox messages
 router.get('/', async (req, res) => {

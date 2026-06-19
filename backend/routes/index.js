@@ -420,7 +420,7 @@ router.post('/config', verifyToken, async (req, res) => {
       'physicalAddress', 'priceTier1', 'priceTier2', 'priceTier3', 'valueProp', 'targetOutcome',
       'personaContext', 'dailyLeadLimit', 'smtpHost', 'smtpPort', 'smtpSecure',
       'testRecipientEmail', 'signature',
-      'timezone', 'outreachPaused', 'outreachPausedReason', 'outreachEnabled'
+      'timezone', 'outreachPaused', 'outreachPausedReason', 'outreachEnabled', 'connectedInboxes'
     ];
 
     let safeBody = {};

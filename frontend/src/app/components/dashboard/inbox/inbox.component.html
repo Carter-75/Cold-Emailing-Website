@@ -3,7 +3,7 @@
   <!-- Left Side: Message List -->
   <div class="w-full lg:w-1/3 flex flex-col border-r border-white/5 pr-6 h-full">
     
-    <div class="flex items-center justify-between mb-4 bg-white/5 p-1 rounded-xl">
+    <div class="flex flex-wrap items-center justify-between mb-4 bg-white/5 p-1 rounded-xl gap-1">
       <button (click)="switchView('inbox')" [ngClass]="{'bg-white/10 text-white': viewMode() === 'inbox', 'text-white/40 hover:text-white/80': viewMode() !== 'inbox'}" class="flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all text-center">
         Inbox
       </button>
