@@ -1,16 +1,16 @@
-<div class="glass-card flex flex-col lg:flex-row gap-6 h-[80vh] w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 overflow-hidden" (document:mouseup)="onMouseUp()">
+<div class="glass-card flex flex-col lg:flex-row gap-6 h-auto lg:h-[80vh] w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 overflow-hidden" (document:mouseup)="onMouseUp()">
   
   <!-- Left Side: Message List -->
-  <div class="w-full lg:w-1/3 flex flex-col border-r border-white/5 pr-6 h-full">
+  <div class="w-full lg:w-1/3 flex flex-col border-b lg:border-b-0 lg:border-r border-white/5 pb-6 lg:pb-0 lg:pr-6 h-[50vh] lg:h-full">
     
     <div class="flex flex-wrap items-center justify-between mb-4 bg-white/5 p-1 rounded-xl gap-1">
-      <button (click)="switchView('inbox')" [ngClass]="{'bg-white/10 text-white': viewMode() === 'inbox', 'text-white/40 hover:text-white/80': viewMode() !== 'inbox'}" class="flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all text-center">
+      <button (click)="switchView('inbox')" [ngClass]="{'bg-white/10 text-white': viewMode() === 'inbox', 'text-white/40 hover:text-white/80': viewMode() !== 'inbox'}" class="flex-1 py-2 text-[10px] sm:text-xs font-black uppercase tracking-widest rounded-lg transition-all text-center">
         Inbox
       </button>
-      <button (click)="switchView('drafts')" [ngClass]="{'bg-white/10 text-white': viewMode() === 'drafts', 'text-white/40 hover:text-white/80': viewMode() !== 'drafts'}" class="flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all text-center">
+      <button (click)="switchView('drafts')" [ngClass]="{'bg-white/10 text-white': viewMode() === 'drafts', 'text-white/40 hover:text-white/80': viewMode() !== 'drafts'}" class="flex-1 py-2 text-[10px] sm:text-xs font-black uppercase tracking-widest rounded-lg transition-all text-center">
         Drafts
       </button>
-      <button (click)="switchView('trash')" [ngClass]="{'bg-white/10 text-white': viewMode() === 'trash', 'text-white/40 hover:text-white/80': viewMode() !== 'trash'}" class="flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all text-center">
+      <button (click)="switchView('trash')" [ngClass]="{'bg-white/10 text-white': viewMode() === 'trash', 'text-white/40 hover:text-white/80': viewMode() !== 'trash'}" class="flex-1 py-2 text-[10px] sm:text-xs font-black uppercase tracking-widest rounded-lg transition-all text-center">
         Trash
       </button>
       <button (click)="switchView('unsubbed')" [ngClass]="{'bg-white/10 text-white': viewMode() === 'unsubbed', 'text-white/40 hover:text-white/80': viewMode() !== 'unsubbed'}" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-center">
@@ -25,7 +25,7 @@
     </div>
 
     <div class="flex flex-col gap-2 mb-6">
-      <div class="flex items-center gap-2">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <select [(ngModel)]="selectedAccount" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-widest text-white/70 outline-none flex-1 appearance-none cursor-pointer hover:bg-white/10 transition-colors">
           <option value="all" class="bg-zinc-900">All Accounts ({{ getUnreadCount('all') }})</option>
           <option *ngFor="let email of availableEmails()" [value]="email" class="bg-zinc-900">
@@ -36,16 +36,16 @@
         <button *ngIf="selectedAccount() === 'all' || selectedAccount() === primaryEmail()"
                 (click)="showLeadRepliesOnly.set(!showLeadRepliesOnly())"
                 [ngClass]="showLeadRepliesOnly() ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-white/5 text-white/40 border-white/10 hover:text-white/80'"
-                class="px-3 py-2 rounded-xl border flex items-center gap-2 transition-all" title="Filter AI Outreach">
+                class="px-3 py-2 rounded-xl border flex items-center justify-center gap-2 transition-all shrink-0" title="Filter AI Outreach">
           <lucide-icon name="bot" class="w-4 h-4"></lucide-icon>
-          <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">AI Only</span>
+          <span class="text-[10px] font-black uppercase tracking-widest">AI Only</span>
         </button>
       </div>
     </div>
 
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="text-3xl font-black uppercase tracking-tighter">{{ viewMode() }}</h2>
-      <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center justify-between mb-6 gap-4">
+      <h2 class="text-2xl sm:text-3xl font-black uppercase tracking-tighter">{{ viewMode() }}</h2>
+      <div class="flex flex-wrap items-center gap-2">
         <button (click)="openCompose()" class="text-orange-500 hover:text-orange-400 transition-colors p-2 flex items-center gap-1 bg-orange-500/10 rounded-xl px-3 border border-orange-500/20 shadow-lg shadow-orange-500/10" title="Compose">
           <lucide-icon name="pen-tool" class="w-4 h-4"></lucide-icon>
         </button>
@@ -100,7 +100,7 @@
   </div>
 
   <!-- Right Side: Message View & Reply OR Compose -->
-  <div class="flex-1 flex flex-col h-full bg-black/20 rounded-2xl border border-white/5 p-6 relative">
+  <div class="flex-1 flex flex-col h-[60vh] lg:h-full bg-black/20 rounded-2xl border border-white/5 p-4 sm:p-6 relative">
     
     <!-- Empty State -->
     <div *ngIf="!selectedMessage() && !isComposing()" class="flex-1 flex flex-col items-center justify-center text-center opacity-50">
