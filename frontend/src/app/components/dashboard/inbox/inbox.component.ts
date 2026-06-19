@@ -69,6 +69,20 @@ export class InboxComponent implements OnInit {
     });
   }
 
+  syncIMAP() {
+    this.loading.set(true);
+    this.http.post('/api/inbox/sync', {}).subscribe({
+      next: (res: any) => {
+        console.log('Sync result:', res.summary);
+        this.fetchMessages();
+      },
+      error: () => {
+        alert('Failed to sync emails. Check server logs.');
+        this.loading.set(false);
+      }
+    });
+  }
+
   get filteredMessages() {
     return this.messages().filter(m => this.viewMode() === 'trash' ? m.isTrashed : !m.isTrashed);
   }

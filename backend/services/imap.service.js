@@ -20,42 +20,55 @@ class IMAPService {
     };
 
     for (const user of users) {
-      const inboxesToCheck = [];
-      
-      if (user.config.senderEmail && user.config.appPassword) {
-        inboxesToCheck.push({
-          email: user.config.senderEmail,
-          pass: user.config.appPassword,
-          host: user.config.imapHost,
-          port: user.config.imapPort
-        });
-      }
-
-      if (user.config.connectedInboxes && Array.isArray(user.config.connectedInboxes)) {
-        for (const inbox of user.config.connectedInboxes) {
-          if (inbox.email && inbox.appPassword) {
-            inboxesToCheck.push({
-              email: inbox.email,
-              pass: inbox.appPassword,
-              host: inbox.imapHost,
-              port: inbox.imapPort
-            });
-          }
-        }
-      }
-
-      for (const inboxConfig of inboxesToCheck) {
-        try {
-          const result = await this.checkInbox(user, inboxConfig);
-          summary.repliesDetected += result?.repliesDetected ?? 0;
-          summary.inboxMessagesSaved += result?.inboxMessagesSaved ?? 0;
-        } catch (err) {
-          console.error(`[IMAP] Failed to check inbox for ${inboxConfig.email}:`, err.message);
-        }
-      }
+      const userSummary = await this.syncUserInboxes(user);
+      summary.repliesDetected += userSummary.repliesDetected;
+      summary.inboxMessagesSaved += userSummary.inboxMessagesSaved;
       summary.usersChecked += 1;
     }
 
+    return summary;
+  }
+
+  async syncUserInboxes(user) {
+    const summary = {
+      repliesDetected: 0,
+      inboxMessagesSaved: 0
+    };
+
+    const inboxesToCheck = [];
+    
+    if (user.config.senderEmail && user.config.appPassword) {
+      inboxesToCheck.push({
+        email: user.config.senderEmail,
+        pass: user.config.appPassword,
+        host: user.config.imapHost,
+        port: user.config.imapPort
+      });
+    }
+
+    if (user.config.connectedInboxes && Array.isArray(user.config.connectedInboxes)) {
+      for (const inbox of user.config.connectedInboxes) {
+        if (inbox.email && inbox.appPassword) {
+          inboxesToCheck.push({
+            email: inbox.email,
+            pass: inbox.appPassword,
+            host: inbox.imapHost,
+            port: inbox.imapPort
+          });
+        }
+      }
+    }
+
+    for (const inboxConfig of inboxesToCheck) {
+      try {
+        const result = await this.checkInbox(user, inboxConfig);
+        summary.repliesDetected += result?.repliesDetected ?? 0;
+        summary.inboxMessagesSaved += result?.inboxMessagesSaved ?? 0;
+      } catch (err) {
+        console.error(`[IMAP] Failed to check inbox for ${inboxConfig.email}:`, err.message);
+      }
+    }
+    
     return summary;
   }
 
@@ -133,7 +146,8 @@ class IMAPService {
             }
           }
 
-          if (!isLeadReply && msgId) {
+          // Always save to Universal Inbox regardless of Lead Reply status
+          if (msgId) {
             const existingMsg = await InboxMessage.findOne({ messageId: msgId, userId: user._id });
             if (!existingMsg) {
               const parsed = await simpleParser(message.source);
@@ -148,7 +162,7 @@ class IMAPService {
                 textBody: parsed.text || '',
                 htmlBody: parsed.html || '',
                 isRead: message.flags?.has('\\Seen') || false,
-                isReply: false,
+                isReply: isLeadReply,
                 date: message.envelope.date || new Date()
               });
               await newMsg.save();

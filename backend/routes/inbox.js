@@ -25,6 +25,18 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Manual IMAP Sync
+router.post('/sync', async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const summary = await IMAPService.syncUserInboxes(user);
+    res.json({ success: true, summary });
+  } catch (err) {
+    console.error('[Sync] Error:', err);
+    res.status(500).json({ message: 'Failed to sync emails' });
+  }
+});
+
 // Mark as read
 router.post('/:id/read', async (req, res) => {
   try {

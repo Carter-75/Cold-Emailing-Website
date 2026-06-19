@@ -10,7 +10,6 @@ import { LucideAngularModule } from 'lucide-angular';
 import { gsap } from 'gsap';
 
 import { OverviewComponent } from './overview/overview.component';
-import { LeadsComponent } from './leads/leads.component';
 import { InfrastructureComponent } from './infrastructure/infrastructure.component';
 import { IdentityComponent } from './identity/identity.component';
 import { InboxComponent } from './inbox/inbox.component';
@@ -23,7 +22,6 @@ import { InboxComponent } from './inbox/inbox.component';
     FormsModule, 
     LucideAngularModule,
     OverviewComponent,
-    LeadsComponent,
     InfrastructureComponent,
     IdentityComponent,
     InboxComponent
@@ -36,7 +34,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   outreach = inject(OutreachService);
   billing = inject(BillingService);
   
-  activeTab = signal<'overview' | 'leads' | 'infra' | 'identity' | 'billing' | 'inbox'>('overview');
+  activeTab = signal<'overview' | 'infra' | 'identity' | 'billing' | 'inbox'>('overview');
   leads = signal<any[]>([]);
   tourStep = signal<number | null>(null); // null means no tour active
 
@@ -197,7 +195,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  setTab(tab: 'overview' | 'leads' | 'infra' | 'identity' | 'billing' | 'inbox') {
+  setTab(tab: 'overview' | 'infra' | 'identity' | 'billing' | 'inbox') {
     this.sidebarOpen.set(false); // Auto-close sidebar on mobile
     const container = document.getElementById('tab-content-container');
     if (container) {
@@ -206,8 +204,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         y: 20,
         duration: 0.2,
         onComplete: () => {
-          this.activeTab.set(tab);
-          if (tab === 'leads') this.fetchLeads();
+          this.activeTab.set(tab as any);
           
           setTimeout(() => {
             gsap.to(container, {
@@ -220,8 +217,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
       });
     } else {
-      this.activeTab.set(tab);
-      if (tab === 'leads') this.fetchLeads();
+      this.activeTab.set(tab as any);
     }
   }
 
