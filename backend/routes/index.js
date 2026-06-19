@@ -185,7 +185,7 @@ router.get('/outreach/unsub-list', verifyToken, async (req, res) => {
 router.get('/outreach/unsub-status', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    const recipient = user.config?.testRecipientEmail || user.config?.senderEmail;
+    const recipient = user.config?.testRecipientEmail || user.config?.senderEmail || '';
     const unsub = await Unsubscribe.findOne({ userId: user._id, recipientEmail: recipient });
     res.json({ isUnsubscribed: !!unsub, email: recipient });
   } catch (err) {

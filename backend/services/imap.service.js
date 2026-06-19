@@ -37,12 +37,20 @@ class IMAPService {
 
     const inboxesToCheck = [];
     
+    const getImapHost = (email, host) => {
+      if (host) return host;
+      const lower = (email || '').toLowerCase();
+      if (lower.includes('@outlook') || lower.includes('@hotmail') || lower.includes('@live.com')) return 'outlook.office365.com';
+      if (lower.includes('@yahoo')) return 'imap.mail.yahoo.com';
+      return 'imap.gmail.com';
+    };
+
     if (user.config.senderEmail && user.config.appPassword) {
       inboxesToCheck.push({
         email: user.config.senderEmail,
         pass: user.config.appPassword,
-        host: user.config.imapHost,
-        port: user.config.imapPort
+        host: getImapHost(user.config.senderEmail, user.config.imapHost),
+        port: user.config.imapPort || 993
       });
     }
 
@@ -52,20 +60,23 @@ class IMAPService {
           inboxesToCheck.push({
             email: inbox.email,
             pass: inbox.appPassword,
-            host: inbox.imapHost,
-            port: inbox.imapPort
+            host: getImapHost(inbox.email, inbox.imapHost),
+            port: inbox.imapPort || 993
           });
         }
       }
     }
 
+    summary.errors = [];
     for (const inboxConfig of inboxesToCheck) {
       try {
         const result = await this.checkInbox(user, inboxConfig);
         summary.repliesDetected += result?.repliesDetected ?? 0;
         summary.inboxMessagesSaved += result?.inboxMessagesSaved ?? 0;
+        if (result?.error) summary.errors.push(`${inboxConfig.email}: ${result.error}`);
       } catch (err) {
         console.error(`[IMAP] Failed to check inbox for ${inboxConfig.email}:`, err.message);
+        summary.errors.push(`${inboxConfig.email}: ${err.message}`);
       }
     }
     
