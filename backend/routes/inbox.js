@@ -25,6 +25,23 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get connected emails
+router.get('/connected-emails', async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const emails = [];
+    if (user.config.senderEmail) emails.push(user.config.senderEmail);
+    if (user.config.connectedInboxes && Array.isArray(user.config.connectedInboxes)) {
+      emails.push(...user.config.connectedInboxes.map(i => i.email).filter(e => e));
+    }
+    const uniqueEmails = [...new Set(emails)];
+    res.json(uniqueEmails);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch connected emails' });
+  }
+});
+
 // Manual IMAP Sync
 router.post('/sync', async (req, res) => {
   try {

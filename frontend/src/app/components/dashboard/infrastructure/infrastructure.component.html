@@ -122,14 +122,24 @@
                 <label class="text-[10px] font-black uppercase text-white/70">App Password</label>
                 <input type="password" [(ngModel)]="inbox.appPassword" name="inboxPass{{i}}" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
               </div>
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-2">
+              <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-2 space-y-2">
                   <label class="text-[10px] font-black uppercase text-white/70">SMTP Host</label>
                   <input type="text" [(ngModel)]="inbox.smtpHost" name="inboxSmtp{{i}}" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
                 </div>
                 <div class="space-y-2">
+                  <label class="text-[10px] font-black uppercase text-white/70">SMTP Port</label>
+                  <input type="number" [(ngModel)]="inbox.smtpPort" name="inboxSmtpPort{{i}}" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-2 space-y-2">
                   <label class="text-[10px] font-black uppercase text-white/70">IMAP Host</label>
                   <input type="text" [(ngModel)]="inbox.imapHost" name="inboxImap{{i}}" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black uppercase text-white/70">IMAP Port</label>
+                  <input type="number" [(ngModel)]="inbox.imapPort" name="inboxImapPort{{i}}" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors">
                 </div>
               </div>
             </div>

@@ -37,7 +37,14 @@ import {
   UserX,
   Loader2,
   Wand2,
-  Menu
+  Menu,
+  PenTool,
+  Trash2,
+  AlertTriangle,
+  Bot,
+  X,
+  Edit3,
+  Loader
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -79,7 +86,14 @@ export const appConfig: ApplicationConfig = {
         UserX,
         Loader2,
         Wand2,
-        Menu
+        Menu,
+        PenTool,
+        Trash2,
+        AlertTriangle,
+        Bot,
+        X,
+        Edit3,
+        Loader
       })
     }
   ]
