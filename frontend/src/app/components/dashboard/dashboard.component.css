@@ -96,7 +96,8 @@ aside button[class*="bg-white/10"]::before {
 
 /* Engine Styles */
 .scanline {
-  @apply absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/10 to-transparent h-2 w-full animate-scan pointer-events-none;
+  @apply absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/10 to-transparent h-2 w-full pointer-events-none;
+  animation: scan 3s linear infinite;
 }
 
 @keyframes scan {
