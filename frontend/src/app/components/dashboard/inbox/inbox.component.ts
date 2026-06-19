@@ -17,6 +17,7 @@ export class InboxComponent implements OnInit {
   messages = signal<any[]>([]);
   drafts = signal<any[]>([]);
   unsubbed = signal<any[]>([]);
+  pending = signal<any[]>([]);
   selectedMessage = signal<any>(null);
   replyText = signal<string>('');
   loading = signal(false);
@@ -27,7 +28,7 @@ export class InboxComponent implements OnInit {
   countdown = signal<number>(0);
   private countdownInterval: any;
 
-  viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'>('inbox');
+  viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'|'pending'>('inbox');
   selectedAccount = signal<string>('all');
   primaryEmail = signal<string>('');
   showLeadRepliesOnly = signal<boolean>(false);
@@ -55,6 +56,7 @@ export class InboxComponent implements OnInit {
     this.fetchMessages();
     this.fetchDrafts();
     this.fetchUnsubbed();
+    this.fetchPending();
   }
 
   fetchMessages() {
@@ -90,6 +92,12 @@ export class InboxComponent implements OnInit {
     });
   }
 
+  fetchPending() {
+    this.http.get<any[]>('/api/inbox/pending').subscribe({
+      next: (data) => this.pending.set(data)
+    });
+  }
+
   syncIMAP() {
     this.loading.set(true);
     this.http.post('/api/inbox/sync', {}).subscribe({
@@ -118,6 +126,10 @@ export class InboxComponent implements OnInit {
       return this.unsubbed();
     }
 
+    if (this.viewMode() === 'pending') {
+      return this.pending();
+    }
+
     return this.messages().filter(m => {
       if (this.viewMode() === 'trash' ? !m.isTrashed : m.isTrashed) return false;
       if (this.selectedAccount() !== 'all' && m.inboxEmail !== this.selectedAccount()) return false;
@@ -135,7 +147,7 @@ export class InboxComponent implements OnInit {
     }).length;
   }
 
-  switchView(mode: 'inbox'|'trash'|'drafts'|'unsubbed') {
+  switchView(mode: 'inbox'|'trash'|'drafts'|'unsubbed'|'pending') {
     this.viewMode.set(mode);
     this.selectedIds.set(new Set());
     this.selectedMessage.set(null);
@@ -325,7 +337,7 @@ export class InboxComponent implements OnInit {
       return;
     }
     
-    if (this.viewMode() === 'unsubbed') return;
+    if (this.viewMode() === 'unsubbed' || this.viewMode() === 'pending') return;
 
     const endpoint = this.viewMode() === 'trash' ? '/api/inbox/permanent-delete' : '/api/inbox/delete';
     const action = this.viewMode() === 'trash' ? 'permanently delete' : 'move to trash';
@@ -348,7 +360,7 @@ export class InboxComponent implements OnInit {
   }
 
   emptyInbox() {
-    if (this.viewMode() === 'drafts' || this.viewMode() === 'unsubbed') return;
+    if (this.viewMode() === 'drafts' || this.viewMode() === 'unsubbed' || this.viewMode() === 'pending') return;
     
     const action = this.viewMode() === 'trash' ? 'permanently delete ALL trashed' : 'move ALL messages to trash';
     if (!confirm(`WARNING: Are you sure you want to ${action} messages?`)) return;

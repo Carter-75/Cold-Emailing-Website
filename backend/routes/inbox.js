@@ -58,6 +58,21 @@ router.get('/unsubbed', async (req, res) => {
   }
 });
 
+// Get Pending Leads (not yet emailed)
+router.get('/pending', async (req, res) => {
+  try {
+    const pendingLeads = await Lead.find({ 
+      userId: req.user._id, 
+      status: { $in: ['discovery', 'verifying', 'ready'] },
+      isUnsubscribed: { $ne: true }
+    }).sort({ updatedAt: -1 });
+    res.json(pendingLeads);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch pending leads' });
+  }
+});
+
 // Drafts Endpoints
 router.get('/drafts', async (req, res) => {
   try {
