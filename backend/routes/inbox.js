@@ -227,13 +227,21 @@ router.post('/:id/reply', async (req, res) => {
     });
 
     const { textBody } = req.body;
-    const htmlBody = textBody.replace(/\n/g, '<br>');
+    let htmlBody = textBody.replace(/\n/g, '<br>');
+    
+    // Append signature if configured
+    const signatureHTML = user.config.signature || `<p>${user.config.senderName}<br>${user.config.senderTitle}</p>`;
+    const signatureText = signatureHTML.replace(/<[^>]*>?/gm, '\n').trim();
+
+    if (user.config.senderName || user.config.signature) {
+      htmlBody += `<br><br>${signatureHTML}`;
+    }
 
     const mailOptions = {
       from: `"${user.config.displayName || user.config.senderName || 'Me'}" <${config.email}>`,
       to: msg.from,
       subject: msg.subject.toLowerCase().startsWith('re:') ? msg.subject : `Re: ${msg.subject}`,
-      text: textBody,
+      text: textBody + ((user.config.senderName || user.config.signature) ? `\n\n${signatureText}` : ''),
       html: htmlBody,
       inReplyTo: msg.messageId,
       references: [msg.messageId]
