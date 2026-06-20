@@ -176,7 +176,7 @@
     </ng-container>
 
     <!-- Reply/Compose Box (shared) -->
-    <div *ngIf="(selectedMessage() || isComposing()) && viewMode() !== 'unsubbed'" class="border-t border-white/5 pt-6 mt-auto shrink-0 flex flex-col gap-4 relative">
+    <div *ngIf="(selectedMessage() || isComposing()) && viewMode() !== 'unsubbed'" class="border-t border-white/5 pt-6 shrink-0 flex flex-col gap-4 relative">
       
       <!-- Cancel Reply Banner -->
       <div *ngIf="pendingReplyId() && countdown() > 0" class="p-4 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-between shadow-2xl shadow-orange-500/20 backdrop-blur-xl shrink-0">
