@@ -53,6 +53,7 @@ const UserSchema = new mongoose.Schema({
     // Autonomous logic
     dailyLeadLimit: { type: Number, default: 3 },
     outreachEnabled: { type: Boolean, default: false },
+    engineTestMode: { type: Boolean, default: false },
     outreachPaused: { type: Boolean, default: false },         // Kill switch — set true on fatal API error
     outreachPausedReason: { type: String, default: '' },       // Human-readable reason stored for dashboard display
     timezone: { type: String, default: 'America/Chicago' },   // Used to gate engine to user's 8am-6pm local time

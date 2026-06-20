@@ -131,6 +131,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Logic
     dailyLeadLimit: 3,
     outreachEnabled: false,
+    engineTestMode: false,
+    timezone: 'America/Chicago',
+    outreachPaused: false,
+    outreachPausedReason: '',
+    connectedInboxes: [],
     testRecipientEmail: ''
   };
 

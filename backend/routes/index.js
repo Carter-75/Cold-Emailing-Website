@@ -421,7 +421,7 @@ router.post('/config', verifyToken, async (req, res) => {
       'personaContext', 'dailyLeadLimit', 'smtpHost', 'smtpPort', 'smtpSecure',
       'imapHost', 'imapPort',
       'testRecipientEmail', 'signature',
-      'timezone', 'outreachPaused', 'outreachPausedReason', 'outreachEnabled', 'connectedInboxes'
+      'timezone', 'outreachPaused', 'outreachPausedReason', 'outreachEnabled', 'engineTestMode', 'connectedInboxes'
     ];
 
     let safeBody = {};
@@ -443,6 +443,7 @@ router.post('/config', verifyToken, async (req, res) => {
     const oldKeys = {
       openaiKey: user.config?.openaiKey || ''
     };
+    const wasTestMode = user.config?.engineTestMode === true;
 
     // Explicitly update config fields
     Object.keys(safeBody).forEach(key => {
@@ -450,6 +451,15 @@ router.post('/config', verifyToken, async (req, res) => {
     });
 
     await user.save();
+
+    // Reset test leads if engineTestMode is turned OFF
+    if (wasTestMode && user.config.engineTestMode === false) {
+      const Lead = require('../models/Lead');
+      await Lead.updateMany(
+        { userId: user._id, status: 'test_emailed' },
+        { $set: { status: 'discovery', thread: [], messageIds: [], sequenceStep: 0 }, $unset: { lastEmailedAt: "", nextEmailAt: "" } }
+      );
+    }
 
     const OptimizerService = require('../services/optimizer.service');
     if (user.config.openaiKey && (!oldKeys.openaiKey || oldKeys.openaiKey !== user.config.openaiKey)) {

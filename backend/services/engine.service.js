@@ -154,10 +154,6 @@ class OutreachEngine {
     return { status: ranThisTick ? 'sent' : 'idle', readyCount };
   }
 
-  /**
-   * stepSendEmail
-   * Priority: Follow-ups, then Ready list.
-   */
   async stepSendEmail(user) {
     // Check Follow-ups first
     const followUp = await Lead.findOne({ userId: user._id, status: 'emailed', nextEmailAt: { $lte: new Date() } }).sort({ nextEmailAt: 1 });
@@ -180,14 +176,17 @@ class OutreachEngine {
 
     try {
       const content = await EmailService.generateContent(lead, user.config);
+      const isTestMode = user.config.engineTestMode === true;
+      
       const emailResult = await EmailService.sendEmail({
         ...user.config.toObject ? user.config.toObject() : user.config,
         userId: user._id,
         displayName: user.displayName
-      }, lead.recipientEmail, content, lead.businessName);
+      }, lead.recipientEmail, content, lead.businessName, isTestMode);
 
-      await SentEmail.create({ userId: user._id, recipientEmail: lead.recipientEmail, businessName: lead.businessName, city: lead.city, source: 'engine' });
-      lead.status = 'emailed';
+      await SentEmail.create({ userId: user._id, recipientEmail: lead.recipientEmail, businessName: lead.businessName, city: lead.city, source: 'engine', testMode: isTestMode });
+      
+      lead.status = isTestMode ? 'test_emailed' : 'emailed';
       lead.sequenceStep = 1;
       lead.lastEmailedAt = new Date();
       lead.nextEmailAt = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);

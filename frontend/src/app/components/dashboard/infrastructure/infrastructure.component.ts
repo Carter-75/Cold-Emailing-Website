@@ -39,7 +39,9 @@ export class InfrastructureComponent {
     timezone: 'America/Chicago',
     outreachPaused: false,
     outreachPausedReason: '',
-    connectedInboxes: []
+    connectedInboxes: [],
+    testRecipientEmail: '',
+    engineTestMode: false
   };
 
   isUnsubscribed = signal(false);

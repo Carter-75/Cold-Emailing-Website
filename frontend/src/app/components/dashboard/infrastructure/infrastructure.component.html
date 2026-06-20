@@ -83,6 +83,29 @@
                 </select>
               </div>
 
+              <!-- Autonomous Engine Test Mode -->
+              <div class="bg-orange-500/10 border border-orange-500/20 p-6 rounded-2xl space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h4 class="text-xs font-black uppercase tracking-widest text-orange-500 flex items-center gap-2">
+                      <lucide-icon name="beaker" class="w-4 h-4"></lucide-icon>
+                      Autonomous Test Mode
+                    </h4>
+                    <p class="text-[10px] text-white/50 mt-1">Run the engine normally, but route all generated emails to your Test Email instead of the lead. Does not burn leads.</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" [(ngModel)]="config.engineTestMode" name="engineTestMode" class="sr-only peer">
+                    <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
+                
+                <div *ngIf="config.engineTestMode" class="space-y-2 pt-2 border-t border-orange-500/20 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <label class="text-[10px] font-black uppercase text-orange-400">Test Recipient Email</label>
+                  <input type="email" [(ngModel)]="config.testRecipientEmail" name="testRecipientEmail" class="w-full bg-white/5 border border-orange-500/30 rounded-xl px-4 py-3 focus:border-orange-500 outline-none transition-colors text-orange-100" placeholder="Where should test emails go?">
+                  <p class="text-[9px] text-orange-500/60 mt-1">Warning: Disabling Test Mode will immediately reset all tested leads back to the discovery queue so they can be mailed for real.</p>
+                </div>
+              </div>
+
               <!-- Kill Switch Status Banner -->
               <div *ngIf="config.outreachPaused" class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-3">
                 <div class="flex items-center gap-2">
