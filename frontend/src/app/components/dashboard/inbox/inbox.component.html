@@ -24,9 +24,9 @@
       </button>
     </div>
 
-    <div class="flex flex-col gap-2 mb-6">
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <div class="flex items-center gap-2 flex-1">
+    <div class="flex flex-col gap-3 mb-6">
+      <div class="flex flex-wrap items-stretch sm:items-center gap-2">
+        <div class="flex items-center gap-2 flex-1 min-w-[200px]">
           <select [(ngModel)]="selectedAccount" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-widest text-white/70 outline-none flex-1 appearance-none cursor-pointer hover:bg-white/10 transition-colors">
             <option value="all" class="bg-zinc-900">All Accounts ({{ getTotalCount('all') }})</option>
             <option *ngFor="let email of availableEmails()" [value]="email" class="bg-zinc-900">
@@ -48,15 +48,14 @@
       </div>
     </div>
 
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="text-2xl 2xl:text-3xl font-black uppercase tracking-tighter truncate pr-2">{{ viewMode() }}</h2>
+    <div class="flex flex-wrap items-center justify-between mb-6 gap-4">
+      <h2 class="text-2xl 2xl:text-3xl font-black uppercase tracking-tighter shrink-0">{{ viewMode() }}</h2>
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
         <button (click)="openCompose()" class="text-orange-500 hover:text-orange-400 transition-colors p-2 flex items-center gap-1 bg-orange-500/10 rounded-xl px-2 sm:px-3 border border-orange-500/20 shadow-lg shadow-orange-500/10 shrink-0" title="Compose">
           <lucide-icon name="pen-tool" class="w-4 h-4"></lucide-icon>
         </button>
         <button *ngIf="filteredMessages.length > 0" (click)="toggleSelectAll()" class="text-white/40 hover:text-white transition-colors p-2 flex items-center gap-2 bg-white/5 rounded-xl px-2 sm:px-3 border border-white/10 shrink-0" [title]="selectedIds().size === filteredMessages.length && filteredMessages.length > 0 ? 'Unselect All' : 'Select All'">
           <lucide-icon [name]="selectedIds().size === filteredMessages.length && filteredMessages.length > 0 ? 'check-square' : 'square'" class="w-4 h-4"></lucide-icon>
-          <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline lg:hidden 2xl:inline w-[85px] text-left">{{ selectedIds().size === filteredMessages.length && filteredMessages.length > 0 ? 'Unselect All' : 'Select All' }}</span>
         </button>
         <button *ngIf="selectedIds().size > 0" (click)="deleteSelected()" class="text-rose-500 hover:text-rose-400 transition-colors p-2 flex items-center gap-1 bg-rose-500/10 rounded-xl px-2 sm:px-3 border border-rose-500/20 shrink-0" title="Delete Selected">
           <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
