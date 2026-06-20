@@ -113,3 +113,14 @@
   0%, 100% { opacity: 0.15; filter: blur(150px); }
   50% { opacity: 0.25; filter: blur(170px); }
 }
+
+/* Custom Quill Editor Overrides */
+.custom-quill-editor .ql-container {
+  font-family: var(--font-main);
+  font-size: 0.875rem; /* text-sm */
+}
+
+.custom-quill-editor .ql-editor {
+  max-height: 40vh; /* Prevent going off-screen on small monitors */
+  overflow-y: auto;
+}
