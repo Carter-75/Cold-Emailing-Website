@@ -124,3 +124,15 @@
   max-height: 40vh; /* Prevent going off-screen on small monitors */
   overflow-y: auto;
 }
+
+.custom-quill-editor .ql-editor table,
+.custom-quill-editor .ql-editor td,
+.custom-quill-editor .ql-editor th {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.custom-quill-editor .ql-editor p {
+  margin-bottom: 0.5em;
+}
