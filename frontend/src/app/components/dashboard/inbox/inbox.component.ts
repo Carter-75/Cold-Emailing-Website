@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { LucideAngularModule } from 'lucide-angular';
 import { QuillModule } from 'ngx-quill';
 import { AuthService } from '../../../services/auth.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-inbox',
@@ -15,6 +16,7 @@ import { AuthService } from '../../../services/auth.service';
 export class InboxComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   public auth = inject(AuthService);
+  private sanitizer = inject(DomSanitizer);
   
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
 
@@ -31,6 +33,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   pendingReplyId = signal<string | null>(null);
   currentDraftId = signal<string | null>(null);
   countdown = signal<number>(0);
+  includeSignature = signal<boolean>(true);
   private countdownInterval: any;
 
   private scrollInterval: any;
@@ -204,16 +207,21 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.currentDraftId.set(null);
   }
 
-  private getSignatureHTML(): string {
+  public getSignatureHTML(): string {
     const config = this.auth.user()?.config;
     if (!config) return '';
     return config.signature || `<p>${config.senderName || ''}<br>${config.senderTitle || ''}</p>`;
   }
 
+  public getSafeSignatureHTML(): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(this.getSignatureHTML());
+  }
+
   openCompose() {
     this.isComposing.set(true);
     this.selectedMessage.set(null);
-    this.replyText.set(`<br><br>${this.getSignatureHTML()}`);
+    this.replyText.set('');
+    this.includeSignature.set(true);
     this.composeTo.set('');
     this.composeSubject.set('');
   }
@@ -230,8 +238,9 @@ export class InboxComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // Prefill the signature for standard replies
-    this.replyText.set(`<br><br>${this.getSignatureHTML()}`);
+    // Reset compose state
+    this.replyText.set('');
+    this.includeSignature.set(true);
     
     this.currentDraftId.set(null);
     if (!msg.isRead && (this.viewMode() === 'inbox' || this.viewMode() === 'trash')) {
@@ -252,8 +261,13 @@ export class InboxComponent implements OnInit, OnDestroy {
     const msg = this.selectedMessage();
     if (!msg || !this.replyText().trim()) return;
 
+    let finalBody = this.replyText();
+    if (this.includeSignature()) {
+      finalBody += `<br><br>${this.getSignatureHTML()}`;
+    }
+
     this.loading.set(true);
-    this.http.post(`/api/inbox/${msg._id}/reply`, { textBody: this.replyText() }).subscribe({
+    this.http.post(`/api/inbox/${msg._id}/reply`, { textBody: finalBody }).subscribe({
       next: (res: any) => this.handleDelayedSendSuccess(res),
       error: () => {
         alert('Failed to send reply');
@@ -265,12 +279,17 @@ export class InboxComponent implements OnInit, OnDestroy {
   sendCompose() {
     if (!this.composeTo().trim() || !this.composeSubject().trim() || !this.replyText().trim()) return;
     
+    let finalBody = this.replyText();
+    if (this.includeSignature()) {
+      finalBody += `<br><br>${this.getSignatureHTML()}`;
+    }
+
     this.loading.set(true);
     this.http.post('/api/inbox/compose', {
       fromEmail: this.composeFrom(),
       to: this.composeTo(),
       subject: this.composeSubject(),
-      textBody: this.replyText()
+      textBody: finalBody
     }).subscribe({
       next: (res: any) => this.handleDelayedSendSuccess(res),
       error: () => {
