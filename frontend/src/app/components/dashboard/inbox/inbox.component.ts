@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { LucideAngularModule } from 'lucide-angular';
 import { QuillModule } from 'ngx-quill';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-inbox',
@@ -13,6 +14,7 @@ import { QuillModule } from 'ngx-quill';
 })
 export class InboxComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
+  public auth = inject(AuthService);
   
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
 
