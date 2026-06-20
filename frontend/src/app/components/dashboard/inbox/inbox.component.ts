@@ -46,6 +46,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   availableEmails = signal<string[]>([]);
   aiPrompt = signal('');
   isGeneratingAI = signal(false);
+  searchQuery = signal('');
 
   isDragging = false;
 
@@ -133,33 +134,45 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   get filteredMessages() {
+    let list: any[] = [];
     if (this.viewMode() === 'drafts') {
-      return this.drafts().filter(m => {
+      list = this.drafts().filter(m => {
         if (this.selectedAccount() !== 'all' && m.inboxEmail !== this.selectedAccount()) return false;
+        return true;
+      });
+    } else if (this.viewMode() === 'unsubbed') {
+      list = this.unsubbed();
+    } else if (this.viewMode() === 'pending') {
+      list = this.pending();
+    } else if (this.viewMode() === 'contacted') {
+      list = this.contacted();
+    } else {
+      list = this.messages().filter(m => {
+        if (m.syncStatus === 'pending_delete') return false; // Hide from everywhere if permanently deleted
+        if (this.viewMode() === 'trash' ? !m.isTrashed : m.isTrashed) return false;
+        if (this.selectedAccount() !== 'all' && m.inboxEmail !== this.selectedAccount()) return false;
+        if (this.showLeadRepliesOnly() && !m.isReply) return false;
         return true;
       });
     }
 
-    if (this.viewMode() === 'unsubbed') {
-      // Unsubbed leads don't have inboxEmail natively in the Lead object easily filterable here, 
-      // but we just return them all.
-      return this.unsubbed();
-    }
+    const query = this.searchQuery().toLowerCase().trim();
+    if (!query) return list;
 
-    if (this.viewMode() === 'pending') {
-      return this.pending();
-    }
+    return list.filter(m => {
+      const subject = (m.subject || '').toLowerCase();
+      const from = (m.from || '').toLowerCase();
+      const to = (m.to || '').toLowerCase();
+      const textBody = (m.textBody || '').toLowerCase();
+      const recipient = (m.recipientEmail || '').toLowerCase();
+      const name = (m.firstName ? m.firstName + ' ' + m.lastName : m.businessName || '').toLowerCase();
 
-    if (this.viewMode() === 'contacted') {
-      return this.contacted();
-    }
-
-    return this.messages().filter(m => {
-      if (m.syncStatus === 'pending_delete') return false; // Hide from everywhere if permanently deleted
-      if (this.viewMode() === 'trash' ? !m.isTrashed : m.isTrashed) return false;
-      if (this.selectedAccount() !== 'all' && m.inboxEmail !== this.selectedAccount()) return false;
-      if (this.showLeadRepliesOnly() && !m.isReply) return false;
-      return true;
+      return subject.includes(query) || 
+             from.includes(query) || 
+             to.includes(query) || 
+             textBody.includes(query) ||
+             recipient.includes(query) ||
+             name.includes(query);
     });
   }
 
