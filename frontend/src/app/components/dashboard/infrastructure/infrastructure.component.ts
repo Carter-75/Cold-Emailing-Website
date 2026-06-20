@@ -40,7 +40,6 @@ export class InfrastructureComponent {
     outreachPaused: false,
     outreachPausedReason: '',
     connectedInboxes: [],
-    testRecipientEmail: '',
     engineTestMode: false
   };
 
