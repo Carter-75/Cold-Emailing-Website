@@ -77,7 +77,7 @@ class EmailService {
       .trim();
   }
 
-  async sendEmail(userConfig, recipientEmail, content, businessName, testMode = false) {
+  async sendEmail(userConfig, recipientEmail, content, businessName, testMode = false, skipFooter = false) {
     const isTest = testMode || userConfig.testMode;
     
     // Check if we have enough SMTP config to actually send
@@ -109,7 +109,7 @@ class EmailService {
       .update(recipientEmail + userConfig.userId)
       .digest('hex');
 
-    const footer = `
+    const footer = skipFooter ? '' : `
       <br>
       ${signature}
       <br><br>

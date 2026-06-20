@@ -175,4 +175,22 @@ export class LeadsComponent {
     const lastMsg = lead.thread[lead.thread.length - 1];
     return lastMsg.from !== this.auth.user()?.config?.senderEmail;
   }
+
+  toggleLead(lead: any) {
+    lead.isExpanded = !lead.isExpanded;
+    if (lead.isExpanded) {
+      const config = this.auth.user()?.config;
+      if (config) {
+        const signatureHTML = config.signature || `<p>${config.senderName || ''}<br>${config.senderTitle || ''}</p>`;
+        const signatureText = signatureHTML.replace(/<[^>]*>?/gm, '\n').trim();
+        if (signatureText) {
+          this.replyContent.set(`\n\n\n${signatureText}`);
+        } else {
+          this.replyContent.set('');
+        }
+      }
+    } else {
+      this.replyContent.set('');
+    }
+  }
 }

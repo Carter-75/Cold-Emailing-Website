@@ -202,10 +202,16 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.currentDraftId.set(null);
   }
 
+  private getSignatureHTML(): string {
+    const config = this.auth.user()?.config;
+    if (!config) return '';
+    return config.signature || `<p>${config.senderName || ''}<br>${config.senderTitle || ''}</p>`;
+  }
+
   openCompose() {
     this.isComposing.set(true);
     this.selectedMessage.set(null);
-    this.replyText.set('');
+    this.replyText.set(`<br><br>${this.getSignatureHTML()}`);
     this.composeTo.set('');
     this.composeSubject.set('');
   }
@@ -221,6 +227,10 @@ export class InboxComponent implements OnInit, OnDestroy {
       this.replyText.set(msg.textBody);
       return;
     }
+    
+    // Prefill the signature for standard replies
+    this.replyText.set(`<br><br>${this.getSignatureHTML()}`);
+    
     this.currentDraftId.set(null);
     if (!msg.isRead && (this.viewMode() === 'inbox' || this.viewMode() === 'trash')) {
       // Mark as read locally

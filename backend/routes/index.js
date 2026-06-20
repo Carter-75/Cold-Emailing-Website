@@ -327,11 +327,12 @@ router.post('/leads/:id/reply', verifyToken, async (req, res) => {
     const sendConfig = user.config?.toObject ? user.config.toObject() : user.config;
 
     // Send the manual reply
+    // parameters: userConfig, recipientEmail, content, businessName, testMode, skipFooter
     const emailResult = await EmailService.sendEmail({
       ...sendConfig,
       userId: user._id,
       displayName: user.displayName || user.config.senderName
-    }, recipientEmail, body, lead.businessName);
+    }, recipientEmail, body, lead.businessName, false, true);
 
     // Update Lead Thread
     if (!lead.thread) lead.thread = [];
