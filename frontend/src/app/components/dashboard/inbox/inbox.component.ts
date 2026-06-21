@@ -44,13 +44,15 @@ export class InboxComponent implements OnInit, OnDestroy {
   selectedAccount = signal<string>('all');
   primaryEmail = signal<string>('');
   showLeadRepliesOnly = signal<boolean>(false);
-  isComposing = signal(false);
+  isComposing = signal<boolean>(false);
+  isReplying = signal<boolean>(false);
+  isFullscreen = signal<boolean>(false);
+  isGeneratingAI = signal<boolean>(false);
+  aiPrompt = signal<string>('');
   composeFrom = signal('');
   composeTo = signal('');
   composeSubject = signal('');
   availableEmails = signal<string[]>([]);
-  aiPrompt = signal('');
-  isGeneratingAI = signal(false);
   searchQuery = signal('');
 
   isDragging = false;
@@ -204,6 +206,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.selectedIds.set(new Set());
     this.selectedMessage.set(null);
     this.isComposing.set(false);
+    this.isReplying.set(false);
     this.currentDraftId.set(null);
   }
 
@@ -219,6 +222,7 @@ export class InboxComponent implements OnInit, OnDestroy {
 
   openCompose() {
     this.isComposing.set(true);
+    this.isReplying.set(false);
     this.selectedMessage.set(null);
     this.replyText.set('');
     this.includeSignature.set(true);
@@ -226,10 +230,18 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.composeSubject.set('');
   }
 
+  openReply() {
+    this.isReplying.set(true);
+    this.isComposing.set(false);
+    this.replyText.set('');
+    this.includeSignature.set(true);
+  }
+
   selectMessage(msg: any) {
     this.selectedMessage.set(msg);
     if (this.viewMode() === 'drafts') {
       this.isComposing.set(true);
+      this.isReplying.set(false);
       this.currentDraftId.set(msg._id);
       this.composeFrom.set(msg.inboxEmail);
       this.composeTo.set(msg.to);
@@ -241,6 +253,8 @@ export class InboxComponent implements OnInit, OnDestroy {
     // Reset compose state
     this.replyText.set('');
     this.includeSignature.set(true);
+    this.isComposing.set(false);
+    this.isReplying.set(false);
     
     this.currentDraftId.set(null);
     if (!msg.isRead && (this.viewMode() === 'inbox' || this.viewMode() === 'trash')) {
@@ -316,6 +330,7 @@ export class InboxComponent implements OnInit, OnDestroy {
           clearInterval(this.countdownInterval);
           this.pendingReplyId.set(null);
           this.isComposing.set(false);
+          this.isReplying.set(false);
           this.currentDraftId.set(null);
           this.fetchMessages();
         }
