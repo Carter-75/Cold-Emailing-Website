@@ -75,7 +75,8 @@ export class AuthService {
         this.user.set(user);
         this.isAuthenticated.set(true);
       },
-      error: () => {
+      error: (err) => {
+        console.error('[AuthService] checkAuth /auth/me request failed:', err);
         // Token is invalid or expired
         this.logoutLocal();
       }

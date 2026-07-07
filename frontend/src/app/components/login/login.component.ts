@@ -25,6 +25,20 @@ export class LoginComponent {
     displayName: ''
   };
 
+  animatedWords = ['Cold Emailing', 'Lead Generation', 'Sales Automation', 'Client Growth'];
+  currentWordIndex = signal(0);
+  private wordInterval: any;
+
+  ngOnInit() {
+    this.wordInterval = setInterval(() => {
+      this.currentWordIndex.update(i => (i + 1) % this.animatedWords.length);
+    }, 2500);
+  }
+
+  ngOnDestroy() {
+    if (this.wordInterval) clearInterval(this.wordInterval);
+  }
+
   onAuthSubmit() {
     this.authError.set(null);
     const obs = this.authMode() === 'login' 
