@@ -16,7 +16,7 @@ This project follows a decoupled MEAN stack architecture.
 - Always maintain the iframe security headers in `backend/app.js`.
 - Prefer Signals for Angular state.
 - Use standalone components.
-- **Environment**: If you modify the root `.env.local`, remind the user to `git push` to sync with Vercel.
+- **Environment**: If you modify the root `.env.local`, remind the user to `git push` to sync with Vercel. But never git add, commit, or push by itself for ANY file. 
 
 ## Agent Operational Directives
 - **File Deletions**: When deleting multiple files, do so one at a time.

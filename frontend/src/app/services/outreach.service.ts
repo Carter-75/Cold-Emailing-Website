@@ -58,7 +58,7 @@ export class OutreachService {
   }
 
   startOutreach() {
-    return this.api.postData<{ message?: string }>('outreach/start', {}).pipe(
+    return this.api.patchData<{ message?: string }>('outreach/status', { status: 'running' }).pipe(
       tap((response) => {
         this.status.set('running');
         this.addLog(`System: ${response.message || 'Automation enabled'}`);
@@ -67,7 +67,7 @@ export class OutreachService {
   }
 
   stopOutreach() {
-    return this.api.postData<{ message?: string }>('outreach/stop', {}).pipe(
+    return this.api.patchData<{ message?: string }>('outreach/status', { status: 'stopped' }).pipe(
       tap((response) => {
         this.status.set('stopped');
         this.addLog(`System: ${response.message || 'Automation disabled'}`);
@@ -76,7 +76,7 @@ export class OutreachService {
   }
 
   sendTestEmail() {
-    return this.api.postData('outreach/test-send', {});
+    return this.api.postData('outreach/test-messages', {});
   }
 
   getUnsubStatus() {
@@ -92,7 +92,7 @@ export class OutreachService {
   }
 
   syncInbox() {
-    return this.api.postData<{ message: string }>('outreach/sync-inbox', {});
+    return this.api.postData<{ message: string }>('outreach/syncs', {});
   }
 
   saveConfig(config: any) {
@@ -108,10 +108,10 @@ export class OutreachService {
   }
 
   refineReply(leadId: string, draft: string) {
-    return this.api.postData<{ refinedText: string }>(`leads/${leadId}/replies/refine`, { draft });
+    return this.api.postData<{ refinedText: string }>(`leads/${leadId}/reply-refinements`, { draft });
   }
 
   cleanThread(leadId: string) {
-    return this.api.postData<{ message: string, lead: any }>(`leads/${leadId}/thread/clean`, {});
+    return this.api.postData<{ message: string, lead: any }>(`leads/${leadId}/thread-cleanups`, {});
   }
 }

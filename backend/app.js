@@ -61,7 +61,7 @@ app.use(helmet({
 }));
 
 // --- Diagnostic Routes (More resilient for Vercel Rewrites) ---
-app.all(['/api/health', '/api/ping', '/health', '/ping'], (req, res) => {
+app.all(['/api/v1/health', '/api/v1/ping', '/api/health', '/api/ping', '/health', '/ping'], (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.status(200).json({
     status: 'online',
@@ -94,6 +94,7 @@ const sessionMiddleware = session({
 app.use(passport.initialize());
 
 // ONLY apply session and passport to Google Auth routes to protect the rest of the API
+app.use('/api/v1/auth/google', sessionMiddleware, passport.session());
 app.use('/api/auth/google', sessionMiddleware, passport.session());
 app.use('/auth/google', sessionMiddleware, passport.session());
 
@@ -111,7 +112,7 @@ app.use(async (req, res, next) => {
   }
 });
 
-app.get('/api/debug-bundle', async (req, res) => {
+app.get('/api/v1/debug-bundle', async (req, res) => {
   if (isProd) return res.status(404).json({ error: 'Not Found' });
   const fs = require('fs').promises;
   async function listFiles(dir) {
@@ -191,36 +192,48 @@ app.get('/', (req, res) => {
 });
 
 // --- Feature Routers ---
+app.use('/api/v1/cron', cronRouter);
 app.use('/api/cron', cronRouter);
 app.use('/cron', cronRouter);
 
 // Missing routes removed
+app.use('/api/v1', indexRouter);
 app.use('/api', indexRouter);
 app.use('/', indexRouter);
 
+app.use('/api/v1/inbox', inboxRoutes);
 app.use('/api/inbox', inboxRoutes);
+
+app.use('/api/v1/outreach', outreachRoutes);
 app.use('/api/outreach', outreachRoutes);
 app.use('/outreach', outreachRoutes);
+
+app.use('/api/v1/leads', leadsRoutes);
 app.use('/api/leads', leadsRoutes);
 app.use('/leads', leadsRoutes);
 
+app.use('/api/v1/auth', authRouter);
 app.use('/api/auth', authRouter);
 app.use('/auth', authRouter);
 
 if (aiRouter) {
+  app.use('/api/v1/ai', aiRouter);
   app.use('/api/ai', aiRouter);
   app.use('/ai', aiRouter);
 }
 
 // Index router should be last as it handles broad feature paths
+app.use('/api/v1', indexRouter);
 app.use('/api', indexRouter);
 app.use('/', indexRouter);
 
 // Error handler
 app.use((err, req, res, next) => {
+  console.error('[Global Error Handler]', err);
+  if (res.headersSent) return next(err);
+  
   res.status(err.status || 500).json({
-    message: err.message,
-    error: req.app.get('env') === 'development' ? err : {}
+    message: isProd ? 'Internal Server Error' : err.message
   });
 });
 

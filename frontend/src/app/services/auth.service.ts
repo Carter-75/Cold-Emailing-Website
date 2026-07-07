@@ -70,7 +70,7 @@ export class AuthService {
       return;
     }
 
-    this.api.getData<any>('auth/user').subscribe({
+    this.api.getData<any>('auth/me').subscribe({
       next: (user) => {
         this.user.set(user);
         this.isAuthenticated.set(true);

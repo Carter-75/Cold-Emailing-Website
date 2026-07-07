@@ -102,11 +102,11 @@ export class InboxDataSource extends DataSource<any | undefined> {
     if (this._filters.repliesOnly) params = params.set('repliesOnly', 'true');
 
     // Determine correct endpoint based on viewMode
-    let endpoint = '/api/inbox';
-    if (this._filters.viewMode === 'drafts') endpoint = '/api/inbox/drafts';
-    else if (this._filters.viewMode === 'unsubbed') endpoint = '/api/inbox/unsubbed';
-    else if (this._filters.viewMode === 'pending') endpoint = '/api/inbox/pending';
-    else if (this._filters.viewMode === 'contacted') endpoint = '/api/inbox/contacted';
+    let endpoint = '/api/v1/inbox';
+    if (this._filters.viewMode === 'drafts') endpoint = '/api/v1/inbox/drafts';
+    else if (this._filters.viewMode === 'unsubbed') endpoint = '/api/v1/inbox/unsubbed';
+    else if (this._filters.viewMode === 'pending') endpoint = '/api/v1/inbox/pending';
+    else if (this._filters.viewMode === 'contacted') endpoint = '/api/v1/inbox/contacted';
 
     console.log(`[InboxDataSource] Fetching page ${pageIndex + 1} for ${endpoint}...`);
     

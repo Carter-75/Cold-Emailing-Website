@@ -82,7 +82,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     // Auto-sync IMAP with remote server on load
     this.syncIMAP();
     
-    this.http.get<{primary: string, emails: string[]}>('/api/inbox/connected-emails').subscribe({
+    this.http.get<{primary: string, emails: string[]}>('/api/v1/inbox/connected-emails').subscribe({
       next: (res) => {
         this.availableEmails.set(res.emails);
         this.primaryEmail.set(res.primary || '');
@@ -94,7 +94,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   fetchStats() {
-    this.http.get<any>('/api/inbox/stats').subscribe({
+    this.http.get<any>('/api/v1/inbox/stats').subscribe({
       next: (data) => this.stats.set(data)
     });
   }
@@ -110,7 +110,7 @@ export class InboxComponent implements OnInit, OnDestroy {
 
   syncIMAP() {
     this.loading.set(true);
-    this.http.post('/api/inbox/sync', {}).subscribe({
+    this.http.post('/api/v1/inbox/syncs', {}).subscribe({
       next: (res: any) => {
         console.log('Sync result:', res.summary);
         this.dataSource.reload();
@@ -201,7 +201,7 @@ export class InboxComponent implements OnInit, OnDestroy {
       this.fetchStats();
       
       // Fire request to backend
-      this.http.patch(`/api/inbox/${msg._id}`, { isRead: true }).subscribe();
+      this.http.patch(`/api/v1/inbox/${msg._id}`, { isRead: true }).subscribe();
     }
   }
 
@@ -219,7 +219,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     }
 
     this.loading.set(true);
-    this.http.post(`/api/inbox/${msg._id}/replies`, { textBody: finalBody }).subscribe({
+    this.http.post(`/api/v1/inbox/${msg._id}/replies`, { textBody: finalBody }).subscribe({
       next: (res: any) => this.handleDelayedSendSuccess(res),
       error: () => {
         alert('Failed to send reply');
@@ -237,7 +237,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     }
 
     this.loading.set(true);
-    this.http.post('/api/inbox/messages', {
+    this.http.post('/api/v1/inbox/messages', {
       fromEmail: this.composeFrom(),
       to: this.composeTo(),
       subject: this.composeSubject(),
@@ -285,7 +285,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     if (!sendId) return;
 
     this.loading.set(true);
-    this.http.delete(`/api/inbox/${this.selectedMessage()._id}/replies/${sendId}`).subscribe({
+    this.http.delete(`/api/v1/inbox/${this.selectedMessage()._id}/replies/${sendId}`).subscribe({
       next: () => {
         clearInterval(this.countdownInterval);
         this.pendingReplyId.set(null);
@@ -307,7 +307,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     const item = this.dataSource.currentData.find(m => m._id === msgId);
     newStatus = item ? !item.isStarred : true;
 
-    this.http.patch(`/api/inbox/${msgId}`, { isStarred: newStatus }).subscribe({
+    this.http.patch(`/api/v1/inbox/${msgId}`, { isStarred: newStatus }).subscribe({
       next: () => this.dataSource.reload(),
       error: () => this.dataSource.reload() // revert on error
     });
@@ -448,14 +448,14 @@ export class InboxComponent implements OnInit, OnDestroy {
       this.currentDraftId.set(null);
 
       // Background process
-      Promise.all(ids.map(id => this.http.delete(`/api/inbox/drafts/${id}`).toPromise()))
+      Promise.all(ids.map(id => this.http.delete(`/api/v1/inbox/drafts/${id}`).toPromise()))
         .catch(err => console.error('Failed to delete some drafts in background', err));
       return;
     }
     
     if (this.viewMode() === 'unsubbed' || this.viewMode() === 'pending' || this.viewMode() === 'contacted') return;
 
-    const endpoint = this.viewMode() === 'trash' ? '/api/inbox/batch-permanent-delete' : '/api/inbox/batch-delete';
+    const endpoint = this.viewMode() === 'trash' ? '/api/v1/inbox/permanent' : '/api/v1/inbox/trash';
     const action = this.viewMode() === 'trash' ? 'permanently delete' : 'move to trash';
     if (!confirm(`Are you sure you want to ${action} ${ids.length} emails?`)) return;
 
@@ -481,7 +481,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     const allIds = this.dataSource.currentData.map(m => m._id);
     if (allIds.length === 0) return;
 
-    const endpoint = this.viewMode() === 'trash' ? '/api/inbox/batch-permanent-delete' : '/api/inbox/batch-delete';
+    const endpoint = this.viewMode() === 'trash' ? '/api/v1/inbox/permanent' : '/api/v1/inbox/trash';
 
     // UI update
     this.dataSource.reload();
@@ -505,7 +505,7 @@ export class InboxComponent implements OnInit, OnDestroy {
       context = `From: ${this.selectedMessage().from}\nSubject: ${this.selectedMessage().subject}\nMessage:\n${this.selectedMessage().textBody}`;
     }
 
-    this.http.post('/api/inbox/ai-draft', { intent, threadContext: context }).subscribe({
+    this.http.post('/api/v1/inbox/ai-draft', { intent, threadContext: context }).subscribe({
       next: (res: any) => {
         if (res.warning) {
           const proceed = confirm(`⚠️ AI WARNING:\n${res.warning}\n\nDo you still want to insert this draft?`);
@@ -536,8 +536,8 @@ export class InboxComponent implements OnInit, OnDestroy {
     };
 
     const request = this.currentDraftId() 
-      ? this.http.put(`/api/inbox/drafts/${this.currentDraftId()}`, payload)
-      : this.http.post('/api/inbox/drafts', payload);
+      ? this.http.put(`/api/v1/inbox/drafts/${this.currentDraftId()}`, payload)
+      : this.http.post('/api/v1/inbox/drafts', payload);
 
     request.subscribe({
       next: (res: any) => {
@@ -563,7 +563,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     }
     
     // Background request
-    this.http.delete(`/api/inbox/drafts/${id}`).subscribe({
+    this.http.delete(`/api/v1/inbox/drafts/${id}`).subscribe({
       error: () => console.error('Failed to delete draft in background')
     });
   }
