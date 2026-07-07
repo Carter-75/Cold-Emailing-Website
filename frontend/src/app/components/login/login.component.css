@@ -1,1 +1,13 @@
 /* Login Component Styles */
+
+.niche-item-large {
+  animation: niche-slide-large 3s infinite;
+  white-space: nowrap;
+}
+
+@keyframes niche-slide-large {
+  0% { transform: translateY(60px); opacity: 0; filter: blur(10px); }
+  10% { transform: translateY(0); opacity: 1; filter: blur(0); }
+  90% { transform: translateY(0); opacity: 1; filter: blur(0); }
+  100% { transform: translateY(-60px); opacity: 0; filter: blur(10px); }
+}

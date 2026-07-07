@@ -53,7 +53,7 @@
     <div class="relative h-[120px] w-full overflow-hidden flex items-center">
       <ng-container *ngFor="let niche of marketNiches; let i = index">
         <div *ngIf="i === currentNicheIndex()" 
-             class="niche-item-large text-7xl xl:text-8xl font-black uppercase tracking-tighter bg-gradient-to-r from-orange-600 via-yellow-500 to-orange-400 bg-clip-text text-transparent absolute left-4 animate-in fade-in slide-in-from-bottom-8 duration-500">
+             class="niche-item-large text-7xl xl:text-8xl font-black uppercase tracking-tighter bg-gradient-to-r from-orange-600 via-yellow-500 to-orange-400 bg-clip-text text-transparent absolute left-4">
           {{ niche }}
         </div>
       </ng-container>
