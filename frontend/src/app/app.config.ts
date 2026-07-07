@@ -45,7 +45,8 @@ import {
   X,
   Edit3,
   Loader,
-  CheckSquare
+  CheckSquare,
+  Beaker
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -95,7 +96,8 @@ export const appConfig: ApplicationConfig = {
         X,
         Edit3,
         Loader,
-        CheckSquare
+        CheckSquare,
+        Beaker
       })
     }
   ]
