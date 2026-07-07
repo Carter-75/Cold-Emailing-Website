@@ -54,7 +54,7 @@ class SequenceService {
     try {
       // Step 0: Enrichment (If still in discovery status)
       if (lead.status === 'discovery') {
-        const email = await EnrichmentService.findEmail(lead.businessName, lead.city, user.config.apolloKey);
+        const email = await EnrichmentService.findEmail(lead.businessName, lead.city, user.config.apolloKey, false, lead.website);
         if (!email) {
           lead.status = 'invalid'; // No email found, give up
           await lead.save();

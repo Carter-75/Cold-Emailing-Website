@@ -257,7 +257,7 @@ class OutreachEngine {
     // Enrichment (Apollo - optional)
     if (user.config.apolloKey) {
       try {
-        const email = await EnrichmentService.findEmail(lead.businessName, lead.city, user.config.apolloKey);
+        const email = await EnrichmentService.findEmail(lead.businessName, lead.city, user.config.apolloKey, false, lead.website);
         if (email) lead.recipientEmail = email;
       } catch (err) {
         console.warn(`[Engine] Enrichment failed, moving to verify list anyway: ${err.message}`);
