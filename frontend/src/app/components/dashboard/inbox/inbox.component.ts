@@ -40,7 +40,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   private mouseY: number = 0;
   private mouseX: number = 0;
 
-  viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'|'pending'|'contacted'|'warm-up'|'dmarc'>('inbox');
+  viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'|'discovery'|'leads'|'warm-up'|'dmarc'>('inbox');
   selectedAccount = signal<string>('all');
   primaryEmail = signal<string>('');
   showLeadRepliesOnly = signal<boolean>(false);
@@ -138,7 +138,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     return s[email]?.unread || 0;
   }
 
-  switchView(mode: 'inbox'|'trash'|'drafts'|'unsubbed'|'pending'|'contacted'|'warm-up'|'dmarc') {
+  switchView(mode: 'inbox'|'trash'|'drafts'|'unsubbed'|'discovery'|'leads'|'warm-up'|'dmarc') {
     this.viewMode.set(mode);
     this.onFiltersChanged();
     this.selectedIds.set(new Set());
@@ -453,7 +453,7 @@ export class InboxComponent implements OnInit, OnDestroy {
       return;
     }
     
-    if (this.viewMode() === 'unsubbed' || this.viewMode() === 'pending' || this.viewMode() === 'contacted') return;
+    if (this.viewMode() === 'unsubbed' || this.viewMode() === 'discovery' || this.viewMode() === 'leads') return;
 
     const endpoint = this.viewMode() === 'trash' ? '/api/v1/inbox/permanent' : '/api/v1/inbox/trash';
     const action = this.viewMode() === 'trash' ? 'permanently delete' : 'move to trash';
@@ -474,7 +474,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   emptyInbox() {
-    if (this.viewMode() === 'drafts' || this.viewMode() === 'unsubbed' || this.viewMode() === 'pending' || this.viewMode() === 'contacted') return;
+    if (this.viewMode() === 'drafts' || this.viewMode() === 'unsubbed' || this.viewMode() === 'discovery' || this.viewMode() === 'leads') return;
     
     const action = this.viewMode() === 'trash' ? 'permanently delete ALL trashed' : 'move ALL messages to trash';
     if (!confirm(`WARNING: Are you sure you want to ${action} messages?`)) return;

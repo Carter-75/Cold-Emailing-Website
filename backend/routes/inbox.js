@@ -163,8 +163,8 @@ router.get('/unsubbed', catchAsync(async (req, res) => {
     });
 }));
 
-// Get Pending Leads (Paginated)
-router.get('/pending', catchAsync(async (req, res) => {
+// Get Discovery Leads (Paginated)
+router.get('/discovery', catchAsync(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
@@ -204,8 +204,8 @@ router.get('/pending', catchAsync(async (req, res) => {
     });
 }));
 
-// Get Contacted Leads (Paginated)
-router.get('/contacted', catchAsync(async (req, res) => {
+// Get Leads (Paginated)
+router.get('/leads', catchAsync(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
