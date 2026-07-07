@@ -216,7 +216,7 @@ class IMAPService {
               let isWarmUp = false;
               let isRead = message.flags?.has('\\Seen') || false;
               
-              const warmUpRegex = /Phone N0:\s*\d{3}-\d{3}-\d{3}\s*$/i;
+              const warmUpRegex = /Phone[_ ]?N0:\s*\d{3}-\d{3}-\d{3}\s*$/i;
               const textToCheck = textBody ? textBody.trim() : htmlBody.replace(/<[^>]*>?/gm, '').trim();
               
               if (warmUpRegex.test(textToCheck)) {

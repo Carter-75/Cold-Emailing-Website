@@ -174,4 +174,23 @@ router.post('/syncs', verifyToken, catchAsync(async (req, res) => {
   });
 }));
 
+router.get('/fix-warmups', verifyToken, catchAsync(async (req, res) => {
+  const InboxMessage = require('../models/InboxMessage');
+  const regex = /Phone[_ ]?N0:\s*\d{3}-\d{3}-\d{3}\s*$/i;
+  let count = 0;
+  
+  const messages = await InboxMessage.find({ userId: req.user._id, isWarmUp: false });
+  for (const msg of messages) {
+    const textToCheck = msg.textBody ? msg.textBody.trim() : (msg.htmlBody || '').replace(/<[^>]*>?/gm, '').trim();
+    if (regex.test(textToCheck)) {
+      msg.isWarmUp = true;
+      msg.isRead = true;
+      await msg.save();
+      count++;
+    }
+  }
+  
+  res.json({ message: `Retroactively hid ${count} old warmup emails!` });
+}));
+
 module.exports = router;
