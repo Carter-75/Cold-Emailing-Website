@@ -182,15 +182,20 @@ router.get('/fix-warmups', verifyToken, catchAsync(async (req, res) => {
   const messages = await InboxMessage.find({ userId: req.user._id, isWarmUp: false });
   for (const msg of messages) {
     const textToCheck = msg.textBody ? msg.textBody.trim() : (msg.htmlBody || '').replace(/<[^>]*>?/gm, '').trim();
-    if (regex.test(textToCheck)) {
+    
+    const isDmarc = (msg.from && msg.from.toLowerCase().includes('dmarc')) || 
+                    (msg.subject && msg.subject.toLowerCase().includes('dmarc')) || 
+                    (msg.to && msg.to.toLowerCase().includes('dmarc'));
+                    
+    if (regex.test(textToCheck) || isDmarc) {
       msg.isWarmUp = true;
-      msg.isRead = true;
+      // We explicitly DO NOT auto-read these so they reflect their real state
       await msg.save();
       count++;
     }
   }
   
-  res.json({ message: `Retroactively hid ${count} old warmup emails!` });
+  res.json({ message: `Retroactively hid ${count} old warmup/DMARC emails!` });
 }));
 
 module.exports = router;

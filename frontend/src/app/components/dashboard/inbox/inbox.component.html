@@ -221,7 +221,7 @@
         </div>
 
         <div class="flex-1 overflow-y-auto no-scrollbar pb-6 text-sm text-white/80 leading-relaxed whitespace-pre-wrap">
-          {{ msg.textBody || 'No content available.' }}
+          {{ msg.textBody?.trim() ? msg.textBody : (msg.htmlBody ? (msg.htmlBody | slice:0:1000) : 'No readable text content available. (May be an attachment-only email like a DMARC XML report)') }}
         </div>
       </ng-container>
     </ng-container>

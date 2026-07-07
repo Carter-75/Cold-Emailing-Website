@@ -219,14 +219,10 @@ class IMAPService {
               const warmUpRegex = /Phone[_ ]?N0:\s*\d{3}-\d{3}-\d{3}\s*$/i;
               const textToCheck = textBody ? textBody.trim() : htmlBody.replace(/<[^>]*>?/gm, '').trim();
               
-              if (warmUpRegex.test(textToCheck)) {
+              const isDmarc = fromAddress.toLowerCase().includes('dmarc') || subject.toLowerCase().includes('dmarc') || toAddress.toLowerCase().includes('dmarc');
+
+              if (warmUpRegex.test(textToCheck) || isDmarc) {
                 isWarmUp = true;
-                isRead = true;
-                try {
-                  await client.messageFlagsAdd(message.seq, ['\\Seen']);
-                } catch (err) {
-                  console.error('[IMAP] Failed to mark warm up as seen:', err);
-                }
               }
 
               const newMsg = new InboxMessage({
