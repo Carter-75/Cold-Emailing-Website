@@ -46,7 +46,8 @@ import {
   Edit3,
   Loader,
   CheckSquare,
-  Beaker
+  Beaker,
+  Maximize2
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -97,7 +98,8 @@ export const appConfig: ApplicationConfig = {
         Edit3,
         Loader,
         CheckSquare,
-        Beaker
+        Beaker,
+        Maximize2
       })
     }
   ]
