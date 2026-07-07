@@ -378,8 +378,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     const tl = gsap.timeline({ defaults: { ease: 'power4.out', duration: 1.2 } });
 
-    tl.from(aside, { x: -100, opacity: 0 })
-      .from(header, { y: -50, opacity: 0 }, '-=0.8');
+    if (window.innerWidth >= 1024) {
+      tl.from(aside, { x: -100, opacity: 0 })
+        .from(header, { y: -50, opacity: 0 }, '-=0.8');
+    } else {
+      tl.from(aside, { opacity: 0 })
+        .from(header, { y: -50, opacity: 0 }, '-=0.8');
+    }
 
   }
 }
