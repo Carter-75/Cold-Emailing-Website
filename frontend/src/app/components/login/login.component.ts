@@ -25,13 +25,15 @@ export class LoginComponent {
     displayName: ''
   };
 
-  animatedWords = ['Cold Emailing', 'Lead Generation', 'Sales Automation', 'Client Growth'];
-  currentWordIndex = signal(0);
+  marketNiches = [
+    'SaaS Growth', 'Agency Scaling', 'Selling Apps', 'B2B Sales', 'Recruiting', 'Startups'
+  ];
+  currentNicheIndex = signal(0);
   private wordInterval: any;
 
   ngOnInit() {
     this.wordInterval = setInterval(() => {
-      this.currentWordIndex.update(i => (i + 1) % this.animatedWords.length);
+      this.currentNicheIndex.update(i => (i + 1) % this.marketNiches.length);
     }, 2500);
   }
 
