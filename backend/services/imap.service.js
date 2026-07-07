@@ -214,15 +214,24 @@ class IMAPService {
               const htmlBody = parsed.html || '';
 
               let isWarmUp = false;
+              let isDmarc = false;
               let isRead = message.flags?.has('\\Seen') || false;
               
               const warmUpRegex = /Phone[_ ]?N0:\s*\d{3}-\d{3}-\d{3}\s*$/i;
               const textToCheck = textBody ? textBody.trim() : htmlBody.replace(/<[^>]*>?/gm, '').trim();
               
-              const isDmarc = fromAddress.toLowerCase().includes('dmarc') || subject.toLowerCase().includes('dmarc') || toAddress.toLowerCase().includes('dmarc');
+              const isDmarcCheck = fromAddress.toLowerCase().includes('dmarc') || subject.toLowerCase().includes('dmarc') || toAddress.toLowerCase().includes('dmarc');
 
-              if (warmUpRegex.test(textToCheck) || isDmarc) {
+              if (warmUpRegex.test(textToCheck)) {
                 isWarmUp = true;
+                isRead = true;
+                try {
+                  await client.messageFlagsAdd(message.seq, ['\\Seen']);
+                } catch (err) {
+                  console.error('[IMAP] Failed to mark warm up as seen:', err);
+                }
+              } else if (isDmarcCheck) {
+                isDmarc = true;
               }
 
               const newMsg = new InboxMessage({
@@ -236,6 +245,7 @@ class IMAPService {
                 htmlBody: htmlBody,
                 isRead: isRead,
                 isWarmUp: isWarmUp,
+                isDmarc: isDmarc,
                 isReply: isLeadReply,
                 date: message.envelope.date || new Date()
               });

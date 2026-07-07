@@ -25,6 +25,9 @@
       <button (click)="switchView('warm-up')" [ngClass]="{'bg-orange-500/20 text-orange-400': viewMode() === 'warm-up', 'text-white/40 hover:text-white/80': viewMode() !== 'warm-up'}" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-center">
         Warm Up
       </button>
+      <button (click)="switchView('dmarc')" [ngClass]="{'bg-rose-500/20 text-rose-400': viewMode() === 'dmarc', 'text-white/40 hover:text-white/80': viewMode() !== 'dmarc'}" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-center">
+        DMARC
+      </button>
     </div>
 
     <div class="mb-4">
@@ -198,30 +201,46 @@
       <ng-container *ngIf="selectedMessage() as msg">
         <div class="border-b border-white/5 pb-6 mb-6 shrink-0">
           <div class="flex items-start justify-between mb-4">
-            <h3 class="text-2xl font-black tracking-tight">{{ msg.subject }}</h3>
+            <h3 class="text-2xl font-black tracking-tight">
+              {{ (viewMode() === 'unsubbed' || viewMode() === 'pending' || viewMode() === 'contacted') ? ((msg.firstName ? msg.firstName + ' ' + msg.lastName : msg.businessName) + ' - ' + msg.status) : msg.subject }}
+            </h3>
             <div class="flex items-center gap-2">
               <button (click)="isFullscreen.set(!isFullscreen())" class="text-white/40 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-all" title="Toggle Fullscreen">
                 <lucide-icon [name]="isFullscreen() ? 'minimize-2' : 'maximize-2'" class="w-4 h-4"></lucide-icon>
               </button>
-              <button *ngIf="!isReplying()" (click)="openReply()" class="px-4 py-2 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors border border-orange-500/20 cursor-pointer shadow-lg shadow-orange-500/10">
+              <button *ngIf="!isReplying() && viewMode() !== 'pending' && viewMode() !== 'contacted' && viewMode() !== 'unsubbed'" (click)="openReply()" class="px-4 py-2 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors border border-orange-500/20 cursor-pointer shadow-lg shadow-orange-500/10">
                 Reply
               </button>
             </div>
           </div>
           <div class="flex items-center justify-between text-xs text-white/60 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
             <div class="space-y-1">
-              <p><span class="font-bold text-white uppercase tracking-widest text-[10px] mr-2">From</span> {{ msg.from }}</p>
-              <p><span class="font-bold text-white uppercase tracking-widest text-[10px] mr-2">To</span> {{ msg.to }}</p>
+              <p><span class="font-bold text-white uppercase tracking-widest text-[10px] mr-2">From</span> {{ (viewMode() === 'unsubbed' || viewMode() === 'pending' || viewMode() === 'contacted') ? msg.userId?.config?.senderEmail : msg.from }}</p>
+              <p><span class="font-bold text-white uppercase tracking-widest text-[10px] mr-2">To</span> {{ (viewMode() === 'unsubbed' || viewMode() === 'pending' || viewMode() === 'contacted') ? msg.recipientEmail : msg.to }}</p>
             </div>
             <div class="text-right space-y-1">
-              <p class="font-bold">{{ msg.date | date:'medium' }}</p>
-              <p class="text-[10px] uppercase font-black tracking-widest text-orange-500">Inbox: {{ msg.inboxEmail }}</p>
+              <p class="font-bold">{{ ((viewMode() === 'unsubbed' || viewMode() === 'pending' || viewMode() === 'contacted') ? msg.updatedAt : msg.date) | date:'medium' }}</p>
+              <p class="text-[10px] uppercase font-black tracking-widest text-orange-500" *ngIf="msg.inboxEmail">Inbox: {{ msg.inboxEmail }}</p>
             </div>
           </div>
         </div>
 
         <div class="flex-1 overflow-y-auto no-scrollbar pb-6 text-sm text-white/80 leading-relaxed whitespace-pre-wrap">
-          {{ msg.textBody?.trim() ? msg.textBody : (msg.htmlBody ? (msg.htmlBody | slice:0:1000) : 'No readable text content available. (May be an attachment-only email like a DMARC XML report)') }}
+          <ng-container *ngIf="viewMode() === 'contacted' || viewMode() === 'pending' || viewMode() === 'unsubbed'">
+            <div *ngIf="msg.thread && msg.thread.length > 0; else noThread">
+              <div *ngFor="let t of msg.thread" class="mb-4 pb-4 border-b border-white/10">
+                <p class="text-xs text-white/50 mb-1">{{ t.timestamp | date:'medium' }}</p>
+                <p class="font-bold text-white mb-2">{{ t.subject }}</p>
+                <div [innerHTML]="t.body" class="text-white/80"></div>
+              </div>
+            </div>
+            <ng-template #noThread>
+              <p>This lead is currently in the '{{ msg.status }}' stage, but there is no email thread recorded yet (possibly scheduled or awaiting dispatch).</p>
+            </ng-template>
+          </ng-container>
+          <ng-container *ngIf="viewMode() !== 'contacted' && viewMode() !== 'pending' && viewMode() !== 'unsubbed'">
+            {{ msg.textBody?.trim() ? msg.textBody : (msg.htmlBody ? (msg.htmlBody | slice:0:1000) : 'No readable text content available. (May be an attachment-only email like a DMARC XML report)') }}
+          </ng-container>
         </div>
       </ng-container>
     </ng-container>

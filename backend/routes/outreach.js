@@ -179,7 +179,7 @@ router.get('/fix-warmups', verifyToken, catchAsync(async (req, res) => {
   const regex = /Phone[_ ]?N0:\s*\d{3}-\d{3}-\d{3}\s*$/i;
   let count = 0;
   
-  const messages = await InboxMessage.find({ userId: req.user._id, isWarmUp: false });
+  const messages = await InboxMessage.find({ userId: req.user._id, $or: [{ isWarmUp: false }, { isDmarc: false }] });
   for (const msg of messages) {
     const textToCheck = msg.textBody ? msg.textBody.trim() : (msg.htmlBody || '').replace(/<[^>]*>?/gm, '').trim();
     
@@ -187,15 +187,24 @@ router.get('/fix-warmups', verifyToken, catchAsync(async (req, res) => {
                     (msg.subject && msg.subject.toLowerCase().includes('dmarc')) || 
                     (msg.to && msg.to.toLowerCase().includes('dmarc'));
                     
-    if (regex.test(textToCheck) || isDmarc) {
+    let modified = false;
+    if (regex.test(textToCheck)) {
       msg.isWarmUp = true;
-      // We explicitly DO NOT auto-read these so they reflect their real state
+      msg.isRead = true; // Warmups are read automatically
+      modified = true;
+    } else if (isDmarc) {
+      msg.isDmarc = true;
+      msg.isWarmUp = false;
+      modified = true;
+    }
+    
+    if (modified) {
       await msg.save();
       count++;
     }
   }
   
-  res.json({ message: `Retroactively hid ${count} old warmup/DMARC emails!` });
+  res.json({ message: `Retroactively fixed ${count} old warmup/DMARC emails!` });
 }));
 
 module.exports = router;

@@ -22,6 +22,7 @@ router.get('/stats', catchAsync(async (req, res) => {
       userId: req.user._id,
       isTrashed: false,
       isWarmUp: false,
+      isDmarc: false,
       syncStatus: { $ne: 'pending_delete' }
     });
     
@@ -65,10 +66,15 @@ router.get('/', catchAsync(async (req, res) => {
       query.isWarmUp = true;
       query.isTrashed = false;
       query.syncStatus = { $ne: 'pending_delete' };
+    } else if (viewMode === 'dmarc') {
+      query.isDmarc = true;
+      query.isTrashed = false;
+      query.syncStatus = { $ne: 'pending_delete' };
     } else {
       // Default 'inbox' view
       query.isTrashed = false;
       query.isWarmUp = false; // Hide warm-ups from main inbox
+      query.isDmarc = false; // Hide dmarc from main inbox
       query.syncStatus = { $ne: 'pending_delete' };
     }
 

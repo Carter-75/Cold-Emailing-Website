@@ -40,7 +40,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   private mouseY: number = 0;
   private mouseX: number = 0;
 
-  viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'|'pending'|'contacted'|'warm-up'>('inbox');
+  viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'|'pending'|'contacted'|'warm-up'|'dmarc'>('inbox');
   selectedAccount = signal<string>('all');
   primaryEmail = signal<string>('');
   showLeadRepliesOnly = signal<boolean>(false);
@@ -138,7 +138,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     return s[email]?.unread || 0;
   }
 
-  switchView(mode: 'inbox'|'trash'|'drafts'|'unsubbed'|'pending'|'contacted'|'warm-up') {
+  switchView(mode: 'inbox'|'trash'|'drafts'|'unsubbed'|'pending'|'contacted'|'warm-up'|'dmarc') {
     this.viewMode.set(mode);
     this.onFiltersChanged();
     this.selectedIds.set(new Set());
