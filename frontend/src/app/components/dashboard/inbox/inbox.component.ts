@@ -6,11 +6,13 @@ import { LucideAngularModule } from 'lucide-angular';
 import { QuillModule } from 'ngx-quill';
 import { AuthService } from '../../../services/auth.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { InboxDataSource } from '../../../models/inbox.datasource';
+import { ScrollingModule, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 
 @Component({
   selector: 'app-inbox',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, QuillModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, QuillModule, ScrollingModule],
   templateUrl: './inbox.component.html'
 })
 export class InboxComponent implements OnInit, OnDestroy {
@@ -18,13 +20,11 @@ export class InboxComponent implements OnInit, OnDestroy {
   public auth = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
   
-  @ViewChild('scrollContainer') scrollContainer!: ElementRef;
+  @ViewChild(CdkVirtualScrollViewport) viewport!: CdkVirtualScrollViewport;
 
-  messages = signal<any[]>([]);
-  drafts = signal<any[]>([]);
-  unsubbed = signal<any[]>([]);
-  pending = signal<any[]>([]);
-  contacted = signal<any[]>([]);
+  dataSource!: InboxDataSource;
+  stats = signal<any>({ all: { total: 0, unread: 0 } });
+
   selectedMessage = signal<any>(null);
   replyText = signal<string>('');
   loading = signal(false);
@@ -40,7 +40,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   private mouseY: number = 0;
   private mouseX: number = 0;
 
-  viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'|'pending'|'contacted'>('inbox');
+  viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'|'pending'|'contacted'|'warm-up'>('inbox');
   selectedAccount = signal<string>('all');
   primaryEmail = signal<string>('');
   showLeadRepliesOnly = signal<boolean>(false);
@@ -56,6 +56,13 @@ export class InboxComponent implements OnInit, OnDestroy {
   searchQuery = signal('');
 
   isDragging = false;
+  
+  // Custom scrollbar
+  isScrollDragging = false;
+  thumbTop = 0;
+  thumbHeight = 50;
+  private _scrollDragStartY = 0;
+  private _scrollDragStartOffset = 0;
 
   quillModules = {
     toolbar: [
@@ -68,26 +75,13 @@ export class InboxComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit() {
-    this.fetchMessages();
-    this.fetchDrafts();
-    this.fetchUnsubbed();
-    this.fetchPending();
-    this.fetchContacted();
+    this.dataSource = new InboxDataSource(this.http);
+    
+    this.fetchStats();
     
     // Auto-sync IMAP with remote server on load
     this.syncIMAP();
-  }
-
-  fetchMessages() {
-    this.loading.set(true);
-    this.http.get<any[]>('/api/inbox').subscribe({
-      next: (data) => {
-        this.messages.set(data);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false)
-    });
-
+    
     this.http.get<{primary: string, emails: string[]}>('/api/inbox/connected-emails').subscribe({
       next: (res) => {
         this.availableEmails.set(res.emails);
@@ -99,27 +93,18 @@ export class InboxComponent implements OnInit, OnDestroy {
     });
   }
 
-  fetchDrafts() {
-    this.http.get<any[]>('/api/inbox/drafts').subscribe({
-      next: (data) => this.drafts.set(data)
+  fetchStats() {
+    this.http.get<any>('/api/inbox/stats').subscribe({
+      next: (data) => this.stats.set(data)
     });
   }
 
-  fetchUnsubbed() {
-    this.http.get<any[]>('/api/inbox/unsubbed').subscribe({
-      next: (data) => this.unsubbed.set(data)
-    });
-  }
-
-  fetchPending() {
-    this.http.get<any[]>('/api/inbox/pending').subscribe({
-      next: (data) => this.pending.set(data)
-    });
-  }
-
-  fetchContacted() {
-    this.http.get<any[]>('/api/inbox/contacted').subscribe({
-      next: (data) => this.contacted.set(data)
+  onFiltersChanged() {
+    this.dataSource.updateFilters({
+      viewMode: this.viewMode(),
+      account: this.selectedAccount(),
+      search: this.searchQuery(),
+      repliesOnly: this.showLeadRepliesOnly()
     });
   }
 
@@ -128,7 +113,8 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.http.post('/api/inbox/sync', {}).subscribe({
       next: (res: any) => {
         console.log('Sync result:', res.summary);
-        this.fetchMessages();
+        this.dataSource.reload();
+        this.fetchStats();
         if (res.summary?.errors && res.summary.errors.length > 0) {
           alert('IMAP Connection Error:\n\n' + res.summary.errors.join('\n\n') + '\n\nPlease check your App Passwords and IMAP Host/Port settings.');
         }
@@ -140,69 +126,21 @@ export class InboxComponent implements OnInit, OnDestroy {
     });
   }
 
-  get filteredMessages() {
-    let list: any[] = [];
-    if (this.viewMode() === 'drafts') {
-      list = this.drafts().filter(m => {
-        if (this.selectedAccount() !== 'all' && m.inboxEmail !== this.selectedAccount()) return false;
-        return true;
-      });
-    } else if (this.viewMode() === 'unsubbed') {
-      list = this.unsubbed();
-    } else if (this.viewMode() === 'pending') {
-      list = this.pending();
-    } else if (this.viewMode() === 'contacted') {
-      list = this.contacted();
-    } else {
-      list = this.messages().filter(m => {
-        if (m.syncStatus === 'pending_delete') return false; // Hide from everywhere if permanently deleted
-        if (this.viewMode() === 'trash' ? !m.isTrashed : m.isTrashed) return false;
-        if (this.selectedAccount() !== 'all' && m.inboxEmail !== this.selectedAccount()) return false;
-        if (this.showLeadRepliesOnly() && !m.isReply) return false;
-        return true;
-      });
-    }
-
-    const query = this.searchQuery().toLowerCase().trim();
-    if (!query) return list;
-
-    return list.filter(m => {
-      const subject = (m.subject || '').toLowerCase();
-      const from = (m.from || '').toLowerCase();
-      const to = (m.to || '').toLowerCase();
-      const textBody = (m.textBody || '').toLowerCase();
-      const recipient = (m.recipientEmail || '').toLowerCase();
-      const name = (m.firstName ? m.firstName + ' ' + m.lastName : m.businessName || '').toLowerCase();
-
-      return subject.includes(query) || 
-             from.includes(query) || 
-             to.includes(query) || 
-             textBody.includes(query) ||
-             recipient.includes(query) ||
-             name.includes(query);
-    });
-  }
-
   getTotalCount(email: string | 'all'): number {
-    return this.messages().filter(m => {
-      if (m.isTrashed || m.syncStatus === 'pending_delete') return false;
-      if (email !== 'all' && m.inboxEmail !== email) return false;
-      if (this.showLeadRepliesOnly() && !m.isReply) return false;
-      return true;
-    }).length;
+    const s = this.stats();
+    if (!s) return 0;
+    return s[email]?.total || 0;
   }
 
   getUnreadCount(email: string | 'all'): number {
-    return this.messages().filter(m => {
-      if (m.isTrashed || m.syncStatus === 'pending_delete') return false;
-      if (email !== 'all' && m.inboxEmail !== email) return false;
-      if (this.showLeadRepliesOnly() && !m.isReply) return false;
-      return !m.isRead;
-    }).length;
+    const s = this.stats();
+    if (!s) return 0;
+    return s[email]?.unread || 0;
   }
 
-  switchView(mode: 'inbox'|'trash'|'drafts'|'unsubbed'|'pending'|'contacted') {
+  switchView(mode: 'inbox'|'trash'|'drafts'|'unsubbed'|'pending'|'contacted'|'warm-up') {
     this.viewMode.set(mode);
+    this.onFiltersChanged();
     this.selectedIds.set(new Set());
     this.selectedMessage.set(null);
     this.isComposing.set(false);
@@ -258,12 +196,12 @@ export class InboxComponent implements OnInit, OnDestroy {
     
     this.currentDraftId.set(null);
     if (!msg.isRead && (this.viewMode() === 'inbox' || this.viewMode() === 'trash')) {
-      // Mark as read locally
-      const updated = this.messages().map(m => m._id === msg._id ? { ...m, isRead: true } : m);
-      this.messages.set(updated);
+      // Mark as read locally (optimistic mutate)
+      msg.isRead = true;
+      this.fetchStats();
       
       // Fire request to backend
-      this.http.post(`/api/inbox/${msg._id}/read`, {}).subscribe();
+      this.http.patch(`/api/inbox/${msg._id}`, { isRead: true }).subscribe();
     }
   }
 
@@ -281,7 +219,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     }
 
     this.loading.set(true);
-    this.http.post(`/api/inbox/${msg._id}/reply`, { textBody: finalBody }).subscribe({
+    this.http.post(`/api/inbox/${msg._id}/replies`, { textBody: finalBody }).subscribe({
       next: (res: any) => this.handleDelayedSendSuccess(res),
       error: () => {
         alert('Failed to send reply');
@@ -299,7 +237,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     }
 
     this.loading.set(true);
-    this.http.post('/api/inbox/compose', {
+    this.http.post('/api/inbox/messages', {
       fromEmail: this.composeFrom(),
       to: this.composeTo(),
       subject: this.composeSubject(),
@@ -332,13 +270,13 @@ export class InboxComponent implements OnInit, OnDestroy {
           this.isComposing.set(false);
           this.isReplying.set(false);
           this.currentDraftId.set(null);
-          this.fetchMessages();
+          this.dataSource.reload();
         }
       }, 1000);
     } else {
       this.isComposing.set(false);
       this.currentDraftId.set(null);
-      this.fetchMessages();
+      this.dataSource.reload();
     }
   }
 
@@ -347,7 +285,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     if (!sendId) return;
 
     this.loading.set(true);
-    this.http.post(`/api/inbox/${this.selectedMessage()._id}/cancel-reply`, { sendId }).subscribe({
+    this.http.delete(`/api/inbox/${this.selectedMessage()._id}/replies/${sendId}`).subscribe({
       next: () => {
         clearInterval(this.countdownInterval);
         this.pendingReplyId.set(null);
@@ -362,12 +300,16 @@ export class InboxComponent implements OnInit, OnDestroy {
 
   toggleStar(msgId: string, event: Event) {
     event.stopPropagation();
-    // Optimistic update
-    const updated = this.messages().map(m => m._id === msgId ? { ...m, isStarred: !m.isStarred } : m);
-    this.messages.set(updated);
+    // We rely on the datasource to fetch the new status
+    let newStatus = false; // We can't know the exact new status without the current item state, but the server handles toggle or sets.
+    // Wait, the API might expect isStarred to be passed, but the old code grabbed it from the local signal.
+    // Let's just find the item in currentData
+    const item = this.dataSource.currentData.find(m => m._id === msgId);
+    newStatus = item ? !item.isStarred : true;
 
-    this.http.post(`/api/inbox/${msgId}/star`, {}).subscribe({
-      error: () => this.fetchMessages() // revert on error
+    this.http.patch(`/api/inbox/${msgId}`, { isStarred: newStatus }).subscribe({
+      next: () => this.dataSource.reload(),
+      error: () => this.dataSource.reload() // revert on error
     });
   }
 
@@ -405,12 +347,12 @@ export class InboxComponent implements OnInit, OnDestroy {
     if (this.animationFrameId !== null) return;
     
     const loop = () => {
-      if (!this.isDragging || !this.scrollContainer) {
+      if (!this.isDragging || !this.viewport) {
         this.animationFrameId = null;
         return;
       }
       
-      const container = this.scrollContainer.nativeElement;
+      const container = this.viewport.elementRef.nativeElement;
       const rect = container.getBoundingClientRect();
       const threshold = 60; // start scrolling when within 60px of the edge
       const scrollSpeed = 12; // pixels per frame
@@ -483,10 +425,10 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   toggleSelectAll() {
-    if (this.selectedIds().size === this.filteredMessages.length && this.filteredMessages.length > 0) {
+    if (this.selectedIds().size === this.dataSource.currentData.length && this.dataSource.currentData.length > 0) {
       this.selectedIds.set(new Set());
     } else {
-      const allIds = new Set(this.filteredMessages.map(m => m._id));
+      const allIds = new Set(this.dataSource.currentData.map(m => m._id));
       this.selectedIds.set(allIds);
     }
   }
@@ -498,8 +440,8 @@ export class InboxComponent implements OnInit, OnDestroy {
     if (this.viewMode() === 'drafts') {
       if (!confirm(`Delete ${ids.length} drafts?`)) return;
       
-      // Optimistic UI update
-      this.drafts.set(this.drafts().filter(d => !ids.includes(d._id)));
+      // UI update
+      this.dataSource.reload();
       this.selectedIds.set(new Set());
       this.selectedMessage.set(null);
       this.isComposing.set(false);
@@ -513,17 +455,12 @@ export class InboxComponent implements OnInit, OnDestroy {
     
     if (this.viewMode() === 'unsubbed' || this.viewMode() === 'pending' || this.viewMode() === 'contacted') return;
 
-    const endpoint = this.viewMode() === 'trash' ? '/api/inbox/permanent-delete' : '/api/inbox/delete';
+    const endpoint = this.viewMode() === 'trash' ? '/api/inbox/batch-permanent-delete' : '/api/inbox/batch-delete';
     const action = this.viewMode() === 'trash' ? 'permanently delete' : 'move to trash';
     if (!confirm(`Are you sure you want to ${action} ${ids.length} emails?`)) return;
 
-    // Optimistic UI update
-    const isTrash = this.viewMode() === 'trash';
-    if (isTrash) {
-      this.messages.set(this.messages().filter(m => !ids.includes(m._id)));
-    } else {
-      this.messages.set(this.messages().map(m => ids.includes(m._id) ? { ...m, isTrashed: true } : m));
-    }
+    // UI update
+    this.dataSource.reload();
 
     this.selectedIds.set(new Set());
     if (this.selectedMessage() && ids.includes(this.selectedMessage()._id)) {
@@ -541,18 +478,13 @@ export class InboxComponent implements OnInit, OnDestroy {
     
     const action = this.viewMode() === 'trash' ? 'permanently delete ALL trashed' : 'move ALL messages to trash';
     if (!confirm(`WARNING: Are you sure you want to ${action} messages?`)) return;
-    const allIds = this.filteredMessages.map(m => m._id);
+    const allIds = this.dataSource.currentData.map(m => m._id);
     if (allIds.length === 0) return;
 
-    const endpoint = this.viewMode() === 'trash' ? '/api/inbox/permanent-delete' : '/api/inbox/delete';
+    const endpoint = this.viewMode() === 'trash' ? '/api/inbox/batch-permanent-delete' : '/api/inbox/batch-delete';
 
-    // Optimistic UI update
-    const isTrash = this.viewMode() === 'trash';
-    if (isTrash) {
-      this.messages.set(this.messages().filter(m => !allIds.includes(m._id)));
-    } else {
-      this.messages.set(this.messages().map(m => allIds.includes(m._id) ? { ...m, isTrashed: true } : m));
-    }
+    // UI update
+    this.dataSource.reload();
 
     this.selectedIds.set(new Set());
     this.selectedMessage.set(null);
@@ -603,10 +535,14 @@ export class InboxComponent implements OnInit, OnDestroy {
       replyToMessageId: this.isComposing() ? null : this.selectedMessage()?._id
     };
 
-    this.http.post('/api/inbox/drafts', payload).subscribe({
+    const request = this.currentDraftId() 
+      ? this.http.put(`/api/inbox/drafts/${this.currentDraftId()}`, payload)
+      : this.http.post('/api/inbox/drafts', payload);
+
+    request.subscribe({
       next: (res: any) => {
         this.currentDraftId.set(res._id);
-        this.fetchDrafts();
+        this.dataSource.reload();
         this.loading.set(false);
         // show success indicator here if desired
       },
@@ -618,8 +554,8 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   deleteDraft(id: string) {
-    // Optimistic UI update
-    this.drafts.set(this.drafts().filter(d => d._id !== id));
+    // UI update
+    this.dataSource.reload();
     if (this.currentDraftId() === id) {
       this.currentDraftId.set(null);
       this.isComposing.set(false);
@@ -630,5 +566,112 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.http.delete(`/api/inbox/drafts/${id}`).subscribe({
       error: () => console.error('Failed to delete draft in background')
     });
+  }
+
+  // --- Custom Scrollbar Logic ---
+
+  onRawScroll() {
+    if (this.viewport) {
+      this.updateThumbPosition();
+    }
+  }
+
+  private updateThumbPosition() {
+    if (!this.viewport || !this.dataSource) return;
+
+    const offset = this.viewport.measureScrollOffset();
+    const totalHeight = this.dataSource.totalLength * 125; // itemSize is 125
+    const viewportHeight = this.viewport.getViewportSize();
+
+    if (totalHeight <= viewportHeight) {
+      this.thumbHeight = 0;
+      return;
+    }
+
+    const ratio = viewportHeight / totalHeight;
+    this.thumbHeight = Math.max(viewportHeight * ratio, 40);
+
+    const maxScroll = totalHeight - viewportHeight;
+    const scrollRatio = maxScroll > 0 ? offset / maxScroll : 0;
+    const maxThumbTop = viewportHeight - this.thumbHeight; 
+    this.thumbTop = scrollRatio * maxThumbTop;
+  }
+
+  startScrollDrag(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isScrollDragging = true;
+    this._scrollDragStartY = event.clientY;
+    this._scrollDragStartOffset = this.viewport?.measureScrollOffset() || 0;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      if (!this.isScrollDragging || !this.viewport) return;
+
+      const deltaY = moveEvent.clientY - this._scrollDragStartY;
+      const viewportHeight = this.viewport.getViewportSize();
+      const totalHeight = this.dataSource.totalLength * 125;
+      const maxScroll = totalHeight - viewportHeight;
+      const maxThumbTop = viewportHeight - this.thumbHeight;
+
+      if (maxThumbTop <= 0) return;
+      const scrollRatio = deltaY / maxThumbTop;
+      const scrollDelta = scrollRatio * maxScroll;
+
+      this.viewport.scrollToOffset(this._scrollDragStartOffset + scrollDelta);
+    };
+
+    const onMouseUp = () => {
+      this.isScrollDragging = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove, { passive: true });
+    document.addEventListener('mouseup', onMouseUp, { passive: true });
+  }
+
+  onTrackClick(event: MouseEvent) {
+    if (!this.viewport || !this.dataSource) return;
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const clickY = event.clientY - rect.top;
+    
+    // Center the thumb on the click
+    const viewportHeight = this.viewport.getViewportSize();
+    const totalHeight = this.dataSource.totalLength * 125;
+    const maxScroll = totalHeight - viewportHeight;
+    const maxThumbTop = viewportHeight - this.thumbHeight;
+    
+    if (maxThumbTop <= 0) return;
+    
+    let targetThumbTop = clickY - (this.thumbHeight / 2);
+    targetThumbTop = Math.max(0, Math.min(targetThumbTop, maxThumbTop));
+    
+    const scrollRatio = targetThumbTop / maxThumbTop;
+    const targetOffset = scrollRatio * maxScroll;
+    
+    // Smooth scroll to it
+    this.fastScrollToOffset(targetOffset);
+  }
+
+  fastScrollToOffset(targetOffset: number, duration: number = 300) {
+    if (!this.viewport) return;
+
+    const startOffset = this.viewport.measureScrollOffset();
+    const distance = targetOffset - startOffset;
+    const startTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      
+      this.viewport?.scrollToOffset(startOffset + distance * easeOut);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    requestAnimationFrame(animate);
   }
 }

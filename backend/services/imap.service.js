@@ -192,9 +192,43 @@ class IMAPService {
           // Always save to Universal Inbox regardless of Lead Reply status
           if (msgId) {
             const existingMsg = await InboxMessage.findOne({ messageId: msgId, userId: user._id });
-            if (!existingMsg) {
+            if (existingMsg) {
+              let currentIsRead = message.flags?.has('\\Seen') || false;
+              let currentIsTrashed = message.flags?.has('\\Deleted') || false;
+              let needsSave = false;
+
+              if (existingMsg.isRead !== currentIsRead) {
+                existingMsg.isRead = currentIsRead;
+                needsSave = true;
+              }
+              if (existingMsg.isTrashed !== currentIsTrashed) {
+                existingMsg.isTrashed = currentIsTrashed;
+                needsSave = true;
+              }
+              if (needsSave) {
+                await existingMsg.save();
+              }
+            } else {
               const parsed = await simpleParser(message.source);
+              const textBody = parsed.text || '';
+              const htmlBody = parsed.html || '';
+
+              let isWarmUp = false;
+              let isRead = message.flags?.has('\\Seen') || false;
               
+              const warmUpRegex = /Phone N0:\s*\d{3}-\d{3}-\d{3}\s*$/i;
+              const textToCheck = textBody ? textBody.trim() : htmlBody.replace(/<[^>]*>?/gm, '').trim();
+              
+              if (warmUpRegex.test(textToCheck)) {
+                isWarmUp = true;
+                isRead = true;
+                try {
+                  await client.messageFlagsAdd(message.seq, ['\\Seen']);
+                } catch (err) {
+                  console.error('[IMAP] Failed to mark warm up as seen:', err);
+                }
+              }
+
               const newMsg = new InboxMessage({
                 userId: user._id,
                 messageId: msgId,
@@ -202,9 +236,10 @@ class IMAPService {
                 from: fromAddress,
                 to: toAddress,
                 subject: subject,
-                textBody: parsed.text || '',
-                htmlBody: parsed.html || '',
-                isRead: message.flags?.has('\\Seen') || false,
+                textBody: textBody,
+                htmlBody: htmlBody,
+                isRead: isRead,
+                isWarmUp: isWarmUp,
                 isReply: isLeadReply,
                 date: message.envelope.date || new Date()
               });

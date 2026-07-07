@@ -13,6 +13,7 @@ const InboxMessageSchema = new mongoose.Schema({
   isReply: { type: Boolean, default: false },
   isStarred: { type: Boolean, default: false },
   isTrashed: { type: Boolean, default: false },
+  isWarmUp: { type: Boolean, default: false },
   syncStatus: { type: String, enum: ['synced', 'pending_trash', 'pending_delete'], default: 'synced' },
   date: Date,
   leadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead' } // Optional link if it relates to a lead

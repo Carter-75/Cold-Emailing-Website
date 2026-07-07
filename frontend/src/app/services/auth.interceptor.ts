@@ -1,20 +1,36 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
+import { AuthService } from './auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = localStorage.getItem('auth_token');
   const isApi = req.url.includes('/api');
+  const router = inject(Router);
+  const auth = inject(AuthService);
   
   console.log(`[Interceptor] Request: ${req.method} ${req.url} | Token Found: ${!!token} | Is API: ${isApi}`);
 
+  let modifiedReq = req;
   if (token && isApi) {
-    const cloned = req.clone({
+    modifiedReq = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
       }
     });
-    return next(cloned);
   }
   
-  return next(req);
+  return next(modifiedReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 || error.status === 403) {
+        console.warn('[Interceptor] Auth error (401/403). Logging out.');
+        auth.logout();
+        router.navigate(['/']);
+        auth.openAuthModal();
+      }
+      return throwError(() => error);
+    })
+  );
 };

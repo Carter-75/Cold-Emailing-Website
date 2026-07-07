@@ -15,11 +15,97 @@ const { verifyToken } = require('../middleware/auth');
 // Middleware to ensure authentication
 router.use(verifyToken);
 
-// Get all inbox messages
+// Get inbox stats
+router.get('/stats', async (req, res) => {
+  try {
+    const messages = await InboxMessage.find({ 
+      userId: req.user._id,
+      isTrashed: false,
+      isWarmUp: false,
+      syncStatus: { $ne: 'pending_delete' }
+    });
+    
+    const stats = { all: { total: 0, unread: 0 } };
+    
+    for (const m of messages) {
+      if (!stats[m.inboxEmail]) stats[m.inboxEmail] = { total: 0, unread: 0 };
+      
+      stats.all.total++;
+      stats[m.inboxEmail].total++;
+      
+      if (!m.isRead) {
+        stats.all.unread++;
+        stats[m.inboxEmail].unread++;
+      }
+    }
+    
+    res.json(stats);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch inbox stats' });
+  }
+});
+
+// Get all inbox messages (Paginated)
 router.get('/', async (req, res) => {
   try {
-    const messages = await InboxMessage.find({ userId: req.user._id }).sort({ date: -1 });
-    res.json(messages);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const { search, viewMode, account, repliesOnly } = req.query;
+
+    const query = { userId: req.user._id };
+
+    // Account filtering
+    if (account && account !== 'all') {
+      query.inboxEmail = account;
+    }
+
+    // ViewMode filtering
+    if (viewMode === 'trash') {
+      query.isTrashed = true;
+      query.syncStatus = { $ne: 'pending_delete' };
+    } else if (viewMode === 'warm-up') {
+      query.isWarmUp = true;
+      query.isTrashed = false;
+      query.syncStatus = { $ne: 'pending_delete' };
+    } else {
+      // Default 'inbox' view
+      query.isTrashed = false;
+      query.isWarmUp = false; // Hide warm-ups from main inbox
+      query.syncStatus = { $ne: 'pending_delete' };
+    }
+
+    // Replies only
+    if (repliesOnly === 'true') {
+      query.isReply = true;
+    }
+
+    // Search filtering
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { subject: searchRegex },
+        { from: searchRegex },
+        { to: searchRegex },
+        { textBody: searchRegex }
+      ];
+    }
+
+    const messages = await InboxMessage.find(query)
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await InboxMessage.countDocuments(query);
+
+    res.json({
+      items: messages,
+      total,
+      page,
+      pages: Math.ceil(total / limit)
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch inbox messages' });
@@ -48,68 +134,177 @@ router.get('/connected-emails', async (req, res) => {
   }
 });
 
-// Get Unsubscribed Leads (formatted as basic info for inbox view)
+// Get Unsubscribed Leads (Paginated)
 router.get('/unsubbed', async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    const { search } = req.query;
+
     const Unsubscribe = require('../models/Unsubscribe');
     const unsubList = await Unsubscribe.find({ userId: req.user._id });
     const unsubEmails = unsubList.map(u => u.recipientEmail);
     
-    // We get the leads that match the unsubscribed emails, plus any explicitly 'finished' ones that might have unsubscribed.
-    const unsubbedLeads = await Lead.find({ 
-      userId: req.user._id, 
-      recipientEmail: { $in: unsubEmails }
-    }).sort({ updatedAt: -1 });
-    res.json(unsubbedLeads);
+    const query = { userId: req.user._id, recipientEmail: { $in: unsubEmails } };
+    
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { businessName: searchRegex },
+        { recipientEmail: searchRegex },
+        { email: searchRegex }
+      ];
+    }
+
+    const unsubbedLeads = await Lead.find(query)
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit);
+      
+    const total = await Lead.countDocuments(query);
+
+    res.json({
+      items: unsubbedLeads,
+      total,
+      page,
+      pages: Math.ceil(total / limit)
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch unsubscribed leads' });
   }
 });
 
-// Get Pending Leads (not yet emailed)
+// Get Pending Leads (Paginated)
 router.get('/pending', async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    const { search } = req.query;
+
     const Unsubscribe = require('../models/Unsubscribe');
     const unsubList = await Unsubscribe.find({ userId: req.user._id });
     const unsubEmails = unsubList.map(u => u.recipientEmail);
 
-    const pendingLeads = await Lead.find({ 
+    const query = { 
       userId: req.user._id, 
       status: { $in: ['discovery', 'verifying', 'ready'] },
       recipientEmail: { $nin: unsubEmails }
-    }).sort({ updatedAt: -1 });
-    res.json(pendingLeads);
+    };
+    
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { businessName: searchRegex },
+        { recipientEmail: searchRegex },
+        { email: searchRegex }
+      ];
+    }
+
+    const pendingLeads = await Lead.find(query)
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit);
+      
+    const total = await Lead.countDocuments(query);
+
+    res.json({
+      items: pendingLeads,
+      total,
+      page,
+      pages: Math.ceil(total / limit)
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch pending leads' });
   }
 });
 
-// Get Contacted Leads
+// Get Contacted Leads (Paginated)
 router.get('/contacted', async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    const { search } = req.query;
+
     const Unsubscribe = require('../models/Unsubscribe');
     const unsubList = await Unsubscribe.find({ userId: req.user._id });
     const unsubEmails = unsubList.map(u => u.recipientEmail);
 
-    const contactedLeads = await Lead.find({ 
+    const query = { 
       userId: req.user._id, 
       status: { $in: ['emailed', 'replied', 'finished'] },
       recipientEmail: { $nin: unsubEmails }
-    }).sort({ updatedAt: -1 });
-    res.json(contactedLeads);
+    };
+    
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { businessName: searchRegex },
+        { recipientEmail: searchRegex },
+        { email: searchRegex }
+      ];
+    }
+
+    const contactedLeads = await Lead.find(query)
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit);
+      
+    const total = await Lead.countDocuments(query);
+
+    res.json({
+      items: contactedLeads,
+      total,
+      page,
+      pages: Math.ceil(total / limit)
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch contacted leads' });
   }
 });
 
-// Drafts Endpoints
+// Drafts Endpoints (Paginated)
 router.get('/drafts', async (req, res) => {
   try {
-    const drafts = await InboxDraft.find({ userId: req.user._id }).sort({ updatedAt: -1 });
-    res.json(drafts);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    
+    const { search, account } = req.query;
+    
+    const query = { userId: req.user._id };
+    
+    if (account && account !== 'all') {
+      query.inboxEmail = account;
+    }
+    
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { subject: searchRegex },
+        { to: searchRegex },
+        { textBody: searchRegex }
+      ];
+    }
+
+    const drafts = await InboxDraft.find(query)
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit);
+      
+    const total = await InboxDraft.countDocuments(query);
+    
+    res.json({
+      items: drafts,
+      total,
+      page,
+      pages: Math.ceil(total / limit)
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch drafts' });
@@ -118,14 +313,9 @@ router.get('/drafts', async (req, res) => {
 
 router.post('/drafts', async (req, res) => {
   try {
-    const { draftId, inboxEmail, to, subject, textBody, replyToMessageId } = req.body;
-    let draft;
-    if (draftId) {
-      draft = await InboxDraft.findOne({ _id: draftId, userId: req.user._id });
-    }
-    if (!draft) {
-      draft = new InboxDraft({ userId: req.user._id });
-    }
+    const { inboxEmail, to, subject, textBody, replyToMessageId } = req.body;
+    
+    const draft = new InboxDraft({ userId: req.user._id });
     draft.inboxEmail = inboxEmail;
     draft.to = to;
     draft.subject = subject;
@@ -137,7 +327,29 @@ router.post('/drafts', async (req, res) => {
     res.json(draft);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to save draft' });
+    res.status(500).json({ message: 'Failed to create draft' });
+  }
+});
+
+router.put('/drafts/:id', async (req, res) => {
+  try {
+    const { inboxEmail, to, subject, textBody, replyToMessageId } = req.body;
+    
+    let draft = await InboxDraft.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!draft) return res.status(404).json({ message: 'Draft not found' });
+    
+    draft.inboxEmail = inboxEmail;
+    draft.to = to;
+    draft.subject = subject;
+    draft.textBody = textBody;
+    draft.htmlBody = textBody ? textBody.replace(/\n/g, '<br>') : '';
+    draft.replyToMessageId = replyToMessageId || null;
+
+    await draft.save();
+    res.json(draft);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to update draft' });
   }
 });
 
@@ -163,31 +375,37 @@ router.post('/sync', async (req, res) => {
   }
 });
 
-// Mark as read
-router.post('/:id/read', async (req, res) => {
+// Update Message Fields (Read/Star)
+router.patch('/:id', async (req, res) => {
   try {
+    const { isRead, isStarred } = req.body;
     const message = await InboxMessage.findById(req.params.id);
     if (!message || message.userId.toString() !== req.user._id.toString()) {
       return res.status(404).json({ message: 'Message not found' });
     }
     
-    // Update local DB
-    message.isRead = true;
-    await message.save();
-    
-    // Sync to IMAP
     const user = await User.findById(req.user._id);
-    await IMAPService.markAsRead(user, message.inboxEmail, message.messageId);
+
+    if (isRead !== undefined) {
+      message.isRead = isRead;
+      await IMAPService.markAsRead(user, message.inboxEmail, message.messageId);
+    }
+
+    if (isStarred !== undefined) {
+      message.isStarred = isStarred;
+      await IMAPService.starMessage(user, message.inboxEmail, message.messageId, isStarred);
+    }
     
-    res.json({ success: true });
+    await message.save();
+    res.json({ success: true, message });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Error marking read' });
+    res.status(500).json({ message: 'Error updating message' });
   }
 });
 
 // Reply
-router.post('/:id/reply', async (req, res) => {
+router.post('/:id/replies', async (req, res) => {
   try {
     const msg = await InboxMessage.findById(req.params.id);
     if (!msg || msg.userId.toString() !== req.user._id.toString()) {
@@ -276,8 +494,8 @@ router.post('/:id/reply', async (req, res) => {
 });
 
 // Cancel Reply
-router.post('/:id/cancel-reply', async (req, res) => {
-  const { sendId } = req.body;
+router.delete('/:id/replies/:sendId', async (req, res) => {
+  const { sendId } = req.params;
   if (global.pendingSends && global.pendingSends[sendId]) {
     clearTimeout(global.pendingSends[sendId]);
     delete global.pendingSends[sendId];
@@ -286,28 +504,10 @@ router.post('/:id/cancel-reply', async (req, res) => {
   res.status(404).json({ message: 'Pending send not found or already sent' });
 });
 
-// Toggle Star
-router.post('/:id/star', async (req, res) => {
-  try {
-    const msg = await InboxMessage.findOne({ _id: req.params.id, userId: req.user._id });
-    if (!msg) return res.status(404).json({ message: 'Message not found' });
-    
-    const newStatus = !msg.isStarred;
-    msg.isStarred = newStatus;
-    await msg.save();
-    
-    const user = await User.findById(req.user._id);
-    await IMAPService.starMessage(user, msg.inboxEmail, msg.messageId, newStatus);
-    
-    res.json({ success: true, isStarred: newStatus });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error starring message' });
-  }
-});
+
 
 // Move to Trash
-router.post('/delete', async (req, res) => {
+router.post('/batch-delete', async (req, res) => {
   try {
     const { messageIds } = req.body;
     if (!messageIds || !Array.isArray(messageIds)) {
@@ -336,7 +536,7 @@ router.post('/delete', async (req, res) => {
 });
 
 // Permanent Delete
-router.post('/permanent-delete', async (req, res) => {
+router.post('/batch-permanent-delete', async (req, res) => {
   try {
     const { messageIds } = req.body;
     if (!messageIds || !Array.isArray(messageIds)) {
@@ -365,7 +565,7 @@ router.post('/permanent-delete', async (req, res) => {
 });
 
 // Compose New Email
-router.post('/compose', async (req, res) => {
+router.post('/messages', async (req, res) => {
   try {
     const { fromEmail, to, subject, textBody } = req.body;
     if (!fromEmail || !to || !subject || !textBody) {

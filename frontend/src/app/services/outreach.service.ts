@@ -80,15 +80,15 @@ export class OutreachService {
   }
 
   getUnsubStatus() {
-    return this.api.getData<{ isUnsubscribed: boolean; email: string }>('outreach/unsub-status');
+    return this.api.getData<{ isUnsubscribed: boolean; email: string }>('outreach/unsubscribes/status');
   }
 
   getUnsubList() {
-    return this.api.getData<any[]>('outreach/unsub-list');
+    return this.api.getData<any[]>('outreach/unsubscribes');
   }
 
   clearUnsub() {
-    return this.api.postData<{ message: string }>('outreach/unsub-clear', {});
+    return this.api.deleteData<{ message: string }>('outreach/unsubscribes');
   }
 
   syncInbox() {
@@ -104,14 +104,14 @@ export class OutreachService {
   }
 
   replyToLead(leadId: string, body: string) {
-    return this.api.postData(`leads/${leadId}/reply`, { body });
+    return this.api.postData(`leads/${leadId}/replies`, { body });
   }
 
   refineReply(leadId: string, draft: string) {
-    return this.api.postData<{ refinedText: string }>(`leads/${leadId}/refine-reply`, { draft });
+    return this.api.postData<{ refinedText: string }>(`leads/${leadId}/replies/refine`, { draft });
   }
 
   cleanThread(leadId: string) {
-    return this.api.postData<{ message: string, lead: any }>(`leads/${leadId}/clean-thread`, {});
+    return this.api.postData<{ message: string, lead: any }>(`leads/${leadId}/thread/clean`, {});
   }
 }

@@ -141,6 +141,8 @@ let aiRouter = null;
 
 // Removed missing stripe and bot routes
 const inboxRoutes = require('./routes/inbox');
+const outreachRoutes = require('./routes/outreach');
+const leadsRoutes = require('./routes/leads');
 
 const indexRouter = require('./routes/index');
 const cronRouter = require('./routes/cron');
@@ -194,6 +196,10 @@ app.use('/cron', cronRouter);
 
 // Missing routes removed
 app.use('/api/inbox', inboxRoutes);
+app.use('/api/outreach', outreachRoutes);
+app.use('/outreach', outreachRoutes);
+app.use('/api/leads', leadsRoutes);
+app.use('/leads', leadsRoutes);
 
 app.use('/api/auth', authRouter);
 app.use('/auth', authRouter);
