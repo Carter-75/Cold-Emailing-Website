@@ -77,6 +77,47 @@ class EmailService {
       .trim();
   }
 
+  async verifyContentWithAI(content, config) {
+    if (!config.openaiKey) return true; // Fallback if no key
+    const openai = new OpenAI({ apiKey: config.openaiKey });
+    
+    const systemPrompt = `You are an elite QA bot for outbound emails.
+Your task is to review the following cold email draft.
+If the email is perfectly formatted, highly professional, strictly plain-text without conversational filler, and ready to send, reply with ONLY the word "yes".
+If the email has formatting issues, placeholders, markdown, conversational filler, or is otherwise not perfect, reply with ONLY the word "no".
+Do not output anything else.`;
+
+    const userPrompt = `Email Draft:\n"""\n${content}\n"""`;
+
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0,
+      });
+
+      const reply = completion.choices[0].message.content.trim();
+      const lowerReply = reply.toLowerCase();
+
+      if (lowerReply === 'yes') {
+        return true;
+      }
+
+      if (/\byes\b/i.test(reply)) {
+        console.log(`[AI Verification] Regex was used to verify. AI Response: "${reply}"`);
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error('[AI Verification] Failed:', err.message);
+      return false; 
+    }
+  }
+
   async sendEmail(userConfig, recipientEmail, content, businessName, testMode = false, skipFooter = false) {
     const isTest = testMode || userConfig.testMode;
     

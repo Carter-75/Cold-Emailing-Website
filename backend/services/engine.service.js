@@ -175,14 +175,36 @@ class OutreachEngine {
     if (!lead) return { sent: false };
 
     try {
-      const content = await EmailService.generateContent(lead, user.config);
+      let content;
       const isTestMode = user.config.engineTestMode === true;
       
+      // Cache logic
+      if (lead.cachedEmail && lead.cachedEmail.content && lead.cachedEmail.isAiApproved) {
+        content = lead.cachedEmail.content;
+      } else {
+        content = await EmailService.generateContent(lead, user.config);
+        
+        const isApproved = await EmailService.verifyContentWithAI(content, user.config);
+        if (!isApproved) {
+          throw new Error('AI Verification failed for email content.');
+        }
+        
+        lead.cachedEmail = { content, isAiApproved: true };
+        try {
+          await lead.save();
+        } catch (saveErr) {
+          throw new Error('Failed to cache AI approved email data: ' + saveErr.message);
+        }
+      }
+
       const emailResult = await EmailService.sendEmail({
         ...user.config.toObject ? user.config.toObject() : user.config,
         userId: user._id,
         displayName: user.displayName
       }, lead.recipientEmail, content, lead.businessName, isTestMode);
+
+      // Clear cache after successful send
+      lead.cachedEmail = undefined;
 
       await SentEmail.create({ userId: user._id, recipientEmail: lead.recipientEmail, businessName: lead.businessName, city: lead.city, source: 'engine', testMode: isTestMode });
       

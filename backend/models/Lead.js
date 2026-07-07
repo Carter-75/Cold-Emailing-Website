@@ -26,6 +26,10 @@ const LeadSchema = new mongoose.Schema({
     clicked: { type: Number, default: 0 }
   },
   isTestData: { type: Boolean, default: false },
+  cachedEmail: {
+    content: String,
+    isAiApproved: { type: Boolean, default: false }
+  },
 
   // Source tag — 'engine' for automated outreach, 'portfolio' for portfolio site outreach.
   // Used by the /leads route to merge cross-app leads from the shared MongoDB.
