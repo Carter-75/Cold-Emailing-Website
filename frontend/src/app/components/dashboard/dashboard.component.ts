@@ -82,17 +82,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
     }, 100);
   }
-  authMode = signal<'login' | 'signup'>('login');
-  credentials = { email: '', password: '', displayName: '' };
-  authError = signal<string | null>(null);
-
-  scrollToLogin() {
-    const el = document.getElementById('login-section');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }
-
   // Advanced Config state
   config = {
     // API Keys
@@ -226,25 +215,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  onAuthSubmit() {
-    this.authError.set(null);
-    const obs = this.authMode() === 'login' 
-      ? this.auth.login(this.credentials) 
-      : this.auth.signup(this.credentials);
 
-    obs.subscribe({
-      next: () => {
-        this.credentials = { email: '', password: '', displayName: '' };
-      },
-      error: (err) => {
-        this.authError.set(err.error?.message || 'Authentication failed');
-      }
-    });
-  }
-
-  loginWithGoogle() {
-    this.auth.loginWithGoogle();
-  }
 
   ngOnDestroy() {
     if (this.physicsInterval) clearInterval(this.physicsInterval);

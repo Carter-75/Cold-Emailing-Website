@@ -27,8 +27,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 401 || error.status === 403) {
         console.warn('[Interceptor] Auth error (401/403). Logging out.');
         auth.logout();
-        router.navigate(['/']);
-        auth.openAuthModal();
+        router.navigate(['/login']);
       }
       return throwError(() => error);
     })

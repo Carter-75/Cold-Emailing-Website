@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { ApiService } from './api.service';
 import { tap } from 'rxjs';
 
@@ -10,19 +11,9 @@ export class AuthService {
   
   user = signal<any>(null);
   isAuthenticated = signal<boolean>(false);
-  showAuthModal = signal<boolean>(false);
-
   constructor() {
     this.checkAuth();
     this.handleUrlToken();
-  }
-
-  openAuthModal() {
-    this.showAuthModal.set(true);
-  }
-
-  closeAuthModal() {
-    this.showAuthModal.set(false);
   }
 
   // Handle token passed via URL query (Google Redirect Flow)
@@ -100,5 +91,6 @@ export class AuthService {
     localStorage.removeItem('auth_token');
     this.user.set(null);
     this.isAuthenticated.set(false);
+    inject(Router).navigate(['/login']);
   }
 }
