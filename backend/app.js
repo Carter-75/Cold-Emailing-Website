@@ -195,6 +195,9 @@ app.use('/api/cron', cronRouter);
 app.use('/cron', cronRouter);
 
 // Missing routes removed
+app.use('/api', indexRouter);
+app.use('/', indexRouter);
+
 app.use('/api/inbox', inboxRoutes);
 app.use('/api/outreach', outreachRoutes);
 app.use('/outreach', outreachRoutes);
