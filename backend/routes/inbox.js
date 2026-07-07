@@ -137,7 +137,13 @@ router.get('/unsubbed', catchAsync(async (req, res) => {
     const unsubList = await Unsubscribe.find({ userId: req.user._id });
     const unsubEmails = unsubList.map(u => u.recipientEmail);
     
-    const query = { userId: req.user._id, recipientEmail: { $in: unsubEmails } };
+    const query = { 
+      userId: req.user._id,
+      $or: [
+        { recipientEmail: { $in: unsubEmails } },
+        { status: 'invalid' }
+      ]
+    };
     
     if (search) {
       const searchRegex = new RegExp(search, 'i');

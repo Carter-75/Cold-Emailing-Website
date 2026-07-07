@@ -216,7 +216,7 @@ class OutreachEngine {
       // Basic email format check before calling Verifalia
       if (!lead.recipientEmail.includes('@') || lead.recipientEmail.includes('@internal.loc')) {
         console.warn(`[Engine] Skipping verification for invalid email format: ${lead.recipientEmail}`);
-        lead.status = 'finished';
+        lead.status = 'invalid';
         await lead.save();
         return 'moved_to_finished';
       }
@@ -232,7 +232,7 @@ class OutreachEngine {
         await updateDiagnosticFlag(user, 'verifalia', false);
         return 'moved_to_ready';
       } else {
-        lead.status = 'finished'; // Throw out bad lead
+        lead.status = 'invalid'; // Throw out bad lead
         await lead.save();
         return 'moved_to_finished'; // Continue the loop
       }
@@ -268,7 +268,7 @@ class OutreachEngine {
     const isPlaceholder = lead.recipientEmail.includes('@internal.loc') || !lead.recipientEmail.includes('@');
     if (isPlaceholder) {
       console.log(`[Engine] No email found for ${lead.businessName} during enrichment. Discarding.`);
-      lead.status = 'finished';
+      lead.status = 'invalid';
       await lead.save();
       return 'moved'; 
     }

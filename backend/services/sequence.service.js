@@ -56,9 +56,9 @@ class SequenceService {
       if (lead.status === 'discovery') {
         const email = await EnrichmentService.findEmail(lead.businessName, lead.city, user.config.apolloKey);
         if (!email) {
-          lead.status = 'finished'; // No email found, give up
+          lead.status = 'invalid'; // No email found, give up
           await lead.save();
-          return 'finished';
+          return 'invalid';
         }
         
         const verifaliaAuth = {
@@ -67,9 +67,9 @@ class SequenceService {
         };
         const isValid = await VerificationService.verifyEmail(email, verifaliaAuth);
         if (!isValid) {
-          lead.status = 'finished';
+          lead.status = 'invalid';
           await lead.save();
-          return 'finished';
+          return 'invalid';
         }
 
         lead.recipientEmail = email;

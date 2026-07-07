@@ -126,13 +126,14 @@ router.post('/test-messages', verifyToken, catchAsync(async (req, res) => {
 // Unsubscribe Management
 router.get('/unsubscribes', verifyToken, catchAsync(async (req, res) => {
   const suppressionList = await Unsubscribe.find({ userId: req.user._id });
-  const finishedLeads = await Lead.find({ userId: req.user._id, status: 'finished' });
+  const finishedLeads = await Lead.find({ userId: req.user._id, status: { $in: ['finished', 'invalid'] } });
 
   const formattedFinished = finishedLeads.map(l => ({
     recipientEmail: l.recipientEmail,
     businessName: l.businessName,
     unsubscribedAt: l.updatedAt,
-    isAutoFinished: true
+    isAutoFinished: l.status === 'finished',
+    isInvalid: l.status === 'invalid'
   }));
 
   const combined = [
@@ -205,6 +206,17 @@ router.get('/fix-warmups', verifyToken, catchAsync(async (req, res) => {
   }
   
   res.json({ message: `Retroactively fixed ${count} old warmup/DMARC emails!` });
+}));
+
+router.get('/fix-invalid-leads', verifyToken, catchAsync(async (req, res) => {
+  const badLeads = await Lead.find({ userId: req.user._id, status: 'finished', messageIds: { $size: 0 } });
+  let count = 0;
+  for (const lead of badLeads) {
+    lead.status = 'invalid';
+    await lead.save();
+    count++;
+  }
+  res.json({ message: `Retroactively fixed ${count} discarded leads that were incorrectly marked as finished.` });
 }));
 
 module.exports = router;
