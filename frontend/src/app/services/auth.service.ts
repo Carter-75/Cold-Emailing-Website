@@ -8,6 +8,7 @@ import { tap } from 'rxjs';
 })
 export class AuthService {
   private api = inject(ApiService);
+  private router = inject(Router);
   
   user = signal<any>(null);
   isAuthenticated = signal<boolean>(false);
@@ -92,6 +93,6 @@ export class AuthService {
     localStorage.removeItem('auth_token');
     this.user.set(null);
     this.isAuthenticated.set(false);
-    inject(Router).navigate(['/login']);
+    this.router.navigate(['/login']);
   }
 }
