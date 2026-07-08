@@ -2,7 +2,7 @@ const axios = require('axios');
 
 class EnrichmentService {
   async findEmail(businessName, city, apiKey, isTest = false, website = null) {
-    if (!apiKey && !isTest) throw new Error('Apollo API Key is required');
+    if (!apiKey && !isTest && !website) throw new Error('Apollo API Key is required');
 
     if (!apiKey && isTest) {
       console.log(`[Enrichment] MOCK MODE: Returning test email for ${businessName}...`);
@@ -43,6 +43,11 @@ class EnrichmentService {
         } catch (scrapeErr) {
           console.log(`[Enrichment] Scrape failed for ${website}: ${scrapeErr.message}. Falling back to Apollo...`);
         }
+      }
+
+      if (!apiKey) {
+        console.log(`[Enrichment] No Apollo key provided and scrape failed for ${businessName}.`);
+        return null;
       }
 
       // 2. Fallback: Apollo API (Costs 1 Credit)

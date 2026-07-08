@@ -65,8 +65,25 @@ function classifyError(err, context) {
 
 async function updateDiagnosticFlag(user, type, isActive) {
   const field = `config.diagnosticFlags.${type}.active`;
-  if (user.config.diagnosticFlags[type].active === isActive) return;
-  await User.updateOne({ _id: user._id }, { [field]: isActive });
+  const updates = { [field]: isActive };
+  
+  if (isActive) {
+    try {
+      console.log(`[Engine] Fatal API error detected for ${type}, alerting admin.`);
+      await EmailService.sendAdminAlert(
+        user.config, 
+        type.toUpperCase() + '_ISSUE', 
+        `The ${type} API is currently failing and requires your attention.`
+      );
+      updates[`config.diagnosticFlags.${type}.lastAlertedAt`] = new Date();
+    } catch(err) {
+      console.error(`[Engine] Failed to send admin alert:`, err.message);
+    }
+  }
+
+  if (user.config.diagnosticFlags[type].active === isActive && !isActive) return;
+
+  await User.updateOne({ _id: user._id }, { $set: updates });
 }
 
 async function checkAndSend12PMAlerts(user, localHour) {
@@ -276,20 +293,13 @@ class OutreachEngine {
     const lead = await Lead.findOne({ userId: user._id, status: 'discovery' }).sort({ createdAt: 1 });
     if (!lead) return 'done';
 
-    // Enrichment (Apollo - optional)
-    if (user.config.apolloKey) {
-      try {
-        const email = await EnrichmentService.findEmail(lead.businessName, lead.city, user.config.apolloKey, false, lead.website);
-        if (email) lead.recipientEmail = email;
-      } catch (err) {
-        console.warn(`[Engine] Enrichment failed, moving to verify list anyway: ${err.message}`);
-      }
-    }
-
-    // DISCARD LOGIC: If we still don't have a valid email (placeholder or phone), throw it out
-    const isPlaceholder = lead.recipientEmail.includes('@internal.loc') || !lead.recipientEmail.includes('@');
+    // Enrichment is now handled in stepRefillDiscovery.
+    // Leads in 'discovery' already have a valid email.
+    
+    // Safety check just in case legacy leads are stuck here
+    const isPlaceholder = !lead.recipientEmail || lead.recipientEmail.includes('@internal.loc') || !lead.recipientEmail.includes('@');
     if (isPlaceholder) {
-      console.log(`[Engine] No email found for ${lead.businessName} during enrichment. Discarding.`);
+      console.log(`[Engine] Invalid email for ${lead.businessName}. Discarding.`);
       lead.status = 'invalid';
       await lead.save();
       return 'moved'; 
@@ -314,17 +324,41 @@ class OutreachEngine {
       
       // Find the first non-duplicate
       for (const raw of rawLeads) {
+        // Skip leads with no website or phone to use as identifier
+        if (!raw.name || (!raw.phone && !raw.website)) continue;
+
         const existing = await Lead.findOne({ userId: user._id, $or: [{ businessName: raw.name, city: currentCity }, { recipientEmail: raw.phone }] });
         if (existing) continue;
 
-        const tempEmail = raw.phone || `no-phone-${Date.now()}@internal.loc`;
+        let email = null;
+        try {
+          email = await EnrichmentService.findEmail(raw.name, currentCity, user.config.apolloKey, false, raw.website);
+        } catch (err) {
+          console.warn(`[Engine] Enrichment failed during discovery: ${err.message}`);
+        }
+
+        if (!email || !email.includes('@')) {
+          // If we couldn't find an email, save it as invalid so we don't query SerpApi/Apollo for it again
+          const tempEmail = raw.phone || `no-phone-${Date.now()}@internal.loc`;
+          await Lead.create({
+            userId: user._id,
+            businessName: raw.name,
+            recipientEmail: tempEmail,
+            city: currentCity,
+            category: raw.category,
+            website: raw.website,
+            status: 'invalid'
+          });
+          continue; 
+        }
+
         await Lead.create({
           userId: user._id,
           businessName: raw.name,
-          recipientEmail: tempEmail,
+          recipientEmail: email,
           city: currentCity,
           category: raw.category,
-          website: raw.website, // Persist website for better enrichment
+          website: raw.website,
           status: 'discovery'
         });
         

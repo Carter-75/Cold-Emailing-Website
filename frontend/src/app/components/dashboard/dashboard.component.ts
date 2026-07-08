@@ -122,7 +122,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     outreachPaused: false,
     outreachPausedReason: '',
     connectedInboxes: [],
-    testRecipientEmail: ''
+    testRecipientEmail: '',
+    diagnosticFlags: {
+      openai: { active: false },
+      serpapi: { active: false },
+      verifalia: { active: false },
+      smtp: { active: false }
+    }
   };
 
   private sceneContainer = viewChild<ElementRef<HTMLDivElement>>('scene');
