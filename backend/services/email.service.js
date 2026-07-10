@@ -307,7 +307,7 @@ Do not output anything else.`;
     const action = ACTION_MAP[errorType] || ACTION_MAP.UNKNOWN;
     const recipient = config.testRecipientEmail || config.senderEmail;
 
-    const body = `Your Phoenix outreach engine has been automatically paused due to a fatal API error.
+    const body = `Your Phoenix outreach engine has detected a fatal API error.
 
 Error Type : ${errorType}
 Detail     : ${detail}
@@ -316,8 +316,7 @@ Time       : ${now}
 Action Required:
 ${action}
 
-After fixing the issue, go to Dashboard → Settings → Engine and re-enable outreach.
-The engine will not fire again until you do.
+The engine's discovery and enrichment pipelines are blocked, but the system remains active. Once the API credentials or credits are restored, the engine will automatically resume full operations.
 
 — Phoenix Engine`;
 
@@ -332,7 +331,7 @@ The engine will not fire again until you do.
       await transporter.sendMail({
         from: `"Phoenix Engine" <${config.senderEmail}>`,
         to: recipient,
-        subject: `🚨 Outreach Paused — ${errorType}`,
+        subject: `🚨 Outreach API Issue — ${errorType}`,
         text: body
       });
       console.log(`[AdminAlert] Sent to ${recipient} — ${errorType}`);

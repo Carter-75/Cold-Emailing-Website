@@ -1,6 +1,7 @@
 const LeadGenService = require('./lead-gen.service');
 const EnrichmentService = require('./enrichment.service');
 const VerificationService = require('./verification.service');
+const ValidatorService = require('./validator.service');
 const EmailService = require('./email.service');
 const SequenceService = require('./sequence.service');
 const cityRotator = require('./city-rotator');
@@ -137,6 +138,7 @@ class OutreachEngine {
     let readyCount = await Lead.countDocuments({ userId: user._id, status: 'ready' });
     let loopSafety = 0;
     const startTime = Date.now();
+    let serpApiCallCount = 0;
 
     // Limit to 50 iterations OR 25 seconds to prevent Vercel timeouts
     while (readyCount < 100 && loopSafety < 50 && (Date.now() - startTime < 25000)) {
@@ -155,8 +157,15 @@ class OutreachEngine {
       if (resV === 'blocked') break;
 
       // 3. Discovery (API -> discovery)
-      const resD = await this.stepRefillDiscovery(user);
-      if (resD === 'moved') { movedAny = true; continue; }
+      const resD = await this.stepRefillDiscovery(user, serpApiCallCount);
+      if (resD === 'moved') { 
+        movedAny = true; 
+        serpApiCallCount++; 
+        continue; 
+      }
+      if (resD === 'serpapi_limit_reached') {
+        continue; // Don't block verifying/ready queues, but don't set movedAny = true
+      }
       if (resD === 'blocked') break;
 
       if (!movedAny) break; 
@@ -293,12 +302,23 @@ class OutreachEngine {
     const lead = await Lead.findOne({ userId: user._id, status: 'discovery' }).sort({ createdAt: 1 });
     if (!lead) return 'done';
 
-    // Enrichment is now handled in stepRefillDiscovery.
-    // Leads in 'discovery' already have a valid email.
-    
-    // Safety check just in case legacy leads are stuck here
+    // Try to enrich placeholder leads (e.g. from DiscoveryWorker or legacy imports)
     const isPlaceholder = !lead.recipientEmail || lead.recipientEmail.includes('@internal.loc') || !lead.recipientEmail.includes('@');
     if (isPlaceholder) {
+      console.log(`[Engine] Enriching placeholder lead: ${lead.businessName}`);
+      try {
+        const email = await EnrichmentService.findEmail(lead.businessName, lead.city, user.config.apolloKey, false, lead.website);
+        if (email && email.includes('@')) {
+          lead.recipientEmail = email;
+        }
+      } catch (err) {
+        console.warn(`[Engine] Enrichment failed for placeholder lead ${lead.businessName}: ${err.message}`);
+      }
+    }
+
+    // Safety check just in case it is still a placeholder
+    const stillPlaceholder = !lead.recipientEmail || lead.recipientEmail.includes('@internal.loc') || !lead.recipientEmail.includes('@');
+    if (stillPlaceholder) {
       console.log(`[Engine] Invalid email for ${lead.businessName}. Discarding.`);
       lead.status = 'invalid';
       await lead.save();
@@ -314,58 +334,95 @@ class OutreachEngine {
    * stepRefillDiscovery (Leads API -> discovery)
    * Max 10 in discovery. Get 1 lead at a time.
    */
-  async stepRefillDiscovery(user) {
+  async stepRefillDiscovery(user, serpApiCallCount = 0) {
     const discoveryCount = await Lead.countDocuments({ userId: user._id, status: 'discovery' });
     if (discoveryCount >= 10) return 'done';
 
+    // Limit to at most 1 SerpAPI call per engine tick
+    if (serpApiCallCount >= 1) {
+      console.log('[Engine] SerpAPI call limit (1) reached for this tick. Skipping discovery.');
+      return 'serpapi_limit_reached';
+    }
+
     try {
       const currentCity = cityRotator.getNextCity();
+      console.log(`[Engine] Querying SerpAPI for new leads in ${currentCity}...`);
       const rawLeads = await LeadGenService.findLeads(currentCity, user.config.serpapiKey);
       
-      // Find the first non-duplicate
+      const nonDuplicates = [];
       for (const raw of rawLeads) {
-        // Skip leads with no website or phone to use as identifier
-        if (!raw.name || (!raw.phone && !raw.website)) continue;
+        if (!raw.name) continue;
+        
+        const queryConditions = [{ businessName: raw.name, city: currentCity }];
+        if (raw.website) {
+          queryConditions.push({ website: raw.website });
+        }
 
-        const existing = await Lead.findOne({ userId: user._id, $or: [{ businessName: raw.name, city: currentCity }, { recipientEmail: raw.phone }] });
-        if (existing) continue;
+        const existing = await Lead.findOne({ 
+          userId: user._id, 
+          $or: queryConditions
+        });
+        if (!existing) {
+          nonDuplicates.push(raw);
+        }
+      }
+
+      if (nonDuplicates.length === 0) {
+        console.log(`[Engine] No new (non-duplicate) leads found in ${currentCity}.`);
+        await updateDiagnosticFlag(user, 'serpapi', false);
+        return 'done';
+      }
+
+      // Process up to 5 candidates in parallel to optimize speed and avoid Vercel timeouts
+      const candidates = nonDuplicates.slice(0, 5);
+      console.log(`[Engine] Enriching ${candidates.length} candidates in parallel...`);
+
+      const enrichmentPromises = candidates.map(async (raw) => {
+        // Validate ICP first - we ONLY want businesses without websites (or with broken/social redirects)
+        const validation = await ValidatorService.validateLead({ website: raw.website });
+        if (!validation.isValid) {
+          // Has operational website. Discard immediately by saving as invalid
+          const sanitizedName = raw.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const tempEmail = `has-website-${sanitizedName}-${currentCity.toLowerCase()}@internal.loc`;
+          return { raw, email: tempEmail, status: 'invalid' };
+        }
 
         let email = null;
         try {
           email = await EnrichmentService.findEmail(raw.name, currentCity, user.config.apolloKey, false, raw.website);
         } catch (err) {
-          console.warn(`[Engine] Enrichment failed during discovery: ${err.message}`);
+          console.warn(`[Engine] Enrichment failed during discovery for ${raw.name}: ${err.message}`);
         }
 
         if (!email || !email.includes('@')) {
-          // If we couldn't find an email, save it as invalid so we don't query SerpApi/Apollo for it again
-          const tempEmail = raw.phone || `no-phone-${Date.now()}@internal.loc`;
-          await Lead.create({
-            userId: user._id,
-            businessName: raw.name,
-            recipientEmail: tempEmail,
-            city: currentCity,
-            category: raw.category,
-            website: raw.website,
-            status: 'invalid'
-          });
-          continue; 
+          // Generate a safe unique placeholder email to avoid MongoDB unique index conflicts
+          const sanitizedName = raw.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const tempEmail = `no-email-${sanitizedName}-${currentCity.toLowerCase()}@internal.loc`;
+          return { raw, email: tempEmail, status: 'invalid' };
         }
+        return { raw, email, status: 'discovery' };
+      });
 
+      const results = await Promise.all(enrichmentPromises);
+
+      let addedAny = false;
+      for (const res of results) {
         await Lead.create({
           userId: user._id,
-          businessName: raw.name,
-          recipientEmail: email,
+          businessName: res.raw.name,
+          recipientEmail: res.email,
           city: currentCity,
-          category: raw.category,
-          website: raw.website,
-          status: 'discovery'
+          category: res.raw.category,
+          website: res.raw.website,
+          status: res.status
         });
-        
-        await updateDiagnosticFlag(user, 'serpapi', false);
-        return 'moved'; // We only add 1 at a time as requested
+        if (res.status === 'discovery') {
+          addedAny = true;
+        }
       }
-      return 'done'; // No new leads found in this city
+
+      await updateDiagnosticFlag(user, 'serpapi', false);
+      return addedAny ? 'moved' : 'done';
     } catch (err) {
       const type = classifyError(err, 'serpapi');
       if (type) { await updateDiagnosticFlag(user, type, true); return 'blocked'; }

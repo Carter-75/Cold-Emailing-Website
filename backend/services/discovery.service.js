@@ -1,5 +1,6 @@
 const LeadGenService = require('./lead-gen.service');
 const ValidatorService = require('./validator.service');
+const EnrichmentService = require('./enrichment.service');
 const Lead = require('../models/Lead');
 const User = require('../models/User');
 const cityRotator = require('./city-rotator');
@@ -24,40 +25,95 @@ class DiscoveryWorker {
       // Decouple discovery from sending limit to ensure a healthy pipeline
       const SEARCH_LIMIT = Math.max(10, (user.config.dailyLeadLimit || 3) * 5);
 
+      const nonDuplicates = [];
       for (const raw of rawLeads) {
-        if (leadsFoundThisSweep >= SEARCH_LIMIT) break;
+        // Build dynamic query conditions to catch identical websites
+        const queryConditions = [{ businessName: raw.name, city }];
+        if (raw.website) queryConditions.push({ website: raw.website });
 
-        // Check if we already have this lead
-        // raw.phone is used as a temporary identifier for maps leads
         const existing = await Lead.findOne({ 
           userId, 
-          $or: [
-            { businessName: raw.name, city },
-            { recipientEmail: raw.phone }
-          ]
+          $or: queryConditions
         });
-        if (existing) continue;
+        if (!existing) {
+          nonDuplicates.push(raw);
+        }
+      }
 
-        // 3. Validate ICP (Redirects/Social Media/Missing Website)
-        const validation = await ValidatorService.validateLead({ website: raw.website });
-        
-        if (validation.isValid) {
-          // 4. Create Lead in 'discovery' status
-          // Use phone if available, otherwise use a placeholder to satisfy the 'required' field
-          const tempEmail = raw.phone || `no-phone-${Date.now()}@internal.loc`;
+      // Batch process validations and enrichments in parallel batches of 5 to prevent Vercel timeouts
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < nonDuplicates.length; i += BATCH_SIZE) {
+        if (leadsFoundThisSweep >= SEARCH_LIMIT) break;
 
-          await Lead.create({
-            userId,
-            businessName: raw.name,
-            recipientEmail: tempEmail, 
-            city,
-            category: raw.category,
-            website: raw.website,
-            status: 'discovery'
-          });
-          
-          leadsFoundThisSweep++;
-          console.log(`[Discovery] Valid ICP found: ${raw.name} (${validation.reason})`);
+        const batch = nonDuplicates.slice(i, i + BATCH_SIZE);
+        const batchPromises = batch.map(async (raw) => {
+          // 3. Validate ICP (Redirects/Social Media/Missing Website)
+          const validation = await ValidatorService.validateLead({ website: raw.website });
+          if (!validation.isValid) {
+            return { raw, isValidIcp: false }; // Has operational website
+          }
+
+          // Find email first
+          let email = null;
+          try {
+            email = await EnrichmentService.findEmail(raw.name, city, user.config.apolloKey, false, raw.website);
+          } catch (err) {
+            console.warn(`[Discovery] Enrichment failed for ${raw.name}: ${err.message}`);
+          }
+
+          return { raw, email, isValidIcp: true };
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+
+        for (const res of batchResults) {
+          if (!res) continue;
+          if (leadsFoundThisSweep >= SEARCH_LIMIT) break;
+
+          if (!res.isValidIcp) {
+            // Save as invalid directly to cache it (has-website placeholder)
+            const sanitizedName = res.raw.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const tempEmail = `has-website-${sanitizedName}-${city.toLowerCase()}@internal.loc`;
+            await Lead.create({
+              userId,
+              businessName: res.raw.name,
+              recipientEmail: tempEmail, 
+              city,
+              category: res.raw.category,
+              website: res.raw.website,
+              status: 'invalid'
+            });
+            console.log(`[Discovery] Has website: ${res.raw.name}. Saved as invalid.`);
+            continue;
+          }
+
+          if (res.email && res.email.includes('@')) {
+            await Lead.create({
+              userId,
+              businessName: res.raw.name,
+              recipientEmail: res.email, 
+              city,
+              category: res.raw.category,
+              website: res.raw.website,
+              status: 'discovery'
+            });
+            leadsFoundThisSweep++;
+            console.log(`[Discovery] Valid ICP with email found: ${res.raw.name}`);
+          } else {
+            // Save as invalid directly so we don't query it again, but do NOT add to discovery (no-email placeholder)
+            const sanitizedName = res.raw.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const tempEmail = `no-email-${sanitizedName}-${city.toLowerCase()}@internal.loc`;
+            await Lead.create({
+              userId,
+              businessName: res.raw.name,
+              recipientEmail: tempEmail, 
+              city,
+              category: res.raw.category,
+              website: res.raw.website,
+              status: 'invalid'
+            });
+            console.log(`[Discovery] Valid ICP but no email found: ${res.raw.name}. Saved as invalid.`);
+          }
         }
       }
 

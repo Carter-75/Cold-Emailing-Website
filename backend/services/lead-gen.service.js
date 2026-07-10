@@ -13,7 +13,6 @@ class LeadGenService {
         mocks.push({
           name: `Mock ${cat} ${i} - ${city}`,
           address: `${100 * i} Main St, ${city}`,
-          phone: `555-010${i}`,
           city: city,
           category: cat,
           website: '' // Empty website triggers the "Valid ICP" logic
@@ -53,7 +52,6 @@ class LeadGenService {
       return filteredResults.map(lead => ({
         name: lead.title,
         address: lead.address,
-        phone: lead.phone,
         website: lead.website, // Capturing website for ICP validation
         city: city,
         category: lead.type
