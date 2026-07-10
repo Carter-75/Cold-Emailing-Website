@@ -302,26 +302,11 @@ class OutreachEngine {
     const lead = await Lead.findOne({ userId: user._id, status: 'discovery' }).sort({ createdAt: 1 });
     if (!lead) return 'done';
 
-    // Try to enrich placeholder leads (e.g. from DiscoveryWorker or legacy imports)
+    // If it's a placeholder lead (e.g., legacy or malformed record), delete it immediately
     const isPlaceholder = !lead.recipientEmail || lead.recipientEmail.includes('@internal.loc') || !lead.recipientEmail.includes('@');
     if (isPlaceholder) {
-      console.log(`[Engine] Enriching placeholder lead: ${lead.businessName}`);
-      try {
-        const email = await EnrichmentService.findEmail(lead.businessName, lead.city, user.config.apolloKey, false, lead.website);
-        if (email && email.includes('@')) {
-          lead.recipientEmail = email;
-        }
-      } catch (err) {
-        console.warn(`[Engine] Enrichment failed for placeholder lead ${lead.businessName}: ${err.message}`);
-      }
-    }
-
-    // Safety check just in case it is still a placeholder
-    const stillPlaceholder = !lead.recipientEmail || lead.recipientEmail.includes('@internal.loc') || !lead.recipientEmail.includes('@');
-    if (stillPlaceholder) {
-      console.log(`[Engine] Invalid email for ${lead.businessName}. Discarding.`);
-      lead.status = 'invalid';
-      await lead.save();
+      console.log(`[Engine] Deleting legacy placeholder lead: ${lead.businessName}`);
+      await Lead.deleteOne({ _id: lead._id });
       return 'moved'; 
     }
 
