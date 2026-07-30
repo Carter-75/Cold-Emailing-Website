@@ -28,11 +28,11 @@ router.get('/', verifyToken, catchAsync(async (req, res) => {
     };
   });
 
-  // ── Query 2: Portfolio leads (new-portfolio outreach, no userId) ─────────
+  // ── Query 2: Portfolio + Data Enrichment leads (cross-app, no userId) ──────
   const engineEmails = new Set(engineLeads.map(l => l.recipientEmail.toLowerCase()));
 
   const portfolioLeads = await Lead.find({
-    source: 'portfolio',
+    source: { $in: ['portfolio', 'data-enrichment'] },
     status: { $in: ['emailed', 'replied', 'unsubscribed'] } 
   }).sort({ updatedAt: -1 });
 

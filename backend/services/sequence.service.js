@@ -86,9 +86,15 @@ class SequenceService {
         return 'finished';
       }
 
-      // Generate AI Content based on step
+      // Generate AI Content based on step — merge data-sales persona if needed
       console.log(`[Sequence] Generating AI Step ${currentStep} for ${lead.businessName}...`);
-      const body = await EmailService.generateContent(lead, user.config, currentStep);
+      let effectiveConfig = user.config;
+      if (lead.source === 'data-sales') {
+        const DataSalesDiscovery = require('./data-sales-discovery.service');
+        const personaOverride = DataSalesDiscovery.getPersonaOverride();
+        effectiveConfig = { ...(user.config.toObject ? user.config.toObject() : user.config), ...personaOverride };
+      }
+      const body = await EmailService.generateContent(lead, effectiveConfig, currentStep);
 
       // Send Email
       console.log(`[Sequence] Sending Step ${currentStep} to ${lead.recipientEmail}...`);

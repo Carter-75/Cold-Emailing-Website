@@ -2,19 +2,52 @@ const nodemailer = require('nodemailer');
 const { OpenAI } = require('openai');
 const crypto = require('crypto');
 
+// --- Reasons Why to Buy (Website Services) ---
+const WEBSITE_REASONS = [
+  'Relying entirely on social media platforms means your entire business infrastructure sits on land you do not own. An algorithm tweak or a sudden policy shift can cut your reach overnight. A website buys permanent digital real estate that nobody can take away from you.',
+  'Unlike traditional advertising which requires continuous capital to keep running, a website is a front-loaded asset. Once the setup cost is out of the way, the monthly overhead to keep it live is virtually nothing compared to the continuous value it brings in.',
+  'The risk is capped, but the reward is uncapped. The maximum you can lose is the setup cost. However, if that website lands just two or three high-ticket clients or recurring accounts over the next year, it completely covers the risk and generates pure profit from that point forward.',
+  'A website is a piece of software that handles manual labor. By integrating custom forms, scheduling tools, and automated onboarding workflows, you stop chasing leads through messy direct messages or playing phone tag. It buys back hours of a business owner\'s time that can be redirected into billable work.',
+  'People who look for services on Google have high intent — they are looking to buy right now, not just browse social media. Without an SEO-mapped website, a business is entirely invisible to this massive pool of local buyers, conceding 100% of that market share to competitors who did take the digital risk.',
+  'When a business operates without a professional home, prospects view them as a budget option and try to negotiate prices down. A high-end digital presentation elevates the perceived value of the business and gives the owner the leverage to confidently charge premium rates.',
+  'Modern consumers are deeply skeptical. If a business only has a Facebook page or an unverified profile, a certain percentage of high-paying clients will quietly move on to a competitor simply because they lack the trust a dedicated site provides. A website removes that friction instantly.',
+  'Operating without a website leaves a business completely blind to consumer data. With a site, integrating basic analytics lets the owner see exactly what services people click on, where they lose interest, and how they found the business. It turns marketing from a guessing game into a predictable data-driven strategy.',
+  'Human energy is finite, but a website never sleeps. It acts as an automated employee that handles intake, answers repetitive FAQs, and captures hot leads at 11:00 PM on a Sunday when the business owner is off the clock.',
+  'The internet is a great equalizer. A fast, clean, beautifully optimized website can look just as authoritative and secure as a multi-million-dollar company\'s site, allowing an agile local business to capture market share it otherwise could not touch.'
+];
+
+// --- Reasons Why to Buy (Data Intelligence Services) ---
+const DATA_REASONS = [
+  'New building permits get filed every day in your city — each one represents a project that needs contractors, suppliers, and services. Without real-time data, your competitors are getting to these opportunities first while you are left finding out weeks later.',
+  'Government contracts worth millions are awarded daily through SAM.gov and local agencies. Having instant access to who won, what they won, and how much it was worth gives you a direct line to subcontracting opportunities and partnership deals.',
+  'Most businesses find new clients through word of mouth and referrals, which is slow and unpredictable. AI-enriched data gives you a constant stream of companies actively investing in projects right now — complete with contact information and project details.',
+  'Your competitors are already using data services to find prospects before they even hit the market. Without the same intelligence, you are always playing catch-up, responding to opportunities instead of creating them.',
+  'A single data purchase can surface hundreds of qualified leads that would take weeks of manual research to find. The time saved alone pays for itself — that is time your team can spend closing deals instead of hunting for them.',
+  'Every building permit, government contract, and business filing is public record. The problem is not access — it is that the raw data is scattered, messy, and buried in government databases. We do the hard work of collecting, cleaning, and enriching it with AI so you get actionable intelligence, not raw noise.'
+];
+
 class EmailService {
   async generateContent(lead, config, step = 1) {
     const openai = new OpenAI({ apiKey: config.openaiKey });
     
-    const safeBusinessName = lead.businessName ? lead.businessName.replace(/["\n\r]/g, ' ').trim() : 'the business';
+    const safeBusinessName = lead.businessName ? lead.businessName.replace(/["\\n\\r]/g, ' ').trim() : 'the business';
+    const isDataSalesLead = lead.source === 'data-sales';
 
     let stepInstructions = '';
     if (step === 1) {
-      stepInstructions = `This is the INITIAL outreach. Focus on a personalized hook regarding [${safeBusinessName}] and a brief intro.`;
+      stepInstructions = `This is the INITIAL outreach. Focus on a personalized hook regarding [${safeBusinessName}] and a brief intro. You MUST mention the company name naturally. For initial emails ONLY, pick exactly 1 reason from the provided "Reasons Why to Buy" list and naturally integrate it into the email.`;
     } else if (step === 2) {
       stepInstructions = `This is the FIRST FOLLOW-UP (Cold). Acknowledge that you sent a previous email which may have been missed regarding [${safeBusinessName}]. DO NOT assume they have responded or shown interest yet. Keep it shorter and focus on the "bump" of the value prop.`;
     } else {
-      stepInstructions = `This is the FINAL FOLLOW-UP (Cold). Be professional but direct. Mention this is the last time you'll be reaching out personally about optimizing [${safeBusinessName}]'s presence. Assume they have not responded to your previous two emails.`;
+      stepInstructions = `This is the FINAL FOLLOW-UP (Cold). Be professional but direct. Mention this is the last time you will be reaching out personally about [${safeBusinessName}]. Assume they have not responded to your previous two emails.`;
+    }
+
+    // Pick a random reason for initial emails
+    let reasonBlock = '';
+    if (step === 1) {
+      const reasons = isDataSalesLead ? DATA_REASONS : WEBSITE_REASONS;
+      const selectedReason = reasons[Math.floor(Math.random() * reasons.length)];
+      reasonBlock = `\n    Reason Why to Buy (integrate exactly 1 of these naturally into the email body):\n    "${selectedReason}"`;
     }
 
     const systemPrompt = `You are a world-class cold email expert representing ${config.senderName} (${config.senderTitle}) from ${config.companyName}.
@@ -23,21 +56,27 @@ class EmailService {
     Instructions: ${stepInstructions}
 
     Persona Context:
-    ${config.personaContext || 'I help businesses build a professional online presence.'}
+    ${config.personaContext || ''}
 
-    Standard Pricing Model:
-    ${config.priceTier1 ? '- ' + config.priceTier1 : '- Basic Service: $100'}
-    ${config.priceTier2 ? '- ' + config.priceTier2 : '- Professional Service: $250'}
-    ${config.priceTier3 ? '- ' + config.priceTier3 : '- Full Solution: $475'}
+    Service Offerings:
+    ${config.priceTier1 ? '- ' + config.priceTier1 : ''}
+    ${config.priceTier2 ? '- ' + config.priceTier2 : ''}
+    ${config.priceTier3 ? '- ' + config.priceTier3 : ''}
+    ${config.priceTier4 ? '- ' + config.priceTier4 : ''}
+    ${reasonBlock}
 
     Linguistic Rules:
     - Max 3-5 sentences for follow-ups.
     - Zero passive phrasing.
-    - **CRITICAL**: Use ONLY plain text. Do NOT use markdown (no asterisks, no hashes, no bolding).
-    - **CRITICAL**: NEVER put quotation marks around business names or links unless grammatically required.
-    - **CRITICAL**: Do NOT include a sign-off or signature.
-    - **CRITICAL**: Do NOT include a subject line. Start directly with the email body.
-    - **CRITICAL**: Do NOT include any conversational filler or meta-commentary.
+    - CRITICAL: Use ONLY plain text. Do NOT use markdown (no asterisks, no hashes, no bolding).
+    - CRITICAL: NEVER put quotation marks around business names or links unless grammatically required.
+    - CRITICAL: Do NOT include a sign-off or signature.
+    - CRITICAL: Do NOT include a subject line. Start directly with the email body.
+    - CRITICAL: Do NOT include any conversational filler or meta-commentary.
+    - CRITICAL: Never use asterisks or hash symbols.
+    - CRITICAL: The tone should convey a flying, energetic phoenix connection — confident, direct, soaring.
+    - CRITICAL: Mention looking at the Phoenix site for reviews and other company work.
+    - CRITICAL: No calls — all communication is via email.
     
     Email Structure:
     - Personalized context regarding [${safeBusinessName}].

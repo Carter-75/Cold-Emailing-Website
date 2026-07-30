@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 class LeadGenService {
-  async findLeads(city, apiKey, isTest = false) {
+  async findLeads(city, apiKey, isTest = false, customQuery = null) {
     if (!apiKey && !isTest) throw new Error('SerpApi Key is required');
     
     if (!apiKey && isTest) {
@@ -27,7 +27,7 @@ class LeadGenService {
         'Law Firm', 'Real Estate Agency', 'Electrical Contractor', 'Landscape Design',
         'Auto Repair Shop', 'Medical Clinic', 'Home Remodeling', 'Pest Control'
       ];
-      const niche = niches[Math.floor(Math.random() * niches.length)];
+      const niche = customQuery || niches[Math.floor(Math.random() * niches.length)];
       
       console.log(`[LeadGen] Searching for ${niche} in ${city}...`);
       

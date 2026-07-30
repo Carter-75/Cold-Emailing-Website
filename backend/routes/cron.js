@@ -53,4 +53,9 @@ router.get('/outreach', withCronAuth(async (req) => {
   return SchedulerService.runOutreachChunk(userId);
 }));
 
+router.get('/data-enrichment', withCronAuth(async () => {
+  const DataPipelineService = require('../services/data-pipeline.service');
+  return DataPipelineService.runPipeline();
+}));
+
 module.exports = router;

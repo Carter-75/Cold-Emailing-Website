@@ -137,13 +137,10 @@ app.get('/api/v1/debug-bundle', async (req, res) => {
 });
 
 // --- Feature Routers ---
-// Note: aiRouter is currently optional/flavor-specific
-let aiRouter = null;
-
-// Removed missing stripe and bot routes
 const inboxRoutes = require('./routes/inbox');
 const outreachRoutes = require('./routes/outreach');
 const leadsRoutes = require('./routes/leads');
+const dataEnrichmentRoutes = require('./routes/data-enrichment');
 
 const indexRouter = require('./routes/index');
 const cronRouter = require('./routes/cron');
@@ -216,16 +213,15 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/auth', authRouter);
 app.use('/auth', authRouter);
 
-if (aiRouter) {
-  app.use('/api/v1/ai', aiRouter);
-  app.use('/api/ai', aiRouter);
-  app.use('/ai', aiRouter);
-}
+app.use('/api/v1/data-enrichment', dataEnrichmentRoutes);
+app.use('/api/data-enrichment', dataEnrichmentRoutes);
+app.use('/data-enrichment', dataEnrichmentRoutes);
 
-// Index router should be last as it handles broad feature paths
-app.use('/api/v1', indexRouter);
-app.use('/api', indexRouter);
-app.use('/', indexRouter);
+
+// 404 Handler (must be after all routes)
+app.use((req, res, next) => {
+  res.status(404).json({ message: `Route ${req.originalUrl} not found` });
+});
 
 // Error handler
 app.use((err, req, res, next) => {

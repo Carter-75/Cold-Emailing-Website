@@ -91,14 +91,27 @@ class SchedulerService {
       console.log('[Cron] Starting maintenance sweep');
       const sequenceSummary = await SequenceService.processAllSequences();
       const inboxSummary = await IMAPService.checkAllInboxes();
-      console.log('[Cron] Maintenance sweep complete', { sequenceSummary, inboxSummary });
+      
+      // Data Enrichment Pipeline — piggybacks on existing external cron trigger
+      // Runs alongside maintenance to avoid using extra Vercel cron slots
+      let dataPipelineSummary = { skipped: true, reason: 'not-triggered' };
+      try {
+        const DataPipelineService = require('./data-pipeline.service');
+        dataPipelineSummary = await DataPipelineService.runPipeline();
+      } catch (err) {
+        console.error('[Cron] Data pipeline error (non-fatal):', err.message);
+        dataPipelineSummary = { skipped: false, error: err.message };
+      }
+      
+      console.log('[Cron] Maintenance sweep complete', { sequenceSummary, inboxSummary, dataPipelineSummary });
 
       return {
         ok: true,
         skipped: false,
-        tasks: ['process-sequences', 'monitor-replies'],
+        tasks: ['process-sequences', 'monitor-replies', 'data-enrichment'],
         sequenceSummary,
-        inboxSummary
+        inboxSummary,
+        dataPipelineSummary
       };
     } finally {
       await this.releaseLease(leaseKey);
@@ -132,12 +145,32 @@ class SchedulerService {
       leadsQueued += result?.leadsFound ?? 0;
     }
 
+    // Data Buyer Discovery — find companies that would buy data intelligence
+    let dataBuyerLeads = 0;
+    try {
+      const DataSalesDiscovery = require('./data-sales-discovery.service');
+      const cityRotator = require('./city-rotator');
+      
+      for (const user of users) {
+        const result = await DataSalesDiscovery.runDataBuyerDiscovery(user._id, {
+          LeadGenService: require('./lead-gen.service'),
+          ValidatorService: require('./validator.service'),
+          EnrichmentService: require('./enrichment.service'),
+          cityRotator
+        });
+        dataBuyerLeads += result?.leadsFound ?? 0;
+      }
+    } catch (err) {
+      console.error('[Discovery] Data buyer discovery error (non-fatal):', err.message);
+    }
+
     return {
       ok: true,
       skipped: false,
       windowKey,
       processedUsers,
-      leadsQueued
+      leadsQueued,
+      dataBuyerLeads
     };
   }
 

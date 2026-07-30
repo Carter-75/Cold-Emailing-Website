@@ -64,6 +64,18 @@ const UserSchema = new mongoose.Schema({
       serpapi: { active: { type: Boolean, default: false }, lastAlertedAt: Date },
       verifalia: { active: { type: Boolean, default: false }, lastAlertedAt: Date },
       smtp: { active: { type: Boolean, default: false }, lastAlertedAt: Date }
+    },
+    
+    // Data Enrichment Pipeline Config
+    dataEnrichment: {
+      enabled: { type: Boolean, default: false },
+      activeSources: [{ type: String }],              // ['building-permits', 'gov-contracts']
+      aiInstructions: { type: String, default: '' },   // Custom AI prompt override
+      targetRegions: [{ type: String }],               // ['Chicago, IL', 'Dallas, TX']
+      autoOutreach: { type: Boolean, default: false },  // Auto-email discovered contacts
+      publishSEO: { type: Boolean, default: false },    // Auto-publish to SEO site (Phase 4)
+      lastRunAt: { type: Date },
+      dailyProcessLimit: { type: Number, default: 50 }
     }
   },
   stats: {

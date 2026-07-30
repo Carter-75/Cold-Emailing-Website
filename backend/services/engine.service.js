@@ -208,7 +208,15 @@ class OutreachEngine {
       if (lead.cachedEmail && lead.cachedEmail.content && lead.cachedEmail.isAiApproved) {
         content = lead.cachedEmail.content;
       } else {
-        content = await EmailService.generateContent(lead, user.config);
+        // For data-sales leads, merge the data buyer persona into the config
+        let effectiveConfig = user.config;
+        if (lead.source === 'data-sales') {
+          const DataSalesDiscovery = require('./data-sales-discovery.service');
+          const personaOverride = DataSalesDiscovery.getPersonaOverride();
+          effectiveConfig = { ...(user.config.toObject ? user.config.toObject() : user.config), ...personaOverride };
+        }
+        
+        content = await EmailService.generateContent(lead, effectiveConfig);
         
         const isApproved = await EmailService.verifyContentWithAI(content, user.config);
         if (!isApproved) {
