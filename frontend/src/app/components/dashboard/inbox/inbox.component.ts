@@ -57,6 +57,7 @@ export class InboxComponent implements OnInit, OnDestroy {
 
   isFullscreen = signal<boolean>(false);
   isGeneratingAI = signal<boolean>(false);
+  isSending = signal<boolean>(false);
   aiPrompt = signal<string>('');
   composeFrom = signal('');
   composeTo = signal('');
@@ -144,6 +145,7 @@ export class InboxComponent implements OnInit, OnDestroy {
         console.log('Sync result:', res.summary);
         this.dataSource.reload();
         this.fetchStats();
+        this.loading.set(false);
         if (res.summary?.errors && res.summary.errors.length > 0) {
           alert('IMAP Connection Error:\n\n' + res.summary.errors.join('\n\n') + '\n\nPlease check your App Passwords and IMAP Host/Port settings.');
         }
@@ -251,12 +253,12 @@ export class InboxComponent implements OnInit, OnDestroy {
       finalBody += `<br><br>${this.getSignatureHTML()}`;
     }
 
-    this.loading.set(true);
+    this.isSending.set(true);
     this.http.post(`/api/v1/inbox/${msg._id}/replies`, { textBody: finalBody }).subscribe({
       next: (res: any) => this.handleDelayedSendSuccess(res),
       error: () => {
         alert('Failed to send reply');
-        this.loading.set(false);
+        this.isSending.set(false);
       }
     });
   }
@@ -340,7 +342,7 @@ export class InboxComponent implements OnInit, OnDestroy {
       finalBody += `<br><br>${this.getSignatureHTML()}`;
     }
 
-    this.loading.set(true);
+    this.isSending.set(true);
     this.http.post('/api/v1/inbox/messages', {
       fromEmail: this.composeFrom(),
       to: this.composeTo(),
@@ -350,7 +352,7 @@ export class InboxComponent implements OnInit, OnDestroy {
       next: (res: any) => this.handleDelayedSendSuccess(res),
       error: () => {
         alert('Failed to send message');
-        this.loading.set(false);
+        this.isSending.set(false);
       }
     });
   }
@@ -362,7 +364,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     }
     
     this.replyText.set('');
-    this.loading.set(false);
+    this.isSending.set(false);
     if (res.sendId) {
       this.pendingReplyId.set(res.sendId);
       this.countdown.set(30);
