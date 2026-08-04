@@ -117,14 +117,14 @@ class EmailService {
   }
 
   async verifyContentWithAI(content, config) {
-    if (!config.openaiKey) return true; // Fallback if no key
+    if (!config.openaiKey) return content; // Fallback if no key
     const openai = new OpenAI({ apiKey: config.openaiKey });
     
     const systemPrompt = `You are an elite QA bot for outbound emails.
 Your task is to review the following cold email draft.
-If the email is perfectly formatted, highly professional, strictly plain-text without conversational filler, and ready to send, reply with ONLY the word "yes".
-If the email has formatting issues, placeholders, markdown, conversational filler, or is otherwise not perfect, reply with ONLY the word "no".
-Do not output anything else.`;
+If the email has severe issues that you cannot fix, reply with EXACTLY and ONLY: "NO: [Reason]".
+Otherwise, if the email has minor issues (like markdown formatting, placeholders, or weirdly spaced names like 'Osu a De tal Ca e'), FIX them silently.
+Reply with the absolute final, polished, strictly plain-text email ready to be sent. Do not include any conversational filler before or after the email text. Just the email content.`;
 
     const userPrompt = `Email Draft:\n"""\n${content}\n"""`;
 
@@ -139,21 +139,15 @@ Do not output anything else.`;
       });
 
       const reply = completion.choices[0].message.content.trim();
-      const lowerReply = reply.toLowerCase();
 
-      if (lowerReply === 'yes') {
-        return true;
+      if (reply.toUpperCase().startsWith('NO:')) {
+        throw new Error(`AI QA Rejection: ${reply}`);
       }
 
-      if (/\byes\b/i.test(reply)) {
-        console.log(`[AI Verification] Regex was used to verify. AI Response: "${reply}"`);
-        return true;
-      }
-
-      return false;
+      return reply; // Return the fixed (or perfect) email content
     } catch (err) {
       console.error('[AI Verification] Failed:', err.message);
-      return false; 
+      throw err; 
     }
   }
 

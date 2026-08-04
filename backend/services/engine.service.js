@@ -218,11 +218,9 @@ class OutreachEngine {
         
         content = await EmailService.generateContent(lead, effectiveConfig);
         
-        const isApproved = await EmailService.verifyContentWithAI(content, user.config);
-        if (!isApproved) {
-          throw new Error('AI Verification failed for email content.');
-        }
+        const verifiedContent = await EmailService.verifyContentWithAI(content, user.config);
         
+        content = verifiedContent;
         lead.cachedEmail = { content, isAiApproved: true };
         try {
           await lead.save();
@@ -254,6 +252,7 @@ class OutreachEngine {
       await updateDiagnosticFlag(user, 'smtp', false);
       return { sent: true, recipient: lead.recipientEmail };
     } catch (err) {
+      console.error(`[Engine] Send error for ${lead.businessName}:`, err.message);
       const type = classifyError(err, this._infer(err));
       if (type) await updateDiagnosticFlag(user, type, true);
       return { sent: false };
