@@ -8,23 +8,23 @@ export interface DataRecord {
   sourceType: string;
   sourceId: string;
   sourceUrl: string;
-  structured: {
-    companyName: string;
-    estimatedBudget: number;
-    projectType: string;
-    location: {
-      city: string;
-      state: string;
-      zip: string;
-      fullAddress: string;
+  structured?: {
+    companyName?: string;
+    estimatedBudget?: number;
+    projectType?: string;
+    location?: {
+      city?: string;
+      state?: string;
+      zip?: string;
+      fullAddress?: string;
     };
-    contactInfo: {
-      name: string;
-      email: string;
-      phone: string;
+    contactInfo?: {
+      name?: string;
+      email?: string;
+      phone?: string;
     };
-    executiveSummary: string;
-    tags: string[];
+    executiveSummary?: string;
+    tags?: string[];
   };
   status: string;
   failureReason?: string;

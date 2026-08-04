@@ -1,4 +1,4 @@
-<div class="glass-card flex flex-col lg:flex-row gap-6 h-auto lg:h-[80vh] w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 overflow-hidden" (document:mouseup)="onMouseUp()">
+<div class="glass-card flex flex-col lg:flex-row gap-6 h-auto lg:h-[80vh] w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 overflow-hidden">
   
   <!-- Left Side: Message List -->
   <div class="w-full lg:w-1/3 flex flex-col border-b lg:border-b-0 lg:border-r border-white/5 pb-6 lg:pb-0 lg:pr-6 h-[50vh] lg:h-full">
@@ -109,7 +109,6 @@
       <div *cdkVirtualFor="let msg of dataSource" 
            [attr.data-msg-id]="msg?._id"
            (click)="msg && selectMessage(msg)"
-           (mouseenter)="msg && onMouseEnter(msg._id)"
            [ngClass]="{'bg-white/10 border-orange-500/30': msg && selectedMessage()?._id === msg._id, 'bg-white/[0.02] border-white/5 hover:bg-white/5': msg && selectedMessage()?._id !== msg._id}"
            class="p-4 rounded-xl border cursor-pointer transition-all duration-300 relative group flex items-start gap-3 select-none mb-3 h-[115px]">
            

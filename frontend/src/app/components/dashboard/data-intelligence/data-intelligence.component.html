@@ -149,7 +149,7 @@
           </div>
           <div class="p-4 rounded-xl bg-white/5 border border-white/10">
             <p class="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Source</p>
-            <p class="text-sm capitalize">{{ record.sourceType?.replace('-', ' ') }}</p>
+            <p class="text-sm capitalize">{{ record.sourceType.replace('-', ' ') }}</p>
             <a *ngIf="record.sourceUrl" [href]="record.sourceUrl" target="_blank" class="text-xs text-blue-400 hover:underline">View Original →</a>
           </div>
         </div>
@@ -160,7 +160,7 @@
         </div>
 
         <div *ngIf="record.structured?.tags?.length" class="flex flex-wrap gap-2">
-          <span *ngFor="let tag of record.structured.tags" class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-white/60">
+          <span *ngFor="let tag of record.structured?.tags" class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-white/60">
             {{ tag }}
           </span>
         </div>

@@ -36,9 +36,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   includeSignature = signal<boolean>(true);
   private countdownInterval: any;
 
-  private scrollInterval: any;
-  private mouseY: number = 0;
-  private mouseX: number = 0;
+
 
   viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'|'discovery'|'leads'|'warm-up'|'dmarc'>('inbox');
   selectedAccount = signal<string>('all');
@@ -63,8 +61,6 @@ export class InboxComponent implements OnInit, OnDestroy {
   composeSubject = signal('');
   availableEmails = signal<string[]>([]);
   searchQuery = signal('');
-
-  isDragging = false;
   
   // Custom scrollbar
   isScrollDragging = false;
