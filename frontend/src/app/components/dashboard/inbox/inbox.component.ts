@@ -35,6 +35,8 @@ export class InboxComponent implements OnInit, OnDestroy {
   countdown = signal<number>(0);
   includeSignature = signal<boolean>(true);
   private countdownInterval: any;
+  private autoSaveInterval: any;
+  private lastSavedContent: string = '';
 
 
 
@@ -93,9 +95,30 @@ export class InboxComponent implements OnInit, OnDestroy {
         this.primaryEmail.set(res.primary || '');
         if (res.emails.length > 0 && !this.composeFrom()) {
           this.composeFrom.set(res.emails[0]);
-        }
       }
     });
+
+    // Auto-save loop (every 5 seconds)
+    this.autoSaveInterval = setInterval(() => {
+      this.checkAndAutoSave();
+    }, 5000);
+  }
+
+  checkAndAutoSave() {
+    if (!this.isComposing() && !this.isReplying()) return;
+    
+    const currentText = this.replyText() || '';
+    const currentTo = this.composeTo() || '';
+    const currentSubject = this.composeSubject() || '';
+
+    // Don't auto-save if completely empty
+    if (!currentText.trim() && !currentTo.trim() && !currentSubject.trim()) return;
+
+    const currentSignature = `${currentText}|${currentTo}|${currentSubject}`;
+    if (currentSignature !== this.lastSavedContent) {
+      this.saveDraft(true);
+      this.lastSavedContent = currentSignature;
+    }
   }
 
   fetchStats() {
@@ -151,6 +174,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.isComposing.set(false);
     this.isReplying.set(false);
     this.currentDraftId.set(null);
+    this.lastSavedContent = '';
   }
 
   public getSignatureHTML(): string {
@@ -171,6 +195,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.includeSignature.set(true);
     this.composeTo.set('');
     this.composeSubject.set('');
+    this.lastSavedContent = '';
   }
 
   openReply() {
@@ -178,6 +203,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.isComposing.set(false);
     this.replyText.set('');
     this.includeSignature.set(true);
+    this.lastSavedContent = '';
   }
 
   selectMessage(msg: any) {
@@ -190,6 +216,7 @@ export class InboxComponent implements OnInit, OnDestroy {
       this.composeTo.set(msg.to);
       this.composeSubject.set(msg.subject);
       this.replyText.set(msg.textBody);
+      this.lastSavedContent = `${msg.textBody || ''}|${msg.to || ''}|${msg.subject || ''}`;
       return;
     }
     
@@ -231,6 +258,80 @@ export class InboxComponent implements OnInit, OnDestroy {
         this.loading.set(false);
       }
     });
+  }
+
+  saveDraft(isAutoSave: boolean = false) {
+    let finalBody = this.replyText();
+    if (this.includeSignature()) {
+      finalBody += `<br><br>${this.getSignatureHTML()}`;
+    }
+
+    const payload = {
+      inboxEmail: this.isComposing() ? this.composeFrom() : this.selectedMessage()?.inboxEmail,
+      to: this.isComposing() ? this.composeTo() : this.selectedMessage()?.from,
+      subject: this.isComposing() ? this.composeSubject() : (this.selectedMessage()?.subject.toLowerCase().startsWith('re:') ? this.selectedMessage()?.subject : `Re: ${this.selectedMessage()?.subject}`),
+      textBody: finalBody,
+      replyToMessageId: this.isComposing() ? null : this.selectedMessage()?._id
+    };
+
+    if (!isAutoSave) {
+      this.loading.set(true);
+    }
+    
+    if (this.currentDraftId()) {
+      this.http.put(`/api/v1/inbox/drafts/${this.currentDraftId()}`, payload).subscribe({
+        next: () => {
+          if (!isAutoSave) {
+            this.loading.set(false);
+            this.isComposing.set(false);
+            this.isReplying.set(false);
+            this.dataSource.reload();
+          }
+        },
+        error: () => {
+          if (!isAutoSave) {
+            this.loading.set(false);
+            alert('Failed to update draft');
+          }
+        }
+      });
+    } else {
+      this.http.post<any>('/api/v1/inbox/drafts', payload).subscribe({
+        next: (res) => {
+          this.currentDraftId.set(res._id); // Assign the newly created draft ID so future auto-saves update it
+          if (!isAutoSave) {
+            this.loading.set(false);
+            this.isComposing.set(false);
+            this.isReplying.set(false);
+            this.dataSource.reload();
+          }
+        },
+        error: () => {
+          if (!isAutoSave) {
+            this.loading.set(false);
+            alert('Failed to save draft');
+          }
+        }
+      });
+    }
+  }
+
+  discardDraft() {
+    if (this.currentDraftId()) {
+      this.http.delete(`/api/v1/inbox/drafts/${this.currentDraftId()}`).subscribe({
+        next: () => {
+          this.currentDraftId.set(null);
+          this.isComposing.set(false);
+          this.isReplying.set(false);
+          this.lastSavedContent = '';
+          this.dataSource.reload();
+        }
+      });
+    } else {
+      this.isComposing.set(false);
+      this.isReplying.set(false);
+      this.lastSavedContent = '';
+    }
   }
 
   sendCompose() {
@@ -290,7 +391,11 @@ export class InboxComponent implements OnInit, OnDestroy {
     if (!sendId) return;
 
     this.loading.set(true);
-    this.http.delete(`/api/v1/inbox/${this.selectedMessage()._id}/replies/${sendId}`).subscribe({
+    
+    const isNew = sendId.startsWith('new-');
+    const url = isNew ? `/api/v1/inbox/messages/${sendId}` : `/api/v1/inbox/${this.selectedMessage()._id}/replies/${sendId}`;
+    
+    this.http.delete(url).subscribe({
       next: () => {
         clearInterval(this.countdownInterval);
         this.pendingReplyId.set(null);
@@ -318,8 +423,11 @@ export class InboxComponent implements OnInit, OnDestroy {
     });
   }
 
+
   ngOnDestroy() {
     this.stopDragSelection();
+    if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
   }
 
   // --- ROBUST DRAG TO SELECT ---

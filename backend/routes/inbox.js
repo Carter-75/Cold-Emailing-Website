@@ -452,8 +452,93 @@ router.post('/:id/replies', catchAsync(async (req, res) => {
     res.status(201).json({ success: true, message: 'Reply queued for 30s delay', sendId });
 }));
 
+// Send New Message
+router.post('/messages', catchAsync(async (req, res) => {
+    const { fromEmail, to, subject, textBody } = req.body;
+    const user = await User.findById(req.user._id);
+    
+    let config = null;
+    if (user.config.senderEmail === fromEmail) {
+      config = {
+        email: user.config.senderEmail,
+        pass: user.config.appPassword,
+        host: user.config.smtpHost,
+        port: user.config.smtpPort
+      };
+    } else if (user.config.connectedInboxes) {
+      const secondary = user.config.connectedInboxes.find(i => i.email === fromEmail);
+      if (secondary) {
+        config = {
+          email: secondary.email,
+          pass: secondary.appPassword,
+          host: secondary.smtpHost,
+          port: secondary.smtpPort
+        };
+      }
+    }
+    
+    if (!config) return res.status(400).json({ message: 'SMTP config not found for this inbox' });
+    
+    const transporter = nodemailer.createTransport({
+      host: config.host,
+      port: config.port || 465,
+      secure: config.port === 465,
+      auth: { user: config.email, pass: config.pass }
+    });
+
+    const htmlBody = textBody.replace(/\\n/g, '<br>');
+
+    const mailOptions = {
+      from: `"${user.config.displayName || user.config.companyName || 'Me'}" <${config.email}>`,
+      to,
+      subject,
+      text: textBody,
+      html: htmlBody
+    };
+
+    const sendId = 'new-' + Date.now();
+    
+    global.pendingSends[sendId] = setTimeout(async () => {
+      try {
+        await transporter.sendMail(mailOptions);
+        
+        const sentMsg = new InboxMessage({
+          userId: req.user._id,
+          inboxEmail: config.email,
+          messageId: `sent-${Date.now()}@coldauto.pro`,
+          from: config.email,
+          to,
+          subject,
+          textBody,
+          htmlBody,
+          date: new Date(),
+          isRead: true,
+          isReply: false
+        });
+        await sentMsg.save();
+      } catch (err) {
+        console.error('Delayed send message failed:', err);
+      } finally {
+        delete global.pendingSends[sendId];
+      }
+    }, 30000);
+
+    res.status(201).json({ success: true, message: 'Message queued for 30s delay', sendId });
+}));
+
 // Cancel Reply
 router.delete('/:id/replies/:sendId', catchAsync(async (req, res) => {
+  const { sendId } = req.params;
+  if (global.pendingSends && global.pendingSends[sendId]) {
+    clearTimeout(global.pendingSends[sendId]);
+    delete global.pendingSends[sendId];
+    return res.json({ success: true, message: 'Reply cancelled' });
+  }
+  res.status(404).json({ message: 'Reply not found or already sent' });
+}));
+
+// Cancel Send Message
+router.delete('/messages/:sendId', catchAsync(async (req, res) => {
   const { sendId } = req.params;
   if (global.pendingSends && global.pendingSends[sendId]) {
     clearTimeout(global.pendingSends[sendId]);
