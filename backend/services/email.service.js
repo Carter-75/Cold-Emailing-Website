@@ -69,7 +69,7 @@ class EmailService {
     - CRITICAL: Format the email with natural paragraph breaks (leave a blank line between sections) so it is NOT a giant wall of text.
     - CRITICAL: Sound like a real, conversational human. Avoid stiff, robotic corporate jargon.
     - CRITICAL: Start with a brief, friendly greeting (e.g., "Hi there," or "Hi team at ${safeBusinessName},").
-    - CRITICAL: End with a natural sign-off (e.g., "Best,\\n${config.senderName}").
+    - CRITICAL: End with a natural sign-off (e.g., "Best,\\n${config.companyName}"). Do NOT use a personal name like ${config.senderName}.
     - CRITICAL: Use ONLY plain text. Do NOT use markdown (no asterisks, no hashes, no bolding).
     - CRITICAL: NEVER put quotation marks around business names or links unless grammatically required.
     - CRITICAL: Do NOT include a subject line.
