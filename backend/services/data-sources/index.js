@@ -22,6 +22,7 @@ const registerSource = (name, path) => {
 };
 
 // Register available sources
+registerSource('phoenix-api', './phoenix-api');
 registerSource('building-permits', './building-permits');
 registerSource('gov-contracts', './gov-contracts');
 

@@ -235,6 +235,7 @@ export class DataIntelligenceComponent implements OnInit {
 
   getSourceIcon(sourceType: string): string {
     switch (sourceType) {
+      case 'phoenix-api': return 'sparkles';
       case 'building-permits': return 'building-2';
       case 'gov-contracts': return 'landmark';
       case 'sec-filings': return 'file-text';

@@ -28,42 +28,7 @@ router.get('/', verifyToken, catchAsync(async (req, res) => {
     };
   });
 
-  // ── Query 2: Portfolio + Data Enrichment leads (cross-app, no userId) ──────
-  const engineEmails = new Set(engineLeads.map(l => l.recipientEmail.toLowerCase()));
-
-  const portfolioLeads = await Lead.find({
-    source: { $in: ['portfolio', 'data-enrichment'] },
-    status: { $in: ['emailed', 'replied', 'unsubscribed'] } 
-  }).sort({ updatedAt: -1 });
-
-  const portfolioLeadsFormatted = portfolioLeads
-    .filter(l => !engineEmails.has(l.email?.toLowerCase())) // no duplicates
-    .map(l => {
-      const raw = l.toObject ? l.toObject() : l;
-      return {
-        _id: raw._id,
-        businessName: raw.businessName || raw.name || 'Portfolio Lead',
-        recipientEmail: raw.email,
-        city: null,
-        status: raw.status === 'unsubscribed' ? 'finished' : raw.status,
-        sequenceStep: null,
-        lastEmailedAt: raw.lastEmailedAt,
-        nextEmailAt: null,
-        thread: raw.thread || [],
-        messageIds: raw.messageIds || [],
-        isTestData: false,
-        isUnsubscribed: raw.status === 'unsubscribed',
-        source: 'portfolio',
-        sourceEmail: raw.sourceEmail || 'hello@phoenixwebsites.ai',
-        updatedAt: raw.updatedAt || raw.lastEmailedAt || raw.createdAt
-      };
-    });
-
-  // ── Merge & sort by most recent activity ────────────────────────────────
-  const combined = [...engineLeadsFormatted, ...portfolioLeadsFormatted]
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-
-  res.json(combined);
+  res.json(engineLeadsFormatted);
 }));
 
 router.post('/:id/replies', verifyToken, catchAsync(async (req, res) => {
@@ -71,7 +36,6 @@ router.post('/:id/replies', verifyToken, catchAsync(async (req, res) => {
   if (!body) return res.status(400).json({ message: 'Reply content is required.' });
 
   let lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
-  if (!lead) lead = await Lead.findOne({ _id: req.params.id, source: 'portfolio' });
   if (!lead) return res.status(404).json({ message: 'Lead not found.' });
 
   const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
@@ -116,7 +80,6 @@ router.post('/:id/reply-refinements', verifyToken, catchAsync(async (req, res) =
   if (!draft) return res.status(400).json({ message: 'Draft is required for refinement.' });
 
   let lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
-  if (!lead) lead = await Lead.findOne({ _id: req.params.id, source: 'portfolio' });
   if (!lead) return res.status(404).json({ message: 'Lead not found.' });
 
   const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
@@ -128,7 +91,6 @@ router.post('/:id/reply-refinements', verifyToken, catchAsync(async (req, res) =
 
 router.post('/:id/thread-cleanups', verifyToken, catchAsync(async (req, res) => {
   let lead = await Lead.findOne({ _id: req.params.id, userId: req.user._id });
-  if (!lead) lead = await Lead.findOne({ _id: req.params.id, source: 'portfolio' });
   if (!lead) return res.status(404).json({ message: 'Lead not found.' });
 
   const user = req.user.isShadow ? req.user : await User.findById(req.user._id);
