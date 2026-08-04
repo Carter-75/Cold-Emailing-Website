@@ -13,7 +13,6 @@ import { OverviewComponent } from './overview/overview.component';
 import { InfrastructureComponent } from './infrastructure/infrastructure.component';
 import { IdentityComponent } from './identity/identity.component';
 import { InboxComponent } from './inbox/inbox.component';
-import { DataIntelligenceComponent } from './data-intelligence/data-intelligence.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -25,8 +24,7 @@ import { DataIntelligenceComponent } from './data-intelligence/data-intelligence
     OverviewComponent,
     InfrastructureComponent,
     IdentityComponent,
-    InboxComponent,
-    DataIntelligenceComponent
+    InboxComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
@@ -36,7 +34,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   outreach = inject(OutreachService);
   billing = inject(BillingService);
   
-  activeTab = signal<'overview' | 'infra' | 'identity' | 'billing' | 'inbox' | 'data'>('overview');
+  activeTab = signal<'overview' | 'infra' | 'identity' | 'billing' | 'inbox'>('overview');
   leads = signal<any[]>([]);
   tourStep = signal<number | null>(null); // null means no tour active
 
