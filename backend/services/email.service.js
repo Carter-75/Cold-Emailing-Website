@@ -35,11 +35,11 @@ class EmailService {
 
     let stepInstructions = '';
     if (step === 1) {
-      stepInstructions = `This is the INITIAL outreach. Focus on a personalized hook regarding [${safeBusinessName}] and a brief intro. You MUST mention the company name naturally. For initial emails ONLY, pick exactly 1 reason from the provided "Reasons Why to Buy" list and naturally integrate it into the email.`;
+      stepInstructions = `This is the INITIAL outreach. Start immediately with a specific observation or challenge related to [${safeBusinessName}]. DO NOT use "I" statements in the opening line or robotic flattery. Focus entirely on the business outcome and integrate exactly 1 reason from the "Reasons Why to Buy" list. Keep it under 100 words.`;
     } else if (step === 2) {
-      stepInstructions = `This is the FIRST FOLLOW-UP (Cold). Acknowledge that you sent a previous email which may have been missed regarding [${safeBusinessName}]. DO NOT assume they have responded or shown interest yet. Keep it shorter and focus on the "bump" of the value prop.`;
+      stepInstructions = `This is the FIRST FOLLOW-UP. Keep it under 50 words. Focus on the core business outcome value prop. Use a very low-friction CTA like "Worth a 2-minute look?". DO NOT assume they read the first email.`;
     } else {
-      stepInstructions = `This is the FINAL FOLLOW-UP (Cold). Be professional but direct. Mention this is the last time you will be reaching out personally about [${safeBusinessName}]. Assume they have not responded to your previous two emails.`;
+      stepInstructions = `This is the FINAL FOLLOW-UP. Keep it under 50 words. Be professional but direct. Mention this is the last time you'll reach out regarding [${safeBusinessName}]. Ask a simple yes/no question as the CTA.`;
     }
 
     // Pick a random reason for initial emails
@@ -66,22 +66,20 @@ class EmailService {
     ${reasonBlock}
 
     Linguistic Rules:
-    - Max 3-5 sentences for follow-ups.
-    - Zero passive phrasing.
+    - CRITICAL: Keep the email strictly between 50 and 100 words. If it takes longer than 10 seconds to read, it is too long.
+    - CRITICAL: Avoid "I" statements at the beginning of the email. Do not introduce yourself ("I am the founder of..."). Just get straight to the point about their business.
+    - CRITICAL: Do NOT include portfolio links or URLs unless strictly necessary, as they hurt deliverability. Sell the outcome, not the portfolio.
+    - CRITICAL: Use a low-friction CTA (e.g. "Worth a quick look?", "Open to exploring this?"). Do NOT ask for a 30-minute call.
     - CRITICAL: Use ONLY plain text. Do NOT use markdown (no asterisks, no hashes, no bolding).
     - CRITICAL: NEVER put quotation marks around business names or links unless grammatically required.
-    - CRITICAL: Do NOT include a sign-off or signature.
-    - CRITICAL: Do NOT include a subject line. Start directly with the email body.
-    - CRITICAL: Do NOT include any conversational filler or meta-commentary.
-    - CRITICAL: Never use asterisks or hash symbols.
-    - CRITICAL: The tone should convey a flying, energetic phoenix connection — confident, direct, soaring.
-    - CRITICAL: Mention looking at the Phoenix site for reviews and other company work.
-    - CRITICAL: No calls — all communication is via email.
+    - CRITICAL: Do NOT include a sign-off or signature. Start directly with the email body.
+    - CRITICAL: Do NOT include a subject line.
+    - CRITICAL: Do NOT include any conversational filler (e.g. "Hope you are well", "I've been following your work").
     
     Email Structure:
-    - Personalized context regarding [${safeBusinessName}].
+    - Outcome-focused observation regarding [${safeBusinessName}].
     - The value prop: ${config.valueProp}.
-    - Clear Call to Action: ${config.targetOutcome}.`;
+    - Low-friction Call to Action (CTA).`;
 
     const userPrompt = `Generate the Step ${step} email for """${safeBusinessName}""". 
     Goal: ${config.targetOutcome}
