@@ -35,11 +35,11 @@ class EmailService {
 
     let stepInstructions = '';
     if (step === 1) {
-      stepInstructions = `This is the INITIAL outreach. Start immediately with a specific observation or challenge related to [${safeBusinessName}]. DO NOT use "I" statements in the opening line or robotic flattery. Focus entirely on the business outcome and integrate exactly 1 reason from the "Reasons Why to Buy" list. Keep it under 100 words.`;
+      stepInstructions = `This is the INITIAL outreach. Write a highly personalized, human-sounding cold email to the team at ${safeBusinessName}. Focus entirely on the business outcome and integrate exactly 1 reason from the "Reasons Why to Buy" list. Make it conversational, polite, and persuasive, but keep it under 150 words. Use natural spacing (blank lines between paragraphs) so it is easy to read.`;
     } else if (step === 2) {
-      stepInstructions = `This is the FIRST FOLLOW-UP. Keep it under 50 words. Focus on the core business outcome value prop. Use a very low-friction CTA like "Worth a 2-minute look?". DO NOT assume they read the first email.`;
+      stepInstructions = `This is the FIRST FOLLOW-UP. Keep it under 75 words. Be casual, human, and polite. Focus on the core business outcome value prop. Use a very low-friction CTA like "Worth a 2-minute look?". Use blank lines for spacing.`;
     } else {
-      stepInstructions = `This is the FINAL FOLLOW-UP. Keep it under 50 words. Be professional but direct. Mention this is the last time you'll reach out regarding [${safeBusinessName}]. Ask a simple yes/no question as the CTA.`;
+      stepInstructions = `This is the FINAL FOLLOW-UP. Keep it under 50 words. Be professional but brief. Mention this is the last time you'll reach out regarding ${safeBusinessName}. Ask a simple yes/no question as the CTA. Use blank lines for spacing.`;
     }
 
     // Pick a random reason for initial emails
@@ -66,20 +66,20 @@ class EmailService {
     ${reasonBlock}
 
     Linguistic Rules:
-    - CRITICAL: Keep the email strictly between 50 and 100 words. If it takes longer than 10 seconds to read, it is too long.
-    - CRITICAL: Avoid "I" statements at the beginning of the email. Do not introduce yourself ("I am the founder of..."). Just get straight to the point about their business.
-    - CRITICAL: Do NOT include portfolio links or URLs unless strictly necessary, as they hurt deliverability. Sell the outcome, not the portfolio.
-    - CRITICAL: Use a low-friction CTA (e.g. "Worth a quick look?", "Open to exploring this?"). Do NOT ask for a 30-minute call.
+    - CRITICAL: Format the email with natural paragraph breaks (leave a blank line between sections) so it is NOT a giant wall of text.
+    - CRITICAL: Sound like a real, conversational human. Avoid stiff, robotic corporate jargon.
+    - CRITICAL: Start with a brief, friendly greeting (e.g., "Hi there," or "Hi team at ${safeBusinessName},").
+    - CRITICAL: End with a natural sign-off (e.g., "Best,\\n${config.senderName}").
     - CRITICAL: Use ONLY plain text. Do NOT use markdown (no asterisks, no hashes, no bolding).
     - CRITICAL: NEVER put quotation marks around business names or links unless grammatically required.
-    - CRITICAL: Do NOT include a sign-off or signature. Start directly with the email body.
     - CRITICAL: Do NOT include a subject line.
-    - CRITICAL: Do NOT include any conversational filler (e.g. "Hope you are well", "I've been following your work").
     
     Email Structure:
-    - Outcome-focused observation regarding [${safeBusinessName}].
-    - The value prop: ${config.valueProp}.
-    - Low-friction Call to Action (CTA).`;
+    - Friendly greeting
+    - A human, outcome-focused observation regarding ${safeBusinessName}
+    - The value prop: ${config.valueProp}
+    - Low-friction Call to Action (CTA)
+    - Friendly sign-off`;
 
     const userPrompt = `Generate the Step ${step} email for """${safeBusinessName}""". 
     Goal: ${config.targetOutcome}
@@ -122,7 +122,7 @@ class EmailService {
 Your task is to review the following cold email draft.
 If the email has severe issues that you cannot fix, reply with EXACTLY and ONLY: "NO: [Reason]".
 Otherwise, if the email has minor issues (like markdown formatting, placeholders, or weirdly spaced names like 'Osu a De tal Ca e'), FIX them silently.
-Reply with the absolute final, polished, strictly plain-text email ready to be sent. Do not include any conversational filler before or after the email text. Just the email content.`;
+Reply with the absolute final, polished email ready to be sent. Ensure it has natural paragraph breaks (blank lines) and reads conversationally. Do not include any conversational filler before or after the email text. Just the email content.`;
 
     const userPrompt = `Email Draft:\n"""\n${content}\n"""`;
 

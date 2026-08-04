@@ -12,6 +12,28 @@ const axios = require('axios');
  *   1. Per-user config fields: verifaliaUsername / verifaliaPassword
  *   2. Environment variables:  VERIFALIA_USERNAME / VERIFALIA_PASSWORD
  */
+const FREE_EMAIL_PROVIDERS = new Set([
+  'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 
+  'aol.com', 'mail.com', 'msn.com', 'live.com', 'me.com', 'mac.com', 
+  'ymail.com', 'protonmail.com', 'proton.me', 'zoho.com', 'gmx.com'
+]);
+
+async function domainHasWebsite(domain) {
+  if (!domain || FREE_EMAIL_PROVIDERS.has(domain.toLowerCase())) {
+    return false;
+  }
+  try {
+    await axios.get(`http://${domain}`, { 
+      timeout: 5000, 
+      maxRedirects: 3,
+      validateStatus: (status) => status < 400
+    });
+    return true; // Resolves with 2xx/3xx, meaning the website exists
+  } catch (err) {
+    return false; // ENOTFOUND, Timeout, 404, 500, etc. means no working website
+  }
+}
+
 class VerificationService {
   /**
    * @param {string} email        - The email address to verify.
@@ -39,6 +61,16 @@ class VerificationService {
     if (!username && isTest) {
       console.log(`[Verification] MOCK MODE: Auto-approving ${email}...`);
       return true;
+    }
+
+    // 1. Custom pre-check: Does the domain already have a website?
+    const domain = email.split('@')[1];
+    if (domain) {
+      const hasWebsite = await domainHasWebsite(domain);
+      if (hasWebsite) {
+        console.log(`[Verification] Domain '${domain}' has a working website. Skipping lead ${email}.`);
+        return false; // Treat as invalid/skip so we don't pitch them a website
+      }
     }
 
     try {
