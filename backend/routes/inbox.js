@@ -466,7 +466,7 @@ router.delete('/:id/replies/:sendId', catchAsync(async (req, res) => {
 
 
 // Move to Trash
-router.delete('/trash', catchAsync(async (req, res) => {
+router.post('/trash', catchAsync(async (req, res) => {
     const { messageIds } = req.body;
     if (!messageIds || !Array.isArray(messageIds)) {
       return res.status(400).json({ message: 'Invalid request' });
@@ -489,7 +489,7 @@ router.delete('/trash', catchAsync(async (req, res) => {
 }));
 
 // Permanent Delete
-router.delete('/permanent', catchAsync(async (req, res) => {
+router.post('/permanent', catchAsync(async (req, res) => {
     const { messageIds } = req.body;
     if (!messageIds || !Array.isArray(messageIds)) {
       return res.status(400).json({ message: 'Invalid request' });
