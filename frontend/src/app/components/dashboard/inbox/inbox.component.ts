@@ -263,9 +263,6 @@ export class InboxComponent implements OnInit, OnDestroy {
 
   saveDraft(isAutoSave: boolean = false) {
     let finalBody = this.replyText();
-    if (this.includeSignature()) {
-      finalBody += `<br><br>${this.getSignatureHTML()}`;
-    }
 
     const payload = {
       inboxEmail: this.isComposing() ? this.composeFrom() : this.selectedMessage()?.inboxEmail,
