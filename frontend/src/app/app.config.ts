@@ -47,7 +47,13 @@ import {
   Loader,
   CheckSquare,
   Beaker,
-  Maximize2
+  Maximize2,
+  Database,
+  Download,
+  Building2,
+  Landmark,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -99,7 +105,13 @@ export const appConfig: ApplicationConfig = {
         Loader,
         CheckSquare,
         Beaker,
-        Maximize2
+        Maximize2,
+        Database,
+        Download,
+        Building2,
+        Landmark,
+        ChevronLeft,
+        ChevronRight
       })
     }
   ]

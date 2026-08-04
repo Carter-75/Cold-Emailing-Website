@@ -329,8 +329,19 @@ router.delete('/drafts/:id', catchAsync(async (req, res) => {
 // Manual IMAP Sync
 router.post('/syncs', catchAsync(async (req, res) => {
     const user = await User.findById(req.user._id);
-    const summary = await IMAPService.syncUserInboxes(user);
-    res.json({ success: true, summary });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Race sync against an 8s timeout to prevent Vercel 504 Gateway Timeout
+    const syncPromise = IMAPService.syncUserInboxes(user);
+    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ timeout: true }), 8000));
+
+    const result = await Promise.race([syncPromise, timeoutPromise]);
+
+    if (result && result.timeout) {
+      return res.json({ success: true, status: 'syncing_in_background' });
+    }
+
+    res.json({ success: true, summary: result });
 }));
 
 // Update Message Fields (Read/Star)
