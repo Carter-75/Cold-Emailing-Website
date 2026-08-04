@@ -20,7 +20,8 @@ export class LeadsComponent {
   leads = signal<any[]>([]);
   unsubList = signal<any[]>([]);
   mailboxes = signal<string[]>([]);
-  activeMailbox = signal<string>('');
+  activeMailbox = signal<string>('All');
+  expandedLeadId = signal<string | null>(null);
   activeTab = signal<'pipeline' | 'replied' | 'unsubscribed'>('pipeline');
   replyContent = signal<string>('');
   isReplying = signal<boolean>(false);
@@ -177,8 +178,11 @@ export class LeadsComponent {
   }
 
   toggleLead(lead: any) {
-    lead.isExpanded = !lead.isExpanded;
-    if (lead.isExpanded) {
+    if (this.expandedLeadId() === lead._id) {
+      this.expandedLeadId.set(null);
+      this.replyContent.set('');
+    } else {
+      this.expandedLeadId.set(lead._id);
       const config = this.auth.user()?.config;
       if (config) {
         const signatureHTML = config.signature || `<p>${config.senderName || ''}<br>${config.senderTitle || ''}</p>`;
@@ -189,8 +193,6 @@ export class LeadsComponent {
           this.replyContent.set('');
         }
       }
-    } else {
-      this.replyContent.set('');
     }
   }
 }

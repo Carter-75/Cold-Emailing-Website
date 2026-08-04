@@ -46,6 +46,15 @@ export class InboxComponent implements OnInit, OnDestroy {
   showLeadRepliesOnly = signal<boolean>(false);
   isComposing = signal<boolean>(false);
   isReplying = signal<boolean>(false);
+
+  // Robust Drag Selection State
+  isDragging = false;
+  dragAnchorIndex = -1;
+  isSelecting = false;
+  originalSelectedIds = new Set<string>();
+  private animationFrameId: number | null = null;
+  private mouseY = 0;
+
   isFullscreen = signal<boolean>(false);
   isGeneratingAI = signal<boolean>(false);
   aiPrompt = signal<string>('');
@@ -314,33 +323,74 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.stopAutoScroll();
+    this.stopDragSelection();
   }
 
-  private animationFrameId: number | null = null;
-  private lastCheckTime = 0;
-
-  // Slide to select logic
-  onMouseDown(msgId: string, event: Event) {
+  // --- ROBUST DRAG TO SELECT ---
+  startDragSelection(msgId: string, event: MouseEvent) {
     event.preventDefault(); // Prevents native text selection / drag
     event.stopPropagation();
+    
+    const data = this.dataSource.currentData;
+    this.dragAnchorIndex = data.findIndex(m => m._id === msgId);
+    if (this.dragAnchorIndex === -1) return;
+
     this.isDragging = true;
-    this.toggleSelection(msgId, event);
+    this.originalSelectedIds = new Set(this.selectedIds());
+    this.isSelecting = !this.originalSelectedIds.has(msgId);
+    
+    // Toggle the initial item immediately
+    this.updateSelectionRange(this.dragAnchorIndex);
     this.startAutoScroll();
   }
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event: MouseEvent) {
     if (!this.isDragging) return;
-    this.mouseX = event.clientX;
     this.mouseY = event.clientY;
     
-    // Find element under cursor to trigger selection if scroll isn't happening but mouse is moving over items
-    const now = Date.now();
-    if (now - this.lastCheckTime > 50) {
-      this.checkHoverSelection();
-      this.lastCheckTime = now;
+    // Find element under cursor (works seamlessly with CDK Virtual Scroll)
+    const el = document.elementFromPoint(event.clientX, event.clientY);
+    if (el) {
+      const row = el.closest('[data-msg-id]');
+      if (row) {
+        const id = row.getAttribute('data-msg-id');
+        if (id) {
+          const currentIndex = this.dataSource.currentData.findIndex(m => m._id === id);
+          if (currentIndex !== -1) {
+            this.updateSelectionRange(currentIndex);
+          }
+        }
+      }
     }
+  }
+
+  @HostListener('document:mouseup')
+  stopDragSelection() {
+    this.isDragging = false;
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+  }
+
+  updateSelectionRange(currentIndex: number) {
+    if (this.dragAnchorIndex === -1) return;
+    
+    const start = Math.min(this.dragAnchorIndex, currentIndex);
+    const end = Math.max(this.dragAnchorIndex, currentIndex);
+    const data = this.dataSource.currentData;
+    
+    const newSelection = new Set(this.originalSelectedIds);
+    for (let i = start; i <= end; i++) {
+      if (this.isSelecting) {
+        newSelection.add(data[i]._id);
+      } else {
+        newSelection.delete(data[i]._id);
+      }
+    }
+    
+    this.selectedIds.set(newSelection);
   }
 
   startAutoScroll() {
@@ -365,52 +415,17 @@ export class InboxComponent implements OnInit, OnDestroy {
         container.scrollTop -= scrollSpeed;
         scrolled = true;
       }
-
+      
+      // If we scrolled, manually trigger a hit test at the current mouse position
       if (scrolled) {
-        const now = Date.now();
-        if (now - this.lastCheckTime > 50) {
-          this.checkHoverSelection();
-          this.lastCheckTime = now;
-        }
+         // Create a synthetic event to trigger the hit test logic in onMouseMove
+         this.onMouseMove(new MouseEvent('mousemove', { clientX: window.innerWidth / 2, clientY: this.mouseY }));
       }
 
       this.animationFrameId = requestAnimationFrame(loop);
     };
 
     this.animationFrameId = requestAnimationFrame(loop);
-  }
-
-  stopAutoScroll() {
-    if (this.animationFrameId !== null) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
-    }
-  }
-
-  checkHoverSelection() {
-    // During auto-scroll, the mouse might be stationary but elements move under it.
-    // elementFromPoint checks what's currently under the stationary cursor.
-    const el = document.elementFromPoint(this.mouseX, this.mouseY);
-    if (el) {
-      const row = el.closest('[data-msg-id]');
-      if (row) {
-        const id = row.getAttribute('data-msg-id');
-        if (id) this.onMouseEnter(id);
-      }
-    }
-  }
-
-  onMouseEnter(msgId: string) {
-    if (this.isDragging) {
-      const current = new Set(this.selectedIds());
-      current.add(msgId);
-      this.selectedIds.set(current);
-    }
-  }
-
-  onMouseUp() {
-    this.isDragging = false;
-    this.stopAutoScroll();
   }
 
   toggleSelection(msgId: string, event: Event) {

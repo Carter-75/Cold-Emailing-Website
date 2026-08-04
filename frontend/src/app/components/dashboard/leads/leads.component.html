@@ -80,7 +80,7 @@
                 {{ lead.updatedAt | date:'HH:mm:ss' }}
               </td>
             </tr>
-            <tr *ngIf="lead.isExpanded" class="bg-black/20 border-b border-white/5">
+            <tr *ngIf="expandedLeadId() === lead._id" class="bg-black/20 border-b border-white/5">
               <td colspan="3" class="px-8 py-10">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-12 animate-in fade-in slide-in-from-top-2 duration-500">
                   <div class="space-y-6">
