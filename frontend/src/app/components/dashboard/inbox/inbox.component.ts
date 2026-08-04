@@ -95,6 +95,7 @@ export class InboxComponent implements OnInit, OnDestroy {
         this.primaryEmail.set(res.primary || '');
         if (res.emails.length > 0 && !this.composeFrom()) {
           this.composeFrom.set(res.emails[0]);
+        }
       }
     });
 
@@ -639,35 +640,6 @@ export class InboxComponent implements OnInit, OnDestroy {
       error: () => {
         alert('Failed to generate AI Draft. Check if your OpenAI key is configured in settings.');
         this.isGeneratingAI.set(false);
-      }
-    });
-  }
-
-  saveDraft() {
-    this.loading.set(true);
-    const payload = {
-      draftId: this.currentDraftId(),
-      inboxEmail: this.isComposing() ? this.composeFrom() : this.selectedMessage()?.inboxEmail,
-      to: this.isComposing() ? this.composeTo() : this.selectedMessage()?.from,
-      subject: this.isComposing() ? this.composeSubject() : (this.selectedMessage()?.subject?.startsWith('Re:') ? this.selectedMessage().subject : `Re: ${this.selectedMessage()?.subject}`),
-      textBody: this.replyText(),
-      replyToMessageId: this.isComposing() ? null : this.selectedMessage()?._id
-    };
-
-    const request = this.currentDraftId() 
-      ? this.http.put(`/api/v1/inbox/drafts/${this.currentDraftId()}`, payload)
-      : this.http.post('/api/v1/inbox/drafts', payload);
-
-    request.subscribe({
-      next: (res: any) => {
-        this.currentDraftId.set(res._id);
-        this.dataSource.reload();
-        this.loading.set(false);
-        // show success indicator here if desired
-      },
-      error: () => {
-        alert('Failed to save draft');
-        this.loading.set(false);
       }
     });
   }
