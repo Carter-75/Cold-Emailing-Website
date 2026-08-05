@@ -420,36 +420,49 @@ router.post('/:id/replies', catchAsync(async (req, res) => {
       references: [msg.messageId]
     };
 
-    // Store in global memory and execute after 30 seconds
-    const sendId = msg._id.toString() + '-' + Date.now();
-    
-    global.pendingSends[sendId] = setTimeout(async () => {
-      try {
-        await transporter.sendMail(mailOptions);
-        
-        // Optionally save the sent message in DB
-        const replyMsg = new InboxMessage({
-          userId: req.user._id,
-          inboxEmail: msg.inboxEmail,
-          messageId: `reply-${Date.now()}@coldauto.pro`,
-          from: config.email,
-          to: msg.from,
-          subject: mailOptions.subject,
-          textBody: textBody,
-          htmlBody: htmlBody,
-          date: new Date(),
-          isRead: true,
-          isReply: true
-        });
-        await replyMsg.save();
-      } catch (err) {
-        console.error('Delayed send failed:', err);
-      } finally {
-        delete global.pendingSends[sendId];
-      }
-    }, 30000);
-
-    res.status(201).json({ success: true, message: 'Reply queued for 30s delay', sendId });
+    try {
+      await transporter.sendMail(mailOptions);
+      
+      // Track as a Lead
+      const extractEmail = (str) => {
+        const match = str.match(/<([^>]+)>/);
+        return match ? match[1].toLowerCase() : str.trim().toLowerCase();
+      };
+      const cleanRecipientEmail = extractEmail(msg.from);
+      
+      await Lead.findOneAndUpdate(
+        { userId: req.user._id, recipientEmail: cleanRecipientEmail },
+        {
+          $set: {
+            userId: req.user._id,
+            recipientEmail: cleanRecipientEmail,
+            status: 'replied',
+            updatedAt: new Date()
+          }
+        },
+        { upsert: true, new: true }
+      );
+      
+      const replyMsg = new InboxMessage({
+        userId: req.user._id,
+        inboxEmail: msg.inboxEmail,
+        messageId: `reply-${Date.now()}@coldauto.pro`,
+        from: config.email,
+        to: msg.from,
+        subject: mailOptions.subject,
+        textBody: textBody,
+        htmlBody: htmlBody,
+        date: new Date(),
+        isRead: true,
+        isReply: true
+      });
+      await replyMsg.save();
+      
+      res.status(201).json({ success: true, message: 'Reply sent immediately' });
+    } catch (err) {
+      console.error('Send failed:', err);
+      res.status(500).json({ success: false, message: 'Failed to send email' });
+    }
 }));
 
 // Send New Message
@@ -496,56 +509,49 @@ router.post('/messages', catchAsync(async (req, res) => {
       html: htmlBody
     };
 
-    const sendId = 'new-' + Date.now();
-    
-    global.pendingSends[sendId] = setTimeout(async () => {
-      try {
-        await transporter.sendMail(mailOptions);
-        
-        const sentMsg = new InboxMessage({
-          userId: req.user._id,
-          inboxEmail: config.email,
-          messageId: `sent-${Date.now()}@coldauto.pro`,
-          from: config.email,
-          to,
-          subject,
-          textBody,
-          htmlBody,
-          date: new Date(),
-          isRead: true,
-          isReply: false
-        });
-        await sentMsg.save();
-      } catch (err) {
-        console.error('Delayed send message failed:', err);
-      } finally {
-        delete global.pendingSends[sendId];
-      }
-    }, 30000);
-
-    res.status(201).json({ success: true, message: 'Message queued for 30s delay', sendId });
-}));
-
-// Cancel Reply
-router.delete('/:id/replies/:sendId', catchAsync(async (req, res) => {
-  const { sendId } = req.params;
-  if (global.pendingSends && global.pendingSends[sendId]) {
-    clearTimeout(global.pendingSends[sendId]);
-    delete global.pendingSends[sendId];
-    return res.json({ success: true, message: 'Reply cancelled' });
-  }
-  res.status(404).json({ message: 'Reply not found or already sent' });
-}));
-
-// Cancel Send Message
-router.delete('/messages/:sendId', catchAsync(async (req, res) => {
-  const { sendId } = req.params;
-  if (global.pendingSends && global.pendingSends[sendId]) {
-    clearTimeout(global.pendingSends[sendId]);
-    delete global.pendingSends[sendId];
-    return res.json({ success: true, message: 'Reply cancelled' });
-  }
-  res.status(404).json({ message: 'Pending send not found or already sent' });
+    try {
+      await transporter.sendMail(mailOptions);
+      
+      // Track as a Lead
+      const extractEmail = (str) => {
+        const match = str.match(/<([^>]+)>/);
+        return match ? match[1].toLowerCase() : str.trim().toLowerCase();
+      };
+      const cleanRecipientEmail = extractEmail(to);
+      
+      await Lead.findOneAndUpdate(
+        { userId: req.user._id, recipientEmail: cleanRecipientEmail },
+        {
+          $set: {
+            userId: req.user._id,
+            recipientEmail: cleanRecipientEmail,
+            status: 'emailed',
+            updatedAt: new Date()
+          }
+        },
+        { upsert: true, new: true }
+      );
+      
+      const sentMsg = new InboxMessage({
+        userId: req.user._id,
+        inboxEmail: config.email,
+        messageId: `sent-${Date.now()}@coldauto.pro`,
+        from: config.email,
+        to,
+        subject,
+        textBody,
+        htmlBody,
+        date: new Date(),
+        isRead: true,
+        isReply: false
+      });
+      await sentMsg.save();
+      
+      res.status(201).json({ success: true, message: 'Message sent immediately' });
+    } catch (err) {
+      console.error('Send message failed:', err);
+      res.status(500).json({ success: false, message: 'Failed to send email' });
+    }
 }));
 
 

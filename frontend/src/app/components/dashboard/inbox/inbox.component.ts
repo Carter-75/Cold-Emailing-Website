@@ -8,6 +8,7 @@ import { AuthService } from '../../../services/auth.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { InboxDataSource } from '../../../models/inbox.datasource';
 import { ScrollingModule, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-inbox',
@@ -19,6 +20,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   public auth = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
+  private router = inject(Router);
   
   @ViewChild(CdkVirtualScrollViewport) viewport!: CdkVirtualScrollViewport;
 
@@ -54,6 +56,8 @@ export class InboxComponent implements OnInit, OnDestroy {
   originalSelectedIds = new Set<string>();
   private animationFrameId: number | null = null;
   private mouseY = 0;
+
+  pendingSendState: any = null;
 
   isFullscreen = signal<boolean>(false);
   isGeneratingAI = signal<boolean>(false);
@@ -241,26 +245,21 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   sendReply() {
-    if (this.isComposing()) {
-      return this.sendCompose();
-    }
-
+    if (this.isComposing()) return this.sendCompose();
     const msg = this.selectedMessage();
     if (!msg || !this.replyText().trim()) return;
 
-    let finalBody = this.replyText();
-    if (this.includeSignature()) {
-      finalBody += `<br><br>${this.getSignatureHTML()}`;
-    }
+    this.pendingSendState = {
+      isComposing: false,
+      isReplying: true,
+      textBody: this.replyText(),
+      to: this.composeTo(),
+      subject: this.composeSubject(),
+      draftId: this.currentDraftId(),
+      message: msg
+    };
 
-    this.isSending.set(true);
-    this.http.post(`/api/v1/inbox/${msg._id}/replies`, { textBody: finalBody }).subscribe({
-      next: (res: any) => this.handleDelayedSendSuccess(res),
-      error: () => {
-        alert('Failed to send reply');
-        this.isSending.set(false);
-      }
-    });
+    this.startFrontendCountdown();
   }
 
   saveDraft(isAutoSave: boolean = false) {
@@ -336,76 +335,94 @@ export class InboxComponent implements OnInit, OnDestroy {
 
   sendCompose() {
     if (!this.composeTo().trim() || !this.composeSubject().trim() || !this.replyText().trim()) return;
+
+    this.pendingSendState = {
+      isComposing: true,
+      isReplying: false,
+      textBody: this.replyText(),
+      to: this.composeTo(),
+      subject: this.composeSubject(),
+      draftId: this.currentDraftId(),
+      message: null
+    };
+
+    this.startFrontendCountdown();
+  }
+
+  startFrontendCountdown() {
+    this.replyText.set(''); // Clear editor immediately
+    this.pendingReplyId.set(this.pendingSendState.isComposing ? 'new-' + Date.now() : 'reply-' + Date.now());
+    this.countdown.set(30);
+    this.countdownInterval = setInterval(() => {
+      this.countdown.update(c => c - 1);
+      if (this.countdown() <= 0) {
+        clearInterval(this.countdownInterval);
+        this.executeSend();
+      }
+    }, 1000);
+  }
+
+  executeSend() {
+    const state = this.pendingSendState;
+    if (!state) return;
     
-    let finalBody = this.replyText();
+    let finalBody = state.textBody;
     if (this.includeSignature()) {
       finalBody += `<br><br>${this.getSignatureHTML()}`;
     }
 
     this.isSending.set(true);
-    this.http.post('/api/v1/inbox/messages', {
-      fromEmail: this.composeFrom(),
-      to: this.composeTo(),
-      subject: this.composeSubject(),
-      textBody: finalBody
-    }).subscribe({
-      next: (res: any) => this.handleDelayedSendSuccess(res),
-      error: () => {
-        alert('Failed to send message');
-        this.isSending.set(false);
-      }
-    });
+    
+    if (state.isComposing) {
+      this.http.post('/api/v1/inbox/messages', {
+        fromEmail: this.composeFrom(),
+        to: state.to,
+        subject: state.subject,
+        textBody: finalBody
+      }).subscribe({
+        next: () => this.finalizeSend(state),
+        error: () => this.handleSendError()
+      });
+    } else {
+      this.http.post(`/api/v1/inbox/${state.message._id}/replies`, { textBody: finalBody }).subscribe({
+        next: () => this.finalizeSend(state),
+        error: () => this.handleSendError()
+      });
+    }
   }
 
-  handleDelayedSendSuccess(res: any) {
-    // If it was a draft, delete it after sending
-    if (this.currentDraftId()) {
-      this.deleteDraft(this.currentDraftId()!);
-    }
-    
-    this.replyText.set('');
+  finalizeSend(state: any) {
+    if (state.draftId) this.deleteDraft(state.draftId);
     this.isSending.set(false);
-    if (res.sendId) {
-      this.pendingReplyId.set(res.sendId);
-      this.countdown.set(30);
-      this.countdownInterval = setInterval(() => {
-        this.countdown.update(c => c - 1);
-        if (this.countdown() <= 0) {
-          clearInterval(this.countdownInterval);
-          this.pendingReplyId.set(null);
-          this.isComposing.set(false);
-          this.isReplying.set(false);
-          this.currentDraftId.set(null);
-          this.dataSource.reload();
-        }
-      }, 1000);
-    } else {
-      this.isComposing.set(false);
-      this.currentDraftId.set(null);
-      this.dataSource.reload();
-    }
+    this.pendingReplyId.set(null);
+    this.isComposing.set(false);
+    this.isReplying.set(false);
+    this.currentDraftId.set(null);
+    this.pendingSendState = null;
+    this.dataSource.reload();
+    this.router.navigate(['/dashboard/leads']);
+  }
+
+  handleSendError() {
+    alert('Failed to send message');
+    this.isSending.set(false);
+    this.pendingReplyId.set(null);
   }
 
   cancelReply() {
-    const sendId = this.pendingReplyId();
-    if (!sendId) return;
+    if (!this.pendingReplyId()) return;
+    clearInterval(this.countdownInterval);
+    this.pendingReplyId.set(null);
+    this.loading.set(false);
 
-    this.loading.set(true);
-    
-    const isNew = sendId.startsWith('new-');
-    const url = isNew ? `/api/v1/inbox/messages/${sendId}` : `/api/v1/inbox/${this.selectedMessage()._id}/replies/${sendId}`;
-    
-    this.http.delete(url).subscribe({
-      next: () => {
-        clearInterval(this.countdownInterval);
-        this.pendingReplyId.set(null);
-        this.loading.set(false);
-      },
-      error: () => {
-        alert('Failed to cancel or already sent');
-        this.loading.set(false);
-      }
-    });
+    if (this.pendingSendState) {
+      this.isComposing.set(this.pendingSendState.isComposing);
+      this.isReplying.set(this.pendingSendState.isReplying);
+      this.replyText.set(this.pendingSendState.textBody);
+      this.composeTo.set(this.pendingSendState.to);
+      this.composeSubject.set(this.pendingSendState.subject);
+      this.pendingSendState = null;
+    }
   }
 
   toggleStar(msgId: string, event: Event) {
