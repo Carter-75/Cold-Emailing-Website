@@ -22,6 +22,13 @@ export class InboxComponent implements OnInit, OnDestroy {
   private sanitizer = inject(DomSanitizer);
   private router = inject(Router);
   
+  @HostListener('window:beforeunload', ['$event'])
+  unloadNotification($event: any) {
+    if (this.pendingReplyId()) {
+      $event.returnValue = true;
+    }
+  }
+  
   @ViewChild(CdkVirtualScrollViewport) viewport!: CdkVirtualScrollViewport;
 
   dataSource!: InboxDataSource;
@@ -258,7 +265,8 @@ export class InboxComponent implements OnInit, OnDestroy {
       draftId: this.currentDraftId(),
       message: msg
     };
-
+    
+    this.saveDraft(true);
     this.startFrontendCountdown();
   }
 
@@ -346,6 +354,7 @@ export class InboxComponent implements OnInit, OnDestroy {
       message: null
     };
 
+    this.saveDraft(true);
     this.startFrontendCountdown();
   }
 
