@@ -359,7 +359,6 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   startFrontendCountdown() {
-    this.replyText.set(''); // Clear editor immediately
     this.pendingReplyId.set(this.pendingSendState.isComposing ? 'new-' + Date.now() : 'reply-' + Date.now());
     this.countdown.set(30);
     this.countdownInterval = setInterval(() => {
@@ -430,6 +429,7 @@ export class InboxComponent implements OnInit, OnDestroy {
       this.replyText.set(this.pendingSendState.textBody);
       this.composeTo.set(this.pendingSendState.to);
       this.composeSubject.set(this.pendingSendState.subject);
+      this.currentDraftId.set(this.pendingSendState.draftId);
       this.pendingSendState = null;
     }
   }
