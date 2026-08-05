@@ -421,7 +421,8 @@ router.post('/:id/replies', catchAsync(async (req, res) => {
     };
 
     try {
-      await transporter.sendMail(mailOptions);
+      const info = await transporter.sendMail(mailOptions);
+      const actualMessageId = info.messageId ? info.messageId.replace(/[<>]/g, '') : `reply-${Date.now()}@coldauto.pro`;
       
       // Track as a Lead
       const extractEmail = (str) => {
@@ -429,6 +430,7 @@ router.post('/:id/replies', catchAsync(async (req, res) => {
         return match ? match[1].toLowerCase() : str.trim().toLowerCase();
       };
       const cleanRecipientEmail = extractEmail(msg.from);
+      const defaultBusinessName = cleanRecipientEmail.split('@')[0];
       
       await Lead.findOneAndUpdate(
         { userId: req.user._id, recipientEmail: cleanRecipientEmail },
@@ -438,6 +440,19 @@ router.post('/:id/replies', catchAsync(async (req, res) => {
             recipientEmail: cleanRecipientEmail,
             status: 'replied',
             updatedAt: new Date()
+          },
+          $setOnInsert: {
+            businessName: defaultBusinessName
+          },
+          $push: {
+            messageIds: actualMessageId,
+            thread: {
+              from: config.email,
+              to: msg.from,
+              subject: mailOptions.subject,
+              body: textBody,
+              timestamp: new Date()
+            }
           }
         },
         { upsert: true, new: true }
@@ -446,7 +461,7 @@ router.post('/:id/replies', catchAsync(async (req, res) => {
       const replyMsg = new InboxMessage({
         userId: req.user._id,
         inboxEmail: msg.inboxEmail,
-        messageId: `reply-${Date.now()}@coldauto.pro`,
+        messageId: actualMessageId,
         from: config.email,
         to: msg.from,
         subject: mailOptions.subject,
@@ -510,7 +525,8 @@ router.post('/messages', catchAsync(async (req, res) => {
     };
 
     try {
-      await transporter.sendMail(mailOptions);
+      const info = await transporter.sendMail(mailOptions);
+      const actualMessageId = info.messageId ? info.messageId.replace(/[<>]/g, '') : `sent-${Date.now()}@coldauto.pro`;
       
       // Track as a Lead
       const extractEmail = (str) => {
@@ -518,6 +534,7 @@ router.post('/messages', catchAsync(async (req, res) => {
         return match ? match[1].toLowerCase() : str.trim().toLowerCase();
       };
       const cleanRecipientEmail = extractEmail(to);
+      const defaultBusinessName = cleanRecipientEmail.split('@')[0];
       
       await Lead.findOneAndUpdate(
         { userId: req.user._id, recipientEmail: cleanRecipientEmail },
@@ -527,6 +544,19 @@ router.post('/messages', catchAsync(async (req, res) => {
             recipientEmail: cleanRecipientEmail,
             status: 'emailed',
             updatedAt: new Date()
+          },
+          $setOnInsert: {
+            businessName: defaultBusinessName
+          },
+          $push: {
+            messageIds: actualMessageId,
+            thread: {
+              from: config.email,
+              to: to,
+              subject: subject,
+              body: textBody,
+              timestamp: new Date()
+            }
           }
         },
         { upsert: true, new: true }
@@ -535,7 +565,7 @@ router.post('/messages', catchAsync(async (req, res) => {
       const sentMsg = new InboxMessage({
         userId: req.user._id,
         inboxEmail: config.email,
-        messageId: `sent-${Date.now()}@coldauto.pro`,
+        messageId: actualMessageId,
         from: config.email,
         to,
         subject,
