@@ -240,7 +240,13 @@
             </ng-template>
           </ng-container>
           <ng-container *ngIf="viewMode() !== 'leads' && viewMode() !== 'discovery' && viewMode() !== 'unsubbed'">
-            {{ msg.textBody?.trim() ? msg.textBody : (msg.htmlBody ? (msg.htmlBody | slice:0:1000) : 'No readable text content available. (May be an attachment-only email like a DMARC XML report)') }}
+            <div *ngIf="msg.htmlBody; else plainText" [innerHTML]="msg.htmlBody" class="email-html-body"></div>
+            <ng-template #plainText>
+              <span *ngIf="msg.textBody?.trim(); else noContent">{{ msg.textBody }}</span>
+            </ng-template>
+            <ng-template #noContent>
+              <span class="text-white/40 italic">No readable text content available. (May be an attachment-only email like a DMARC XML report)</span>
+            </ng-template>
           </ng-container>
         </div>
       </ng-container>

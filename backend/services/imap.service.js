@@ -185,6 +185,41 @@ class IMAPService {
                   timestamp: message.envelope.date || new Date()
                 });
                 await lead.save();
+                
+                // Send reply notification email to the user's test email
+                if (user.config.testRecipientEmail && user.config.senderEmail && user.config.appPassword) {
+                  try {
+                    const nodemailer = require('nodemailer');
+                    const notifTransporter = nodemailer.createTransport({
+                      host: user.config.smtpHost,
+                      port: user.config.smtpPort || 465,
+                      secure: (user.config.smtpPort || 465) === 465,
+                      auth: { user: user.config.senderEmail, pass: user.config.appPassword }
+                    });
+                    
+                    const previewBody = replyBody.length > 500 ? replyBody.substring(0, 500) + '...' : replyBody;
+                    
+                    await notifTransporter.sendMail({
+                      from: `"Cold Outreach Alert" <${user.config.senderEmail}>`,
+                      to: user.config.testRecipientEmail,
+                      subject: `🔔 Reply from ${lead.businessName || lead.recipientEmail}!`,
+                      html: `
+                        <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #111; color: #fff; padding: 24px; border-radius: 12px;">
+                          <h2 style="color: #f97316; margin: 0 0 16px;">New Lead Reply Detected</h2>
+                          <p style="color: #ccc; margin: 4px 0;"><strong style="color: #fff;">From:</strong> ${fromAddress}</p>
+                          <p style="color: #ccc; margin: 4px 0;"><strong style="color: #fff;">Lead:</strong> ${lead.businessName || 'Unknown'}</p>
+                          <p style="color: #ccc; margin: 4px 0;"><strong style="color: #fff;">Subject:</strong> ${subject}</p>
+                          <hr style="border: 1px solid #333; margin: 16px 0;" />
+                          <div style="background: #1a1a1a; padding: 16px; border-radius: 8px; color: #ddd; white-space: pre-wrap;">${previewBody}</div>
+                          <p style="color: #666; font-size: 12px; margin-top: 16px;">— Cold Outreach Engine</p>
+                        </div>
+                      `
+                    });
+                    console.log(`[IMAP] Reply notification sent to ${user.config.testRecipientEmail}`);
+                  } catch (notifErr) {
+                    console.error('[IMAP] Failed to send reply notification:', notifErr.message);
+                  }
+                }
               }
             }
           }
