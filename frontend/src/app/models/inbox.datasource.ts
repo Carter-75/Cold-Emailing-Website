@@ -107,6 +107,11 @@ export class InboxDataSource extends DataSource<any | undefined> {
     else if (this._filters.viewMode === 'unsubbed') endpoint = '/api/v1/inbox/unsubbed';
     else if (this._filters.viewMode === 'discovery') endpoint = '/api/v1/inbox/discovery';
     else if (this._filters.viewMode === 'leads') endpoint = '/api/v1/inbox/leads';
+    
+    // Replies view uses the main inbox endpoint with repliesOnly flag
+    if (this._filters.viewMode === 'replies') {
+      params = params.set('repliesOnly', 'true');
+    }
 
     console.log(`[InboxDataSource] Fetching page ${pageIndex + 1} for ${endpoint}...`);
     

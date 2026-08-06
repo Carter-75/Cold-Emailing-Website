@@ -7,6 +7,9 @@
       <button (click)="switchView('inbox')" [ngClass]="{'bg-white/10 text-white': viewMode() === 'inbox', 'text-white/40 hover:text-white/80': viewMode() !== 'inbox'}" class="flex-1 py-2 text-[10px] sm:text-xs font-black uppercase tracking-widest rounded-lg transition-all text-center">
         Inbox
       </button>
+      <button (click)="switchView('replies')" [ngClass]="{'bg-emerald-500/20 text-emerald-400': viewMode() === 'replies', 'text-white/40 hover:text-white/80': viewMode() !== 'replies'}" class="flex-1 py-2 text-[10px] sm:text-xs font-black uppercase tracking-widest rounded-lg transition-all text-center">
+        Replies
+      </button>
       <button (click)="switchView('drafts')" [ngClass]="{'bg-white/10 text-white': viewMode() === 'drafts', 'text-white/40 hover:text-white/80': viewMode() !== 'drafts'}" class="flex-1 py-2 text-[10px] sm:text-xs font-black uppercase tracking-widest rounded-lg transition-all text-center">
         Drafts
       </button>

@@ -180,7 +180,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     return s[email]?.unread || 0;
   }
 
-  switchView(mode: 'inbox'|'trash'|'drafts'|'unsubbed'|'discovery'|'leads'|'warm-up'|'dmarc') {
+  switchView(mode: 'inbox'|'replies'|'trash'|'drafts'|'unsubbed'|'discovery'|'leads'|'warm-up'|'dmarc') {
     this.viewMode.set(mode);
     this.onFiltersChanged();
     this.selectedIds.set(new Set());
