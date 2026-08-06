@@ -49,7 +49,7 @@ export class InboxComponent implements OnInit, OnDestroy {
 
 
 
-  viewMode = signal<'inbox'|'trash'|'drafts'|'unsubbed'|'discovery'|'leads'|'warm-up'|'dmarc'>('inbox');
+  viewMode = signal<'inbox'|'replies'|'trash'|'drafts'|'unsubbed'|'discovery'|'leads'|'warm-up'|'dmarc'>('inbox');
   selectedAccount = signal<string>('all');
   primaryEmail = signal<string>('');
   showLeadRepliesOnly = signal<boolean>(false);
