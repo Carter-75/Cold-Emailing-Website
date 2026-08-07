@@ -50,6 +50,20 @@ export class InboxComponent implements OnInit, OnDestroy {
 
 
   viewMode = signal<'inbox'|'replies'|'trash'|'drafts'|'unsubbed'|'discovery'|'leads'|'warm-up'|'dmarc'>('inbox');
+  
+  tabs = signal<any[]>([
+    { id: 'inbox', label: 'Inbox', color: 'text-white hover:text-white', activeBg: 'bg-white/10', hidden: false },
+    { id: 'replies', label: 'Replies', color: 'text-emerald-400 hover:text-emerald-300', activeBg: 'bg-emerald-500/20', hidden: false },
+    { id: 'drafts', label: 'Drafts', color: 'text-amber-400 hover:text-amber-300', activeBg: 'bg-amber-500/20', hidden: false },
+    { id: 'leads', label: 'Leads', color: 'text-blue-400 hover:text-blue-300', activeBg: 'bg-blue-500/20', hidden: false },
+    { id: 'discovery', label: 'Discovery', color: 'text-purple-400 hover:text-purple-300', activeBg: 'bg-purple-500/20', hidden: false },
+    { id: 'trash', label: 'Trash', color: 'text-stone-400 hover:text-stone-300', activeBg: 'bg-white/10', hidden: false },
+    { id: 'unsubbed', label: 'Unsubbed', color: 'text-rose-400 hover:text-rose-300', activeBg: 'bg-rose-500/20', hidden: true },
+    { id: 'warm-up', label: 'Warm Up', color: 'text-orange-400 hover:text-orange-300', activeBg: 'bg-orange-500/20', hidden: true },
+    { id: 'dmarc', label: 'DMARC', color: 'text-cyan-400 hover:text-cyan-300', activeBg: 'bg-cyan-500/20', hidden: true }
+  ]);
+  showTabSettings = signal(false);
+
   selectedAccount = signal<string>('all');
   primaryEmail = signal<string>('');
   showLeadRepliesOnly = signal<boolean>(false);
