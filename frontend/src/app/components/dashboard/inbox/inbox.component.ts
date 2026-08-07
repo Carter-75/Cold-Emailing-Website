@@ -69,6 +69,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   showLeadRepliesOnly = signal<boolean>(false);
   isComposing = signal<boolean>(false);
   isReplying = signal<boolean>(false);
+  isDeepSyncQueued = signal<boolean>(false);
 
   private lastSyncTime = 0; // Throttle timestamp to prevent Vercel spam
 
@@ -214,6 +215,19 @@ export class InboxComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Failed to sync emails in background. (Check Vercel Logs / Network Tab)', err);
         this.loading.set(false);
+      }
+    });
+  }
+
+  requestDeepSync() {
+    this.isDeepSyncQueued.set(true);
+    this.http.post('/api/v1/inbox/deep-sync/start', {}).subscribe({
+      next: (res) => {
+        console.log('Deep sync queued successfully');
+      },
+      error: (err) => {
+        console.error('Failed to queue deep sync:', err);
+        this.isDeepSyncQueued.set(false);
       }
     });
   }

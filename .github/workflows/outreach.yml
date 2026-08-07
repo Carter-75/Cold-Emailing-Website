@@ -13,6 +13,21 @@ jobs:
       PROD_URL: ${{ secrets.PROD_URL }}
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
     steps:
+      - name: Deep Sync Sweep
+        run: |
+          if [ -z "$PROD_URL" ]; then echo "Error: PROD_URL secret is missing"; exit 1; fi
+          echo "Starting Deep Sync Iteration..."
+          while true; do
+            RESPONSE=$(curl -s "$PROD_URL/api/cron/deep-sync" -H "Authorization: Bearer $CRON_SECRET")
+            DONE=$(echo $RESPONSE | jq -r '.result.done')
+            if [ "$DONE" = "true" ] || [ "$DONE" = "null" ]; then
+              echo "Deep Sync completed or none queued."
+              break
+            fi
+            echo "Chunk processed, fetching next chunk in 2s..."
+            sleep 2
+          done
+
       - name: Trigger Outreach Chunk
         run: |
           if [ -z "$PROD_URL" ]; then echo "Error: PROD_URL secret is missing"; exit 1; fi

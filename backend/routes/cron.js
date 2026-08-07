@@ -58,4 +58,16 @@ router.get('/data-enrichment', withCronAuth(async () => {
   return DataPipelineService.runPipeline();
 }));
 
+router.get('/deep-sync', withCronAuth(async () => {
+  const User = require('../models/User');
+  const IMAPService = require('../services/imap.service');
+  
+  const user = await User.findOne({ 'config.needsDeepSync': true });
+  if (!user) {
+    return { done: true, message: 'No deep syncs queued' };
+  }
+  
+  return IMAPService.runDeepSyncChunk(user);
+}));
+
 module.exports = router;

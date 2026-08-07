@@ -344,6 +344,19 @@ router.post('/syncs', catchAsync(async (req, res) => {
     res.json({ success: true, summary: result });
 }));
 
+// Queue Deep Sync
+router.post('/deep-sync/start', catchAsync(async (req, res) => {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.config.needsDeepSync = true;
+    user.config.deepSyncAccountIndex = 0;
+    user.config.deepSyncCursor = 0;
+    await user.save();
+
+    res.json({ success: true, message: 'Deep sync queued via GitHub Actions' });
+}));
+
 // Update Message Fields (Read/Star)
 router.patch('/:id', catchAsync(async (req, res) => {
     const { isRead, isStarred } = req.body;

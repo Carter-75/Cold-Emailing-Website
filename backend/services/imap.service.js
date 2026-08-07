@@ -30,6 +30,11 @@ class IMAPService {
   }
 
   async syncUserInboxes(user) {
+    if (user.config?.needsDeepSync) {
+      console.log(`[IMAP] Skipping regular sync for ${user.email} because a deep sync is queued.`);
+      return { repliesDetected: 0, inboxMessagesSaved: 0, errors: [] };
+    }
+
     const summary = {
       repliesDetected: 0,
       inboxMessagesSaved: 0
@@ -116,7 +121,7 @@ class IMAPService {
     }
   }
 
-  async checkInbox(user, inboxConfig) {
+  async checkInbox(user, inboxConfig, options = {}) {
     const client = new ImapFlow({
       host: inboxConfig.host,
       port: inboxConfig.port,
@@ -138,11 +143,22 @@ class IMAPService {
         const mailbox = await client.status('INBOX', { messages: true });
         
         if (mailbox.messages > 0) {
-          // Changed from 499 to 49 to only check the last 50 messages. 
-          // 500 messages with source:true was causing Vercel 504 timeouts.
-          const startSeq = Math.max(1, mailbox.messages - 49);
+          let fetchQuery;
+          if (options?.isDeepSync) {
+            const cursor = options.cursor === 0 ? mailbox.messages : options.cursor;
+            const endSeq = cursor;
+            const startSeq = Math.max(1, endSeq - 49); // 50 emails per chunk
+            fetchQuery = `${startSeq}:${endSeq}`;
+            if (options) options.newCursor = startSeq - 1;
+            console.log(`[IMAP Deep Sync] Fetching ${fetchQuery} for ${inboxConfig.email}...`);
+          } else {
+            // Changed from 499 to 49 to only check the last 50 messages. 
+            // 500 messages with source:true was causing Vercel 504 timeouts.
+            const startSeq = Math.max(1, mailbox.messages - 49);
+            fetchQuery = `${startSeq}:*`;
+          }
           
-          for await (let message of client.fetch(`${startSeq}:*`, { envelope: true, source: true, flags: true })) {
+          for await (let message of client.fetch(fetchQuery, { envelope: true, source: true, flags: true })) {
           const msgId = message.envelope.messageId;
           const inReplyTo = message.envelope.inReplyTo;
           const fromAddress = message.envelope.from[0]?.address || 'Unknown';
@@ -295,13 +311,76 @@ class IMAPService {
       } finally {
         lock.release();
       }
-      
       await client.logout();
-      return { repliesDetected, inboxMessagesSaved };
+      return { repliesDetected, inboxMessagesSaved, newCursor: options?.newCursor };
     } catch (err) {
-      console.error(`[IMAP] Error checking inbox ${inboxConfig.email}:`, err);
-      return { repliesDetected: 0, inboxMessagesSaved: 0, error: err.response || err.message };
+      console.error(`[IMAP] Failed to check inbox for ${inboxConfig.email}:`, err);
+      return { repliesDetected: 0, inboxMessagesSaved: 0, error: err.message, newCursor: options?.newCursor };
     }
+  }
+
+  async runDeepSyncChunk(user) {
+    if (!user.config?.needsDeepSync) return { done: true };
+
+    console.log(`[IMAP] Running Deep Sync Chunk for ${user.email}...`);
+    const inboxesToCheck = [];
+    
+    const getImapHost = (email, host) => {
+      if (host) return host;
+      const lower = (email || '').toLowerCase();
+      if (lower.includes('@outlook') || lower.includes('@hotmail') || lower.includes('@live.com')) return 'outlook.office365.com';
+      if (lower.includes('@yahoo')) return 'imap.mail.yahoo.com';
+      return 'imap.gmail.com';
+    };
+
+    if (user.config.senderEmail && user.config.appPassword) {
+      inboxesToCheck.push({
+        email: user.config.senderEmail,
+        pass: user.config.appPassword,
+        host: getImapHost(user.config.senderEmail, user.config.imapHost),
+        port: user.config.imapPort || 993
+      });
+    }
+
+    if (user.config.connectedInboxes && Array.isArray(user.config.connectedInboxes)) {
+      for (const inbox of user.config.connectedInboxes) {
+        if (inbox.email && inbox.appPassword) {
+          inboxesToCheck.push({
+            email: inbox.email,
+            pass: inbox.appPassword,
+            host: getImapHost(inbox.email, inbox.imapHost),
+            port: inbox.imapPort || 993
+          });
+        }
+      }
+    }
+
+    let accountIndex = user.config.deepSyncAccountIndex || 0;
+    
+    if (accountIndex >= inboxesToCheck.length) {
+      user.config.needsDeepSync = false;
+      user.config.deepSyncAccountIndex = 0;
+      user.config.deepSyncCursor = 0;
+      await user.save();
+      console.log(`[IMAP Deep Sync] Finished all inboxes for ${user.email}!`);
+      return { done: true };
+    }
+
+    const inboxConfig = inboxesToCheck[accountIndex];
+    let cursor = user.config.deepSyncCursor || 0;
+    
+    const options = { isDeepSync: true, cursor, newCursor: 0 };
+    const result = await this.checkInbox(user, inboxConfig, options);
+    
+    if (result.error || options.newCursor <= 0) {
+      user.config.deepSyncAccountIndex += 1;
+      user.config.deepSyncCursor = 0;
+    } else {
+      user.config.deepSyncCursor = options.newCursor;
+    }
+    
+    await user.save();
+    return { done: false, summary: result };
   }
 
   async markAsRead(user, inboxEmail, messageId) {

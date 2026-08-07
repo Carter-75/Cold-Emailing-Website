@@ -58,6 +58,12 @@ const UserSchema = new mongoose.Schema({
     outreachPausedReason: { type: String, default: '' },       // Human-readable reason stored for dashboard display
     timezone: { type: String, default: 'America/Chicago' },   // Used to gate engine to user's 8am-6pm local time
     testRecipientEmail: String,
+    
+    // Deep IMAP Sync
+    needsDeepSync: { type: Boolean, default: false },
+    deepSyncCursor: { type: Number, default: 0 },
+    deepSyncAccountIndex: { type: Number, default: 0 },
+
     lastAlertSentAt: { type: Date }, // Tracked for daily diagnostic emails
     diagnosticFlags: {
       openai: { active: { type: Boolean, default: false }, lastAlertedAt: Date },

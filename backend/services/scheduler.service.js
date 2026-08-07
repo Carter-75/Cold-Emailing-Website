@@ -133,7 +133,8 @@ class SchedulerService {
 
     const users = await User.find({
       'config.outreachEnabled': true,
-      'config.serpapiKey': { $exists: true, $ne: '' }
+      'config.serpapiKey': { $exists: true, $ne: '' },
+      'config.needsDeepSync': { $ne: true }
     }).select('_id email');
 
     let processedUsers = 0;
@@ -219,7 +220,8 @@ class SchedulerService {
 
     // If no userId provided, process one chunk for each active user to progress sequences
     const users = await User.find({ 
-      'config.outreachEnabled': true
+      'config.outreachEnabled': true,
+      'config.needsDeepSync': { $ne: true }
     }).select('_id email');
     const results = [];
     const startTime = Date.now();
