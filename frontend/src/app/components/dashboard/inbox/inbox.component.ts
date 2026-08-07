@@ -132,6 +132,9 @@ export class InboxComponent implements OnInit, OnDestroy {
     
     this.fetchStats();
     
+    // Sync UI state to data source before first fetch
+    this.onFiltersChanged();
+    
     // Auto-sync IMAP with remote server on load and every 5 minutes
     this.syncIMAP();
     setInterval(() => this.syncIMAP(), 5 * 60 * 1000);
