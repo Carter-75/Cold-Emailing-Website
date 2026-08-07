@@ -53,7 +53,10 @@ import {
   Building2,
   Landmark,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Settings,
+  Eye,
+  EyeOff
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -111,7 +114,10 @@ export const appConfig: ApplicationConfig = {
         Building2,
         Landmark,
         ChevronLeft,
-        ChevronRight
+        ChevronRight,
+        Settings,
+        Eye,
+        EyeOff
       })
     }
   ]

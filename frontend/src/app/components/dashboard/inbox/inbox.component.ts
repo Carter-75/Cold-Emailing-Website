@@ -112,6 +112,12 @@ export class InboxComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.dataSource = new InboxDataSource(this.http);
     
+    // Load Active View Mode
+    const savedMode = localStorage.getItem('phoenix_inbox_viewMode');
+    if (savedMode) {
+      this.viewMode.set(savedMode as any);
+    }
+
     // Load Tab Preferences
     const savedTabs = localStorage.getItem('phoenix_inbox_tabs');
     if (savedTabs) {
@@ -223,6 +229,8 @@ export class InboxComponent implements OnInit, OnDestroy {
 
   switchView(mode: 'inbox'|'replies'|'trash'|'drafts'|'unsubbed'|'discovery'|'leads'|'warm-up'|'dmarc') {
     this.viewMode.set(mode);
+    localStorage.setItem('phoenix_inbox_viewMode', mode);
+    
     this.onFiltersChanged();
     this.selectedIds.set(new Set());
     this.selectedMessage.set(null);
