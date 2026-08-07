@@ -28,8 +28,25 @@ class DiscoveryWorker {
       const nonDuplicates = [];
       for (const raw of rawLeads) {
         // Build dynamic query conditions to catch identical websites
-        const queryConditions = [{ businessName: raw.name, city }];
-        if (raw.website) queryConditions.push({ website: raw.website });
+        const queryConditions = [];
+        
+        if (raw.website) {
+          // Strip http, https, www, and trailing slash to catch variations
+          const cleanWeb = raw.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+          const websiteRegex = new RegExp(cleanWeb.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+          queryConditions.push({ website: websiteRegex });
+        }
+
+        // Catch similar names in the same city (e.g. "Blue Sky Pest Control" vs "Blue Sky Pest Co t ol")
+        const firstWord = raw.name.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
+        if (firstWord.length > 3) {
+          queryConditions.push({ 
+            businessName: new RegExp(`^${firstWord}`, 'i'), 
+            city: city 
+          });
+        } else {
+          queryConditions.push({ businessName: raw.name, city });
+        }
 
         const existing = await Lead.findOne({ 
           userId, 

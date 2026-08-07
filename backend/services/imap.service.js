@@ -138,7 +138,9 @@ class IMAPService {
         const mailbox = await client.status('INBOX', { messages: true });
         
         if (mailbox.messages > 0) {
-          const startSeq = Math.max(1, mailbox.messages - 499);
+          // Changed from 499 to 49 to only check the last 50 messages. 
+          // 500 messages with source:true was causing Vercel 504 timeouts.
+          const startSeq = Math.max(1, mailbox.messages - 49);
           
           for await (let message of client.fetch(`${startSeq}:*`, { envelope: true, source: true, flags: true })) {
           const msgId = message.envelope.messageId;

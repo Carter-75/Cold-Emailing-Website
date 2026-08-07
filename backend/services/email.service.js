@@ -91,7 +91,7 @@ class EmailService {
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-    });
+    }, { timeout: 25000 }); // 25s timeout to prevent Vercel 504s
 
     const content = completion.choices[0].message.content;
     
@@ -122,6 +122,7 @@ class EmailService {
 Your task is to review the following cold email draft.
 If the email has severe issues that you cannot fix, reply with EXACTLY and ONLY: "NO: [Reason]".
 Otherwise, if the email has minor issues (like markdown formatting, placeholders, or weirdly spaced names like 'Osu a De tal Ca e'), FIX them silently.
+**CRITICAL**: If the business name appears corrupted, misspelled, or has strange spacing (e.g. "Blue Sky Pest Co t ol"), you MUST fix it to the correct spelling (e.g. "Blue Sky Pest Control").
 Reply with the absolute final, polished email ready to be sent. Ensure it has natural paragraph breaks (blank lines) and reads conversationally. Do not include any conversational filler before or after the email text. Just the email content.`;
 
     const userPrompt = `Email Draft:\n"""\n${content}\n"""`;
@@ -134,7 +135,7 @@ Reply with the absolute final, polished email ready to be sent. Ensure it has na
           { role: "user", content: userPrompt }
         ],
         temperature: 0,
-      });
+      }, { timeout: 15000 }); // 15s timeout to prevent Vercel 504s
 
       const reply = completion.choices[0].message.content.trim();
 
