@@ -70,6 +70,8 @@ export class InboxComponent implements OnInit, OnDestroy {
   isComposing = signal<boolean>(false);
   isReplying = signal<boolean>(false);
 
+  private lastSyncTime = 0; // Throttle timestamp to prevent Vercel spam
+
   // Robust Drag Selection State
   isDragging = false;
   dragAnchorIndex = -1;
@@ -124,8 +126,9 @@ export class InboxComponent implements OnInit, OnDestroy {
     
     this.fetchStats();
     
-    // Auto-sync IMAP with remote server on load
+    // Auto-sync IMAP with remote server on load and every 5 minutes
     this.syncIMAP();
+    setInterval(() => this.syncIMAP(), 5 * 60 * 1000);
     
     this.http.get<{primary: string, emails: string[]}>('/api/v1/inbox/connected-emails').subscribe({
       next: (res) => {
@@ -184,6 +187,13 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   syncIMAP() {
+    const now = Date.now();
+    // Throttle to prevent spamming Vercel serverless functions (minimum 60s between syncs)
+    if (now - this.lastSyncTime < 60000) {
+      return;
+    }
+    this.lastSyncTime = now;
+    
     this.loading.set(true);
     this.http.post('/api/v1/inbox/syncs', {}).subscribe({
       next: (res: any) => {
@@ -191,12 +201,9 @@ export class InboxComponent implements OnInit, OnDestroy {
         this.dataSource.reload();
         this.fetchStats();
         this.loading.set(false);
-        if (res.summary?.errors && res.summary.errors.length > 0) {
-          alert('IMAP Connection Error:\n\n' + res.summary.errors.join('\n\n') + '\n\nPlease check your App Passwords and IMAP Host/Port settings.');
-        }
       },
-      error: () => {
-        alert('Failed to sync emails. Check server logs.');
+      error: (err) => {
+        console.error('Failed to sync emails in background. (Check Vercel Logs / Network Tab)', err);
         this.loading.set(false);
       }
     });
@@ -223,6 +230,9 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.isReplying.set(false);
     this.currentDraftId.set(null);
     this.lastSavedContent = '';
+    
+    // Auto-sync when switching tabs to ensure freshest data
+    this.syncIMAP();
   }
 
   public getSignatureHTML(): string {
