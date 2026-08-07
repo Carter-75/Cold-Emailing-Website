@@ -166,6 +166,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.config = { ...this.config, ...user.config };
     }
 
+    const savedTab = localStorage.getItem('phoenix_dashboard_tab');
+    if (savedTab) {
+      this.activeTab.set(savedTab as any);
+    }
+
     // Auto-start tour if not seen
     const tourSeen = localStorage.getItem('tour_seen');
     if (!tourSeen) {
@@ -189,6 +194,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   setTab(tab: 'overview' | 'infra' | 'identity' | 'billing' | 'inbox' | 'data') {
     this.sidebarOpen.set(false); // Auto-close sidebar on mobile
+    localStorage.setItem('phoenix_dashboard_tab', tab);
     const container = document.getElementById('tab-content-container');
     if (container) {
       gsap.to(container, {
