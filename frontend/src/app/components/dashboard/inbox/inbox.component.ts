@@ -110,6 +110,18 @@ export class InboxComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.dataSource = new InboxDataSource(this.http);
     
+    // Load Tab Preferences
+    const savedTabs = localStorage.getItem('phoenix_inbox_tabs');
+    if (savedTabs) {
+      try {
+        const parsed = JSON.parse(savedTabs);
+        this.tabs.update(t => t.map(tab => {
+          const saved = parsed.find((p: any) => p.id === tab.id);
+          return saved ? { ...tab, hidden: saved.hidden } : tab;
+        }));
+      } catch (e) {}
+    }
+    
     this.fetchStats();
     
     // Auto-sync IMAP with remote server on load
@@ -146,6 +158,14 @@ export class InboxComponent implements OnInit, OnDestroy {
       this.saveDraft(true);
       this.lastSavedContent = currentSignature;
     }
+  }
+
+  toggleTabVisibility(tabId: string) {
+    this.tabs.update(t => {
+      const newTabs = t.map(tab => tab.id === tabId ? { ...tab, hidden: !tab.hidden } : tab);
+      localStorage.setItem('phoenix_inbox_tabs', JSON.stringify(newTabs.map(n => ({ id: n.id, hidden: n.hidden }))));
+      return newTabs;
+    });
   }
 
   fetchStats() {
