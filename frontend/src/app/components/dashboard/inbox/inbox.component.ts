@@ -136,9 +136,8 @@ export class InboxComponent implements OnInit, OnDestroy {
     // Sync UI state to data source before first fetch
     this.onFiltersChanged();
     
-    // Auto-sync IMAP with remote server on load and every 5 minutes
-    this.syncIMAP();
-    setInterval(() => this.syncIMAP(), 5 * 60 * 1000);
+    // Auto-refresh data from DB every 60 seconds without forcing IMAP sync
+    setInterval(() => this.refreshData(), 60 * 1000);
     
     this.http.get<{primary: string, emails: string[]}>('/api/v1/inbox/connected-emails').subscribe({
       next: (res) => {
@@ -194,6 +193,11 @@ export class InboxComponent implements OnInit, OnDestroy {
       search: this.searchQuery(),
       repliesOnly: this.showLeadRepliesOnly()
     });
+  }
+
+  refreshData() {
+    this.dataSource.reload();
+    this.fetchStats();
   }
 
   syncIMAP() {
@@ -256,8 +260,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.currentDraftId.set(null);
     this.lastSavedContent = '';
     
-    // Auto-sync when switching tabs to ensure freshest data
-    this.syncIMAP();
+    // No need to spam syncIMAP() here. onFiltersChanged() automatically reloads data.
   }
 
   public getSignatureHTML(): string {
