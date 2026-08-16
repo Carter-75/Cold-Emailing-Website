@@ -29,14 +29,17 @@ router.get('/stats', catchAsync(async (req, res) => {
     const stats = { all: { total: 0, unread: 0 } };
     
     for (const m of messages) {
-      if (!stats[m.inboxEmail]) stats[m.inboxEmail] = { total: 0, unread: 0 };
-      
       stats.all.total++;
-      stats[m.inboxEmail].total++;
-      
       if (!m.isRead) {
         stats.all.unread++;
-        stats[m.inboxEmail].unread++;
+      }
+
+      if (m.inboxEmail && m.inboxEmail !== 'all') {
+        if (!stats[m.inboxEmail]) stats[m.inboxEmail] = { total: 0, unread: 0 };
+        stats[m.inboxEmail].total++;
+        if (!m.isRead) {
+          stats[m.inboxEmail].unread++;
+        }
       }
     }
     
@@ -249,6 +252,17 @@ router.get('/leads', catchAsync(async (req, res) => {
       page,
       pages: Math.ceil(total / limit)
     });
+}));
+
+// Delete Leads / Discovery Leads / Unsubbed
+router.post('/leads/delete', catchAsync(async (req, res) => {
+    const { leadIds } = req.body;
+    if (!leadIds || !Array.isArray(leadIds)) {
+      return res.status(400).json({ message: 'Invalid request' });
+    }
+
+    await Lead.deleteMany({ _id: { $in: leadIds }, userId: req.user._id });
+    res.json({ success: true, deletedCount: leadIds.length });
 }));
 
 // Drafts Endpoints (Paginated)

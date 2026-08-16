@@ -135,6 +135,11 @@ export class InboxComponent implements OnInit, OnDestroy {
     
     // Sync UI state to data source before first fetch
     this.onFiltersChanged();
+
+    // Auto-update custom scrollbar thumb when data arrives or changes
+    this.dataSource.totalResults$.subscribe(() => {
+      setTimeout(() => this.updateThumbPosition(), 60);
+    });
     
     // Auto-refresh data from DB every 60 seconds without forcing IMAP sync
     setInterval(() => this.refreshData(), 60 * 1000);
@@ -153,6 +158,11 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.autoSaveInterval = setInterval(() => {
       this.checkAndAutoSave();
     }, 5000);
+  }
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    this.updateThumbPosition();
   }
 
   checkAndAutoSave() {
@@ -182,7 +192,8 @@ export class InboxComponent implements OnInit, OnDestroy {
 
   fetchStats() {
     this.http.get<any>('/api/v1/inbox/stats').subscribe({
-      next: (data) => this.stats.set(data)
+      next: (data) => this.stats.set(data),
+      error: (err) => console.warn('Could not fetch inbox stats:', err)
     });
   }
 
@@ -198,29 +209,43 @@ export class InboxComponent implements OnInit, OnDestroy {
   refreshData() {
     this.dataSource.reload();
     this.fetchStats();
+    setTimeout(() => this.updateThumbPosition(), 80);
   }
 
-  syncIMAP() {
-    const now = Date.now();
-    // Throttle to prevent spamming Vercel serverless functions (minimum 60s between syncs)
-    if (now - this.lastSyncTime < 60000) {
-      return;
-    }
-    this.lastSyncTime = now;
-    
+  syncOrRefresh() {
     this.loading.set(true);
-    this.http.post('/api/v1/inbox/syncs', {}).subscribe({
-      next: (res: any) => {
-        console.log('Sync result:', res.summary);
-        this.dataSource.reload();
-        this.fetchStats();
-        this.loading.set(false);
-      },
-      error: (err) => {
-        console.error('Failed to sync emails in background. (Check Vercel Logs / Network Tab)', err);
-        this.loading.set(false);
+    
+    // Always immediately reload the current data source & stats
+    this.dataSource.reload();
+    this.fetchStats();
+
+    const imapViews = ['inbox', 'replies', 'trash', 'warm-up', 'dmarc'];
+    if (imapViews.includes(this.viewMode())) {
+      const now = Date.now();
+      if (now - this.lastSyncTime >= 15000) { // 15s debounce for IMAP serverless calls
+        this.lastSyncTime = now;
+        this.http.post('/api/v1/inbox/syncs', {}).subscribe({
+          next: (res: any) => {
+            console.log('Sync result:', res.summary);
+            this.dataSource.reload();
+            this.fetchStats();
+            this.loading.set(false);
+            setTimeout(() => this.updateThumbPosition(), 80);
+          },
+          error: (err) => {
+            console.error('Failed to sync emails in background:', err);
+            this.loading.set(false);
+          }
+        });
+        return;
       }
-    });
+    }
+
+    // For leads, discovery, drafts, unsubbed or throttled clicks, provide smooth visual feedback
+    setTimeout(() => {
+      this.loading.set(false);
+      this.updateThumbPosition();
+    }, 450);
   }
 
   requestDeepSync() {
@@ -670,7 +695,26 @@ export class InboxComponent implements OnInit, OnDestroy {
       return;
     }
     
-    if (this.viewMode() === 'unsubbed' || this.viewMode() === 'discovery' || this.viewMode() === 'leads') return;
+    if (this.viewMode() === 'unsubbed' || this.viewMode() === 'discovery' || this.viewMode() === 'leads') {
+      if (!confirm(`Are you sure you want to delete ${ids.length} selected ${this.viewMode()} records?`)) return;
+      
+      // UI update
+      this.dataSource.reload();
+      this.selectedIds.set(new Set());
+      if (this.selectedMessage() && ids.includes(this.selectedMessage()._id)) {
+        this.selectedMessage.set(null);
+      }
+
+      // Background process
+      this.http.post('/api/v1/inbox/leads/delete', { leadIds: ids }).subscribe({
+        next: () => {
+          this.dataSource.reload();
+          this.fetchStats();
+        },
+        error: () => console.error('Failed to delete leads')
+      });
+      return;
+    }
 
     const endpoint = this.viewMode() === 'trash' ? '/api/v1/inbox/permanent' : '/api/v1/inbox/trash';
     const action = this.viewMode() === 'trash' ? 'permanently delete' : 'move to trash';
@@ -764,25 +808,33 @@ export class InboxComponent implements OnInit, OnDestroy {
     }
   }
 
-  private updateThumbPosition() {
+  public updateThumbPosition() {
     if (!this.viewport || !this.dataSource) return;
 
+    const totalCount = this.dataSource.totalLength;
+    if (totalCount <= 0) {
+      this.thumbHeight = 0;
+      this.thumbTop = 0;
+      return;
+    }
+
     const offset = this.viewport.measureScrollOffset();
-    const totalHeight = this.dataSource.totalLength * 125; // itemSize is 125
+    const totalHeight = totalCount * 125; // itemSize is 125
     const viewportHeight = this.viewport.getViewportSize();
 
-    if (totalHeight <= viewportHeight) {
+    if (totalHeight <= viewportHeight || viewportHeight <= 0) {
       this.thumbHeight = 0;
+      this.thumbTop = 0;
       return;
     }
 
     const ratio = viewportHeight / totalHeight;
-    this.thumbHeight = Math.max(viewportHeight * ratio, 40);
+    this.thumbHeight = Math.max(viewportHeight * ratio, 36);
 
     const maxScroll = totalHeight - viewportHeight;
     const scrollRatio = maxScroll > 0 ? offset / maxScroll : 0;
     const maxThumbTop = viewportHeight - this.thumbHeight; 
-    this.thumbTop = scrollRatio * maxThumbTop;
+    this.thumbTop = Math.max(0, Math.min(scrollRatio * maxThumbTop, maxThumbTop));
   }
 
   startScrollDrag(event: MouseEvent) {
