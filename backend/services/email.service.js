@@ -184,7 +184,7 @@ Reply with the absolute final, polished email ready to be sent. Ensure it has na
       <p style="font-size: 11px; color: #999; line-height: 1.5; font-family: sans-serif;">
         <strong>Legal Disclosure:</strong> This communication is from ${userConfig.senderName} at ${userConfig.companyName}.<br>
         Store Address: ${userConfig.physicalAddress || 'Available on Request'}<br>
-        You are receiving this because your business, ${businessName}, was identified as a candidate for digital optimization based on public Google Maps data.<br>
+        This is a business inquiry about Phoenix services.<br>
         <a href="${rootUrl}/api/v1/unsubscribe?email=${encodeURIComponent(recipientEmail)}&userId=${userConfig.userId}&businessName=${encodeURIComponent(businessName)}&sig=${sig}" style="color: #4f46e5; text-decoration: underline;">Opt-out of future communications</a>
       </p>
     `;

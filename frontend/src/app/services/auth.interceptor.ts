@@ -24,8 +24,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   
   return next(modifiedReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 || error.status === 403) {
-        console.warn('[Interceptor] Auth error (401/403). Logging out.');
+      if (isApi && error.status === 401 && !req.url.endsWith('/auth/login')) {
+        console.warn('[Interceptor] Invalid session. Logging out.');
         localStorage.removeItem('auth_token');
         try {
           const auth = injector.get(AuthService);

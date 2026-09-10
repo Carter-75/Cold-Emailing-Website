@@ -1,4 +1,4 @@
-import { Component, inject, signal, afterNextRender, ElementRef, viewChild } from '@angular/core';
+import { Component, inject, signal, effect, afterNextRender, ElementRef, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
@@ -46,10 +46,10 @@ export class InfrastructureComponent {
   isUnsubscribed = signal(false);
 
   constructor() {
-    const user = this.auth.user();
-    if (user?.config) {
-      this.config = { ...this.config, ...user.config };
-    }
+    effect(() => {
+      const user = this.auth.user();
+      if (user?.config) this.config = { ...this.config, ...user.config };
+    });
 
     afterNextRender(() => {
       this.animateIn();
@@ -70,6 +70,7 @@ export class InfrastructureComponent {
   }
 
   saveConfig() {
+    if (!this.auth.user()?.config) return;
     this.outreach.saveConfig(this.config).subscribe((res: any) => {
       if (res && res.token) localStorage.setItem('auth_token', res.token);
       alert('Infrastructure Synchronized!');
