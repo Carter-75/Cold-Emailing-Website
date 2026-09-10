@@ -45,7 +45,7 @@ class SequenceService {
     // In production, we skip if outreach is disabled or lead is finished
     // But in forceSend (Test Mode), we bypass the 'outreachEnabled' check
     const config = user.config || {};
-    if (!forceSend && (!config.outreachEnabled || lead.status === 'finished')) {
+    if ((forceSend && !lead.isTestData) || (!forceSend && (!config.outreachEnabled || config.outreachPaused || lead.status === 'finished'))) {
       return 'skipped';
     }
 
@@ -87,6 +87,8 @@ class SequenceService {
         await lead.save();
         return 'finished';
       }
+
+      await require('./suppression.service').assertCanSend(user._id, lead.recipientEmail, lead.businessName);
 
       // Generate AI Content based on step — merge data-sales persona if needed
       console.log(`[Sequence] Generating AI Step ${currentStep} for ${lead.businessName}...`);

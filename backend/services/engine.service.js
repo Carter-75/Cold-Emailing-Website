@@ -113,7 +113,7 @@ async function checkAndSend12PMAlerts(user, localHour) {
 class OutreachEngine {
   async processChunk(userId) {
     const user = await User.findById(userId);
-    if (!user || !user.config.outreachEnabled) return { status: 'disabled' };
+    if (!user || !user.config.outreachEnabled || user.config.outreachPaused) return { status: 'disabled' };
 
     const { isOpen, localHour, localMinute } = getBusinessTimeInfo(user.config.timezone);
     if (!isOpen) return { status: 'outside_business_hours' };
@@ -181,11 +181,13 @@ class OutreachEngine {
   }
 
   async stepSendEmail(user) {
+    if (!user?.config?.outreachEnabled || user.config.outreachPaused) return { sent: false };
     // Check Follow-ups first
     const followUp = await Lead.findOne({ userId: user._id, source: { $ne: 'data-sales' }, status: 'emailed', nextEmailAt: { $lte: new Date() } }).sort({ nextEmailAt: 1 });
     if (followUp) {
       try {
-        await SequenceService.processLead(followUp);
+        const result = await SequenceService.processLead(followUp);
+        if (result !== 'processed' && result !== 'finished') return { sent: false };
         await updateDiagnosticFlag(user, 'openai', false);
         await updateDiagnosticFlag(user, 'smtp', false);
         return { sent: true, recipient: followUp.recipientEmail };
