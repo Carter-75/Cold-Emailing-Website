@@ -182,7 +182,7 @@ class OutreachEngine {
 
   async stepSendEmail(user) {
     // Check Follow-ups first
-    const followUp = await Lead.findOne({ userId: user._id, status: 'emailed', nextEmailAt: { $lte: new Date() } }).sort({ nextEmailAt: 1 });
+    const followUp = await Lead.findOne({ userId: user._id, source: { $ne: 'data-sales' }, status: 'emailed', nextEmailAt: { $lte: new Date() } }).sort({ nextEmailAt: 1 });
     if (followUp) {
       try {
         await SequenceService.processLead(followUp);
@@ -197,7 +197,7 @@ class OutreachEngine {
     }
 
     // Then Ready list
-    const lead = await Lead.findOne({ userId: user._id, status: 'ready' }).sort({ updatedAt: 1 });
+    const lead = await Lead.findOne({ userId: user._id, source: { $ne: 'data-sales' }, status: 'ready' }).sort({ updatedAt: 1 });
     if (!lead) return { sent: false };
 
     try {

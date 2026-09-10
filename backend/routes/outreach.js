@@ -3,7 +3,6 @@ const router = express.Router();
 const User = require('../models/User');
 const Unsubscribe = require('../models/Unsubscribe');
 const Lead = require('../models/Lead');
-const jwt = require('jsonwebtoken');
 const { verifyToken } = require('../middleware/auth');
 const OutreachEngine = require('../services/engine.service');
 const SequenceService = require('../services/sequence.service');
@@ -23,11 +22,7 @@ router.patch('/status', verifyToken, catchAsync(async (req, res) => {
     await user.save();
     res.json({ message: 'Automation enabled' });
   } else if (status === 'stopped') {
-    if (req.user.isShadow) {
-      const config = { ...(req.user.config || {}), outreachEnabled: false };
-      const newToken = jwt.sign({ ...req.user, config }, process.env.JWT_SECRET, { expiresIn: '7d' });
-      return res.json({ message: 'Automation disabled (Shadow Mode)', token: newToken });
-    }
+    if (req.user.isShadow) return res.status(401).json({ message: 'Please sign in again.' });
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });

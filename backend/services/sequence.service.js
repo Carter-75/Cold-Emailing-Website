@@ -7,6 +7,7 @@ const VerificationService = require('./verification.service');
 class SequenceService {
   async processAllSequences() {
     const leads = await Lead.find({ 
+      source: { $ne: 'data-sales' },
       status: { $in: ['discovery', 'emailed'] },
       nextEmailAt: { $lte: new Date() }
     }).populate('userId');
@@ -31,6 +32,7 @@ class SequenceService {
   }
 
   async processLead(lead, forceSend = false) {
+    if (lead.source === 'data-sales') return 'skipped';
     let user = lead.userId;
     // If userId is just an ID (not populated), fetch the full user object
     if (user && (typeof user === 'string' || user instanceof require('mongoose').Types.ObjectId)) {

@@ -1,0 +1,16 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const {createSuppressionGuard}=require('../services/suppression.service');
+const rows=[{userId:'owner',recipientEmail:'  STOP@Example.com '},{userId:'owner',businessName:'Example (Painting)'}];
+const model={exists:async q=>rows.find(r=>r.userId===q.userId&&q.$or.some(c=>Object.entries(c).some(([k,v])=>typeof r[k]==='string'&&v.test(r[k]))))};
+const check=createSuppressionGuard(model);
+test('blocks mixed case and legacy whitespace',async()=>assert.rejects(check('owner','Stop@example.com'),{code:'RECIPIENT_SUPPRESSED'}));
+test('blocks a suppressed recipient inside a list',async()=>assert.rejects(check('owner','Good <good@example.com>, Stop <stop@example.com>'),{code:'RECIPIENT_SUPPRESSED'}));
+test('blocks business-level suppression',async()=>assert.rejects(check('owner','other@example.com','example (painting)'),{code:'RECIPIENT_SUPPRESSED'}));
+test('does not treat names as regular expressions',async()=>check('owner','other@example.com','Example Painting'));
+test('isolates account suppression',async()=>check('different-owner','stop@example.com'));
+test('permits unsuppressed address',async()=>check('owner','good@example.com'));
+test('fails closed on database outage',async()=>assert.rejects(createSuppressionGuard({exists:async()=>{throw new Error('DB unavailable')}})('owner','good@example.com'),/DB unavailable/));
+test('fails closed on missing owner',async()=>assert.rejects(check(null,'good@example.com')));
+test('fails closed on invalid recipient',async()=>assert.rejects(check('owner','not an email')));
+test('rechecks after a queued recipient opts out',async()=>{await check('owner','later@example.com');rows.push({userId:'owner',recipientEmail:'later@example.com'});await assert.rejects(check('owner','later@example.com'),{code:'RECIPIENT_SUPPRESSED'});});

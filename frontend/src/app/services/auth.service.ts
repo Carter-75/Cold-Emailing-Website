@@ -13,21 +13,21 @@ export class AuthService {
   user = signal<any>(null);
   isAuthenticated = signal<boolean>(false);
   constructor() {
-    this.checkAuth();
     this.handleUrlToken();
+    this.checkAuth();
   }
 
   // Handle token passed via URL query (Google Redirect Flow)
   private handleUrlToken() {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const token = fragment.get('token') || urlParams.get('token');
     
     if (token) {
       console.log(`[AuthService] Found token in URL. Storing and checking auth...`);
       localStorage.setItem('auth_token', token);
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
-      this.checkAuth();
     }
   }
 
@@ -79,7 +79,7 @@ export class AuthService {
       error: (err) => {
         console.error('[AuthService] checkAuth /auth/me request failed:', err);
         // Token is invalid or expired
-        this.logoutLocal();
+        if (err.status === 401 || err.status === 403) this.logoutLocal();
       }
     });
   }

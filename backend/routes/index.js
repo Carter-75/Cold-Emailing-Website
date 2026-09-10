@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Unsubscribe = require('../models/Unsubscribe');
-const jwt = require('jsonwebtoken');
 const { verifyToken } = require('../middleware/auth');
 
 /* GET home page. */
@@ -33,11 +32,7 @@ router.post('/config', verifyToken, async (req, res) => {
     }
 
     // Shadow Mode Support
-    if (req.user.isShadow) {
-      const config = { ...(req.user.config || {}), ...safeBody };
-      const newToken = jwt.sign({ ...req.user, config }, process.env.JWT_SECRET, { expiresIn: '7d' });
-      return res.json({ message: 'Configuration saved to session (Shadow Mode)', token: newToken });
-    }
+    if (req.user.isShadow) return res.status(401).json({ message: 'Please sign in again.' });
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });

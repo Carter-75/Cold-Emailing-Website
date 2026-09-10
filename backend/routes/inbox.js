@@ -1,3 +1,4 @@
+const { assertCanSend } = require('../services/suppression.service');
 const express = require('express');
 const router = express.Router();
 const InboxMessage = require('../models/InboxMessage');
@@ -448,6 +449,7 @@ router.post('/:id/replies', catchAsync(async (req, res) => {
     };
 
     try {
+      await assertCanSend(user._id, mailOptions.to);
       const info = await transporter.sendMail(mailOptions);
       const actualMessageId = info.messageId ? info.messageId.replace(/[<>]/g, '') : `reply-${Date.now()}@coldauto.pro`;
       
@@ -552,6 +554,7 @@ router.post('/messages', catchAsync(async (req, res) => {
     };
 
     try {
+      await assertCanSend(user._id, mailOptions.to);
       const info = await transporter.sendMail(mailOptions);
       const actualMessageId = info.messageId ? info.messageId.replace(/[<>]/g, '') : `sent-${Date.now()}@coldauto.pro`;
       
@@ -708,6 +711,7 @@ router.post('/messages', catchAsync(async (req, res) => {
     const sendId = 'compose-' + Date.now();
     global.pendingSends[sendId] = setTimeout(async () => {
       try {
+        await assertCanSend(user._id, mailOptions.to);
         await transporter.sendMail(mailOptions);
         
         const newMsg = new InboxMessage({

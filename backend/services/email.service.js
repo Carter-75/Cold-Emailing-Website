@@ -1,37 +1,24 @@
+const { assertCanSend } = require('./suppression.service');
 const nodemailer = require('nodemailer');
 const { OpenAI } = require('openai');
 const crypto = require('crypto');
 
-// --- Reasons Why to Buy (Website Services) ---
+// Describe possible uses without promising revenue or savings.
 const WEBSITE_REASONS = [
-  'Relying entirely on social media platforms means your entire business infrastructure sits on land you do not own. An algorithm tweak or a sudden policy shift can cut your reach overnight. A website buys permanent digital real estate that nobody can take away from you.',
-  'Unlike traditional advertising which requires continuous capital to keep running, a website is a front-loaded asset. Once the setup cost is out of the way, the monthly overhead to keep it live is virtually nothing compared to the continuous value it brings in.',
-  'The risk is capped, but the reward is uncapped. The maximum you can lose is the setup cost. However, if that website lands just two or three high-ticket clients or recurring accounts over the next year, it completely covers the risk and generates pure profit from that point forward.',
-  'A website is a piece of software that handles manual labor. By integrating custom forms, scheduling tools, and automated onboarding workflows, you stop chasing leads through messy direct messages or playing phone tag. It buys back hours of a business owner\'s time that can be redirected into billable work.',
-  'People who look for services on Google have high intent — they are looking to buy right now, not just browse social media. Without an SEO-mapped website, a business is entirely invisible to this massive pool of local buyers, conceding 100% of that market share to competitors who did take the digital risk.',
-  'When a business operates without a professional home, prospects view them as a budget option and try to negotiate prices down. A high-end digital presentation elevates the perceived value of the business and gives the owner the leverage to confidently charge premium rates.',
-  'Modern consumers are deeply skeptical. If a business only has a Facebook page or an unverified profile, a certain percentage of high-paying clients will quietly move on to a competitor simply because they lack the trust a dedicated site provides. A website removes that friction instantly.',
-  'Operating without a website leaves a business completely blind to consumer data. With a site, integrating basic analytics lets the owner see exactly what services people click on, where they lose interest, and how they found the business. It turns marketing from a guessing game into a predictable data-driven strategy.',
-  'Human energy is finite, but a website never sleeps. It acts as an automated employee that handles intake, answers repetitive FAQs, and captures hot leads at 11:00 PM on a Sunday when the business owner is off the clock.',
-  'The internet is a great equalizer. A fast, clean, beautifully optimized website can look just as authoritative and secure as a multi-million-dollar company\'s site, allowing an agile local business to capture market share it otherwise could not touch.'
-];
-
-// --- Reasons Why to Buy (Data Intelligence Services) ---
-const DATA_REASONS = [
-  'New building permits get filed every day in your city — each one represents a project that needs contractors, suppliers, and services. Without real-time data, your competitors are getting to these opportunities first while you are left finding out weeks later.',
-  'Government contracts worth millions are awarded daily through SAM.gov and local agencies. Having instant access to who won, what they won, and how much it was worth gives you a direct line to subcontracting opportunities and partnership deals.',
-  'Most businesses find new clients through word of mouth and referrals, which is slow and unpredictable. AI-enriched data gives you a constant stream of companies actively investing in projects right now — complete with contact information and project details.',
-  'Your competitors are already using data services to find prospects before they even hit the market. Without the same intelligence, you are always playing catch-up, responding to opportunities instead of creating them.',
-  'A single data purchase can surface hundreds of qualified leads that would take weeks of manual research to find. The time saved alone pays for itself — that is time your team can spend closing deals instead of hunting for them.',
-  'Every building permit, government contract, and business filing is public record. The problem is not access — it is that the raw data is scattered, messy, and buried in government databases. We do the hard work of collecting, cleaning, and enriching it with AI so you get actionable intelligence, not raw noise.'
+  'A website can give customers one place to review your services, service area, and contact details.',
+  'A clear inquiry form can help collect the details needed to review a project.',
+  'A mobile-friendly layout can make service information easier to read on a phone.',
+  'Examples of completed work can help a prospect assess whether the service fits their needs.'
 ];
 
 class EmailService {
   async generateContent(lead, config, step = 1) {
+    if (lead.source === 'data-sales') {
+      throw new Error('The data-sales sequence is retired.');
+    }
     const openai = new OpenAI({ apiKey: config.openaiKey });
     
     const safeBusinessName = lead.businessName ? lead.businessName.replace(/["\\n\\r]/g, ' ').trim() : 'the business';
-    const isDataSalesLead = lead.source === 'data-sales';
 
     let stepInstructions = '';
     if (step === 1) {
@@ -45,7 +32,7 @@ class EmailService {
     // Pick a random reason for initial emails
     let reasonBlock = '';
     if (step === 1) {
-      const reasons = isDataSalesLead ? DATA_REASONS : WEBSITE_REASONS;
+      const reasons = WEBSITE_REASONS;
       const selectedReason = reasons[Math.floor(Math.random() * reasons.length)];
       reasonBlock = `\n    Reason Why to Buy (integrate exactly 1 of these naturally into the email body):\n    "${selectedReason}"`;
     }
@@ -64,6 +51,13 @@ class EmailService {
     ${config.priceTier3 ? '- ' + config.priceTier3 : ''}
     ${config.priceTier4 ? '- ' + config.priceTier4 : ''}
     ${reasonBlock}
+
+    Evidence Rules:
+    - Do not invent a website defect, customer result, review, relationship, or prior contact.
+    - Do not promise revenue, rankings, savings, or a delivery date without verified support.
+    - Do not offer public-record lists or data access. That offer is retired.
+    - Data cleanup means work on client-provided files using Microsoft tools and AI, with scope and price agreed first.
+    - Do not claim that AI is never used. Do not request confidential files in outreach.
 
     Linguistic Rules:
     - CRITICAL: Format the email with natural paragraph breaks (leave a blank line between sections) so it is NOT a giant wall of text.
@@ -214,6 +208,8 @@ Reply with the absolute final, polished email ready to be sent. Ensure it has na
     };
 
     try {
+      await assertCanSend(userConfig.userId, recipientEmail, businessName);
+      if (finalRecipient !== recipientEmail) await assertCanSend(userConfig.userId, finalRecipient);
       const info = await transporter.sendMail(mailOptions);
       return {
         messageId: info.messageId,

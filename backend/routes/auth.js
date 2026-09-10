@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
+const { issueToken } = require('../services/session-token');
 const passport = require('passport');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
@@ -8,24 +8,13 @@ const User = require('../models/User');
 const { verifyToken } = require('../middleware/auth');
 const { catchAsync } = require('../middleware/error');
 
-// --- Helper: Generate Token ---
-const generateToken = (user, isShadow = false) => {
-  const payload = {
-    _id: user._id,
-    googleId: user.googleId,
-    email: user.email,
-    displayName: user.displayName,
-    isShadow: !!isShadow,
-    config: user.config
-  };
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
-};
+const generateToken = issueToken;
 
 // --- Google Auth Routes ---
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get('/google/callback', (req, res, next) => {
-  console.log('📡 Google Callback Received. Query:', req.query);
+  // OAuth codes must never be logged.
     passport.authenticate('google', (err, user, info) => {
       const host = req.get('host') || '';
       const isLocalHost = host.includes('localhost') || host.includes('127.0.0.1');
@@ -38,7 +27,7 @@ router.get('/google/callback', (req, res, next) => {
       
       const token = generateToken(user);
       console.log(`✅ Google Login Successful: ${user.email}`);
-      res.redirect(`${frontendUrl}/dashboard?token=${token}`);
+      res.redirect(`${frontendUrl}/dashboard#token=${token}`);
     })(req, res, next);
 });
 
@@ -60,7 +49,9 @@ router.post('/signup', catchAsync(async (req, res) => {
   });
 
   const token = generateToken(user);
-  res.status(201).json({ token, user });
+  const publicUser = user.toObject();
+  delete publicUser.password;
+  res.status(201).json({ token, user: publicUser });
 }));
 
 // Login
@@ -70,27 +61,21 @@ router.post('/login', (req, res, next) => {
     if (!user) return res.status(401).json({ message: info.message || 'Login failed' });
 
     const token = generateToken(user);
-    res.json({ token, user });
+    const publicUser = user.toObject();
+    delete publicUser.password;
+    res.json({ token, user: publicUser });
   })(req, res, next);
 });
 
 // Get current user via local token payload
 router.get('/me', verifyToken, catchAsync(async (req, res) => {
-  const isDbConnected = mongoose.connection.readyState === 1;
-  let freshUser = req.user;
-
-  if (isDbConnected && !req.user.isShadow) {
-    const dbUser = await User.findById(req.user._id);
-    if (!dbUser) {
-      return res.status(401).json({ message: 'User record no longer exists' });
-    }
-    freshUser = { ...req.user, ...dbUser.toObject() };
+  res.set('Cache-Control', 'no-store');
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ message: 'Account settings are temporarily unavailable. Retry shortly.' });
   }
-
-  res.json({
-    ...freshUser,
-    dbStatus: isDbConnected ? 'online' : 'shadow-mode'
-  });
+  const dbUser = await User.findById(req.user._id).select('-password');
+  if (!dbUser) return res.status(401).json({ message: 'User record no longer exists' });
+  res.json({ ...dbUser.toObject(), dbStatus: 'online' });
 }));
 
 module.exports = router;

@@ -5,6 +5,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 
 export class InboxDataSource extends DataSource<any | undefined> {
   private _length = 0;
+  private _generation = 0;
+  private _requests = new Subscription();
   private _pageSize = 20;
   private _cachedData = new Map<number, (any | undefined)[]>();
   private _fetchedPages = new Set<number>();
@@ -34,6 +36,9 @@ export class InboxDataSource extends DataSource<any | undefined> {
    * Sets new filters and resets the cache
    */
   updateFilters(filters: any) {
+    this._generation++;
+    this._requests.unsubscribe();
+    this._requests = new Subscription();
     this._filters = { ...this._filters, ...filters };
 
     this._cachedData.clear();
@@ -79,6 +84,8 @@ export class InboxDataSource extends DataSource<any | undefined> {
   }
 
   disconnect(): void {
+    this._generation++;
+    this._requests.unsubscribe();
     this._subscription.unsubscribe();
     this._subscription = new Subscription();
     this._destroy$.next();
@@ -115,8 +122,10 @@ export class InboxDataSource extends DataSource<any | undefined> {
 
     console.log(`[InboxDataSource] Fetching page ${pageIndex + 1} for ${endpoint}...`);
     
-    this.http.get<any>(endpoint, { params }).subscribe({
+    const generation = this._generation;
+    this._requests.add(this.http.get<any>(endpoint, { params }).subscribe({
       next: (res) => {
+        if (generation !== this._generation) return;
         this._length = res.total || 0;
         this.totalResults$.next(this._length);
         
@@ -127,11 +136,12 @@ export class InboxDataSource extends DataSource<any | undefined> {
         this._updateDataStream();
       },
       error: (err) => {
+        if (generation !== this._generation) return;
         console.error('Failed to load page', err);
         // Retry logic could go here
         this._fetchedPages.delete(pageIndex);
       }
-    });
+    }));
   }
 
   private _updateDataStream() {

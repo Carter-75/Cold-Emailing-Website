@@ -45,6 +45,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   includeSignature = signal<boolean>(true);
   private countdownInterval: any;
   private autoSaveInterval: any;
+  private refreshInterval: any;
   private lastSavedContent: string = '';
 
 
@@ -142,7 +143,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     });
     
     // Auto-refresh data from DB every 60 seconds without forcing IMAP sync
-    setInterval(() => this.refreshData(), 60 * 1000);
+    this.refreshInterval = setInterval(() => { if (!document.hidden) this.refreshData(); }, 60 * 1000);
     
     this.http.get<{primary: string, emails: string[]}>('/api/v1/inbox/connected-emails').subscribe({
       next: (res) => {
@@ -548,6 +549,7 @@ export class InboxComponent implements OnInit, OnDestroy {
 
 
   ngOnDestroy() {
+    if (this.refreshInterval) clearInterval(this.refreshInterval);
     this.stopDragSelection();
     if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
     if (this.countdownInterval) clearInterval(this.countdownInterval);
