@@ -1,28 +1,28 @@
 {
-  "version": 2,
-  "experimentalServices": {
-    "frontend": {
-      "entrypoint": "frontend",
-      "routePrefix": "/",
-      "framework": "angular"
-    },
-    "backend": {
-      "entrypoint": "backend",
-      "routePrefix": "/_/backend"
-    }
-  },
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/_/backend/api/:path*"
+      "source": "/api",
+      "destination": {
+        "service": "backend"
+      }
     },
     {
-      "source": "/auth/:path*",
-      "destination": "/_/backend/auth/:path*"
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "backend"
+      }
     },
     {
-      "source": "/((?!api/|auth/|_/backend/).*)",
-      "destination": "/index.html"
+      "source": "/auth/(.*)",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
     }
   ],
   "headers": [
@@ -39,5 +39,16 @@
         }
       ]
     }
-  ]
+  ],
+  "services": {
+    "backend": {
+      "root": "backend",
+      "entrypoint": "app.js",
+      "framework": "express"
+    },
+    "frontend": {
+      "framework": "angular",
+      "root": "frontend"
+    }
+  }
 }
